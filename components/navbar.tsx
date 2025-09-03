@@ -111,11 +111,14 @@ export function Navbar() {
                 </NavigationMenuContent>
               </NavigationMenuItem>
               <NavigationMenuItem>
-                <Link href='/pricing' legacyBehavior passHref>
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                <NavigationMenuLink asChild>
+                  <Link
+                    href='/pricing'
+                    className={navigationMenuTriggerStyle()}
+                  >
                     Pricing
-                  </NavigationMenuLink>
-                </Link>
+                  </Link>
+                </NavigationMenuLink>
               </NavigationMenuItem>
             </NavigationMenuList>
           </NavigationMenu>
@@ -138,16 +141,17 @@ export function Navbar() {
 }
 
 const ListItem = React.forwardRef<
-  React.ElementRef<'a'>,
-  React.ComponentPropsWithoutRef<'a'> & {
+  React.ElementRef<typeof Link>,
+  React.ComponentPropsWithoutRef<typeof Link> & {
     title: string;
   }
->(({ className, title, children, ...props }, ref) => {
+>(({ className, title, children, href, ...props }, ref) => {
   return (
     <li>
       <NavigationMenuLink asChild>
-        <a
+        <Link
           ref={ref}
+          href={href}
           className={cn(
             'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
             className
@@ -158,7 +162,7 @@ const ListItem = React.forwardRef<
           <p className='line-clamp-2 text-sm leading-snug text-muted-foreground'>
             {children}
           </p>
-        </a>
+        </Link>
       </NavigationMenuLink>
     </li>
   );
