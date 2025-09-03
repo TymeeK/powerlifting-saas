@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { Menu, X } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,14 @@ import {
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { Separator } from '@/components/ui/separator';
 
 const features = [
   {
@@ -76,7 +85,8 @@ export function Navbar() {
               PR Tracker
             </span>
           </Link>
-          <NavigationMenu>
+          {/* Desktop Navigation */}
+          <NavigationMenu className='hidden lg:flex'>
             <NavigationMenuList>
               <NavigationMenuItem>
                 <NavigationMenuTrigger>Features</NavigationMenuTrigger>
@@ -123,7 +133,9 @@ export function Navbar() {
             </NavigationMenuList>
           </NavigationMenu>
         </div>
-        <div className='flex items-center space-x-2'>
+
+        {/* Desktop Auth Buttons */}
+        <div className='hidden lg:flex items-center space-x-2'>
           <Button variant='ghost' size='sm' asChild>
             <Link href='/login'>Sign In</Link>
           </Button>
@@ -134,6 +146,95 @@ export function Navbar() {
           >
             <Link href='/signup'>Get Started</Link>
           </Button>
+        </div>
+
+        {/* Mobile Navigation */}
+        <div className='flex lg:hidden items-center space-x-2'>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant='ghost' size='sm' className='p-2'>
+                <Menu className='h-5 w-5' />
+                <span className='sr-only'>Open menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side='right' className='w-[300px] sm:w-[400px]'>
+              <SheetHeader>
+                <SheetTitle className='text-left'>Navigation</SheetTitle>
+              </SheetHeader>
+              <div className='flex flex-col space-y-4 mt-6'>
+                {/* Mobile Features Section */}
+                <div>
+                  <h3 className='font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3'>
+                    Features
+                  </h3>
+                  <Separator className='mb-3' />
+                  <div className='space-y-2'>
+                    {features.map(feature => (
+                      <Link
+                        key={feature.title}
+                        href={feature.href}
+                        className='block p-3 rounded-md hover:bg-accent transition-colors'
+                      >
+                        <div className='font-medium text-sm'>
+                          {feature.title}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Mobile Resources Section */}
+                <div>
+                  <h3 className='font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3'>
+                    Resources
+                  </h3>
+                  <Separator className='mb-3' />
+                  <div className='space-y-2'>
+                    {resources.map(resource => (
+                      <Link
+                        key={resource.title}
+                        href={resource.href}
+                        className='block p-3 rounded-md hover:bg-accent transition-colors'
+                      >
+                        <div className='font-medium text-sm'>
+                          {resource.title}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Mobile Pricing Link */}
+                <div>
+                  <Link
+                    href='/pricing'
+                    className='block p-3 rounded-md hover:bg-accent transition-colors'
+                  >
+                    <div className='font-medium text-sm'>Pricing</div>
+                  </Link>
+                </div>
+
+                {/* Mobile Auth Buttons */}
+                <div className='pt-4 border-t space-y-2'>
+                  <Button
+                    variant='ghost'
+                    size='sm'
+                    className='w-full justify-start'
+                    asChild
+                  >
+                    <Link href='/login'>Sign In</Link>
+                  </Button>
+                  <Button
+                    size='sm'
+                    className='w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                    asChild
+                  >
+                    <Link href='/signup'>Get Started</Link>
+                  </Button>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>
