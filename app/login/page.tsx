@@ -1,3 +1,5 @@
+import { Separator } from '@/components/ui/separator';
+
 export default function LoginPage() {
   return (
     <main className='min-h-screen w-screen max-w-full overflow-x-hidden flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-4 sm:px-6 lg:px-8 py-8 relative z-0'>
@@ -83,11 +85,11 @@ export default function LoginPage() {
 
         {/* Divider */}
         <div className='flex items-center my-4 sm:my-6'>
-          <div className='flex-1 border-t border-purple-400/30'></div>
+          <Separator className='flex-1 bg-purple-400/30' />
           <span className='px-3 sm:px-4 text-purple-200 text-xs sm:text-sm'>
             or
           </span>
-          <div className='flex-1 border-t border-purple-400/30'></div>
+          <Separator className='flex-1 bg-purple-400/30' />
         </div>
 
         {/* Social Login */}
