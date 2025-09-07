@@ -75,6 +75,12 @@ const resources = [
 ];
 
 export function Navbar() {
+  const [isOpen, setIsOpen] = React.useState(false);
+
+  const handleLinkClick = () => {
+    setIsOpen(false);
+  };
+
   return (
     <header className='sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
       <div className='container flex h-16 items-center justify-between'>
@@ -150,7 +156,7 @@ export function Navbar() {
 
         {/* Mobile Navigation */}
         <div className='flex lg:hidden items-center space-x-2'>
-          <Sheet>
+          <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
               <Button variant='ghost' size='sm' className='p-2'>
                 <Menu className='h-5 w-5' />
@@ -176,7 +182,9 @@ export function Navbar() {
                         className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
                         asChild
                       >
-                        <Link href={feature.href}>{feature.title}</Link>
+                        <Link href={feature.href} onClick={handleLinkClick}>
+                          {feature.title}
+                        </Link>
                       </Button>
                     ))}
                   </div>
@@ -196,7 +204,9 @@ export function Navbar() {
                         className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
                         asChild
                       >
-                        <Link href={resource.href}>{resource.title}</Link>
+                        <Link href={resource.href} onClick={handleLinkClick}>
+                          {resource.title}
+                        </Link>
                       </Button>
                     ))}
                   </div>
@@ -209,7 +219,9 @@ export function Navbar() {
                     className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
                     asChild
                   >
-                    <Link href='/pricing'>Pricing</Link>
+                    <Link href='/pricing' onClick={handleLinkClick}>
+                      Pricing
+                    </Link>
                   </Button>
                 </div>
 
@@ -221,14 +233,18 @@ export function Navbar() {
                     className='w-full border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
                     asChild
                   >
-                    <Link href='/login'>Sign In</Link>
+                    <Link href='/login' onClick={handleLinkClick}>
+                      Sign In
+                    </Link>
                   </Button>
                   <Button
                     size='lg'
                     className='w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold shadow-lg hover:shadow-purple-500/25 transition-all duration-200'
                     asChild
                   >
-                    <Link href='/signup'>Get Started</Link>
+                    <Link href='/signup' onClick={handleLinkClick}>
+                      Get Started
+                    </Link>
                   </Button>
                 </div>
               </div>
