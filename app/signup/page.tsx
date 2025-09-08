@@ -4,14 +4,15 @@ import { useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 
 export default function SignupPage() {
-  const [fullName, setFullName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle form submission logic here
-    console.log({ fullName, password, confirmPassword });
+    console.log({ firstName, lastName, password, confirmPassword });
   };
   return (
     <main className='min-h-screen w-screen max-w-full overflow-x-hidden flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-4 sm:px-6 lg:px-8 py-8 relative z-0'>
@@ -29,23 +30,43 @@ export default function SignupPage() {
         {/* Signup Form */}
         <form className='space-y-4 sm:space-y-6' onSubmit={handleSubmit}>
           <div className='space-y-3 sm:space-y-4'>
-            <div>
-              <label
-                htmlFor='name'
-                className='block text-sm sm:text-base font-medium text-purple-100 mb-1 sm:mb-2'
-              >
-                Full Name
-              </label>
-              <input
-                type='text'
-                id='name'
-                name='name'
-                value={fullName}
-                onChange={e => setFullName(e.target.value)}
-                placeholder='Enter your full name'
-                className='w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-black bg-white border-2 border-purple-300 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 placeholder-gray-500 text-sm sm:text-base'
-                required
-              />
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
+              <div>
+                <label
+                  htmlFor='firstName'
+                  className='block text-sm sm:text-base font-medium text-purple-100 mb-1 sm:mb-2'
+                >
+                  First Name
+                </label>
+                <input
+                  type='text'
+                  id='firstName'
+                  name='firstName'
+                  value={firstName}
+                  onChange={e => setFirstName(e.target.value)}
+                  placeholder='Enter first name'
+                  className='w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-black bg-white border-2 border-purple-300 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 placeholder-gray-500 text-sm sm:text-base'
+                  required
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor='lastName'
+                  className='block text-sm sm:text-base font-medium text-purple-100 mb-1 sm:mb-2'
+                >
+                  Last Name
+                </label>
+                <input
+                  type='text'
+                  id='lastName'
+                  name='lastName'
+                  value={lastName}
+                  onChange={e => setLastName(e.target.value)}
+                  placeholder='Enter last name'
+                  className='w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-black bg-white border-2 border-purple-300 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 placeholder-gray-500 text-sm sm:text-base'
+                  required
+                />
+              </div>
             </div>
 
             <div>
