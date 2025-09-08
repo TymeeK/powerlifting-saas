@@ -1,6 +1,18 @@
+'use client';
+
+import { useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 
 export default function SignupPage() {
+  const [fullName, setFullName] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Handle form submission logic here
+    console.log({ fullName, password, confirmPassword });
+  };
   return (
     <main className='min-h-screen w-screen max-w-full overflow-x-hidden flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-4 sm:px-6 lg:px-8 py-8 relative z-0'>
       <div className='w-full max-w-sm sm:max-w-md lg:max-w-lg xl:max-w-xl'>
@@ -15,7 +27,7 @@ export default function SignupPage() {
         </div>
 
         {/* Signup Form */}
-        <form className='space-y-4 sm:space-y-6'>
+        <form className='space-y-4 sm:space-y-6' onSubmit={handleSubmit}>
           <div className='space-y-3 sm:space-y-4'>
             <div>
               <label
@@ -28,6 +40,8 @@ export default function SignupPage() {
                 type='text'
                 id='name'
                 name='name'
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
                 placeholder='Enter your full name'
                 className='w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-black bg-white border-2 border-purple-300 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 placeholder-gray-500 text-sm sm:text-base'
                 required
@@ -62,6 +76,8 @@ export default function SignupPage() {
                 type='password'
                 id='password'
                 name='password'
+                value={password}
+                onChange={e => setPassword(e.target.value)}
                 placeholder='Create a password'
                 className='w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-black bg-white border-2 border-purple-300 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 placeholder-gray-500 text-sm sm:text-base'
                 required
@@ -79,6 +95,8 @@ export default function SignupPage() {
                 type='password'
                 id='confirmPassword'
                 name='confirmPassword'
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
                 placeholder='Confirm your password'
                 className='w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-black bg-white border-2 border-purple-300 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 placeholder-gray-500 text-sm sm:text-base'
                 required
