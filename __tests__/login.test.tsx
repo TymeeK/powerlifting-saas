@@ -252,7 +252,7 @@ describe('LoginPage', () => {
 
       // Verify redirect happens
       await waitFor(() => {
-        expect(window.location.href).toBe('/');
+        expect(window.location.href).toBe('/dashboard');
       });
     });
 
@@ -271,7 +271,9 @@ describe('LoginPage', () => {
       await user.click(submitButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
+        expect(
+          screen.getByText('Incorrect email or password')
+        ).toBeInTheDocument();
       });
     });
 
