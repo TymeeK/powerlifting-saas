@@ -1,4 +1,41 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+
 export default function LandingPage() {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      if (user) {
+        // User is logged in, redirect to dashboard
+        router.push('/dashboard');
+      } else {
+        setUser(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+  if (loading) {
+    return (
+      <main className='min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-4'>
+        <div className='text-center'>
+          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4'></div>
+          <p className='text-purple-200'>Loading...</p>
+        </div>
+      </main>
+    );
+  }
+
+  // If user is logged in, they will be redirected, so this won't render
   return (
     <main className='min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-4'>
       <h1 className='text-4xl font-bold mb-4 text-center bg-gradient-to-r from-white to-purple-200 bg-clip-text text-transparent'>

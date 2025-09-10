@@ -77,6 +77,25 @@ const resources = [
   },
 ];
 
+const dashboardFeatures = [
+  {
+    title: 'Log Workout',
+    href: '/dashboard/log-workout',
+    description: 'Quickly log your workout session and track your exercises.',
+  },
+  {
+    title: 'Charts',
+    href: '/dashboard/charts',
+    description:
+      'View detailed progress charts and analytics for your fitness journey.',
+  },
+  {
+    title: 'Settings',
+    href: '/dashboard/settings',
+    description: 'Manage your account settings and preferences.',
+  },
+];
+
 export function Navbar() {
   const [isOpen, setIsOpen] = React.useState(false);
   const [user, setUser] = React.useState<any>(null);
@@ -118,48 +137,102 @@ export function Navbar() {
           {/* Desktop Navigation */}
           <NavigationMenu className='hidden lg:flex'>
             <NavigationMenuList>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger>Features</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className='grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]'>
-                    {features.map(feature => (
-                      <ListItem
-                        key={feature.title}
-                        title={feature.title}
-                        href={feature.href}
+              {loading ? (
+                // Loading state - show minimal navigation
+                <NavigationMenuItem>
+                  <div className='h-10 w-20 animate-pulse bg-gray-200 rounded'></div>
+                </NavigationMenuItem>
+              ) : user ? (
+                // Authenticated user navigation
+                <>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <Link
+                        href='/dashboard'
+                        className={navigationMenuTriggerStyle()}
                       >
-                        {feature.description}
-                      </ListItem>
-                    ))}
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuTrigger>Resources</NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className='grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]'>
-                    {resources.map(resource => (
-                      <ListItem
-                        key={resource.title}
-                        title={resource.title}
-                        href={resource.href}
+                        Dashboard
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <Link
+                        href='/dashboard/log-workout'
+                        className={navigationMenuTriggerStyle()}
                       >
-                        {resource.description}
-                      </ListItem>
-                    ))}
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    href='/pricing'
-                    className={navigationMenuTriggerStyle()}
-                  >
-                    Pricing
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
+                        Log Workout
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <Link
+                        href='/dashboard/charts'
+                        className={navigationMenuTriggerStyle()}
+                      >
+                        Charts
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <Link
+                        href='/dashboard/settings'
+                        className={navigationMenuTriggerStyle()}
+                      >
+                        Settings
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                </>
+              ) : (
+                // Guest user navigation
+                <>
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger>Features</NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <ul className='grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]'>
+                        {features.map(feature => (
+                          <ListItem
+                            key={feature.title}
+                            title={feature.title}
+                            href={feature.href}
+                          >
+                            {feature.description}
+                          </ListItem>
+                        ))}
+                      </ul>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger>Resources</NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <ul className='grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]'>
+                        {resources.map(resource => (
+                          <ListItem
+                            key={resource.title}
+                            title={resource.title}
+                            href={resource.href}
+                          >
+                            {resource.description}
+                          </ListItem>
+                        ))}
+                      </ul>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <Link
+                        href='/pricing'
+                        className={navigationMenuTriggerStyle()}
+                      >
+                        Pricing
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                </>
+              )}
             </NavigationMenuList>
           </NavigationMenu>
         </div>
@@ -167,7 +240,10 @@ export function Navbar() {
         {/* Desktop Auth Buttons */}
         <div className='hidden lg:flex items-center space-x-2'>
           {loading ? (
-            <div className='w-8 h-8 animate-pulse bg-gray-200 rounded-full'></div>
+            <div className='flex items-center space-x-2'>
+              <div className='w-20 h-8 animate-pulse bg-gray-200 rounded'></div>
+              <div className='w-16 h-8 animate-pulse bg-gray-200 rounded'></div>
+            </div>
           ) : user ? (
             <div className='flex items-center space-x-3'>
               <span className='text-sm font-medium text-gray-700'>
@@ -213,67 +289,145 @@ export function Navbar() {
                 <SheetTitle className='text-left'>Navigation</SheetTitle>
               </SheetHeader>
               <div className='flex flex-col space-y-4 mt-6'>
-                {/* Mobile Features Section */}
-                <div className='px-4'>
-                  <h3 className='font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3'>
-                    Features
-                  </h3>
-                  <Separator className='mb-3' />
-                  <div className='space-y-2'>
-                    {features.map(feature => (
+                {loading ? (
+                  // Loading state for mobile
+                  <div className='px-4'>
+                    <div className='space-y-2'>
+                      <div className='h-10 w-full animate-pulse bg-gray-200 rounded'></div>
+                      <div className='h-10 w-full animate-pulse bg-gray-200 rounded'></div>
+                      <div className='h-10 w-full animate-pulse bg-gray-200 rounded'></div>
+                    </div>
+                  </div>
+                ) : user ? (
+                  // Authenticated user mobile navigation
+                  <>
+                    {/* Mobile Dashboard Section */}
+                    <div className='px-4'>
+                      <h3 className='font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3'>
+                        Navigation
+                      </h3>
+                      <Separator className='mb-3' />
+                      <div className='space-y-2'>
+                        <Button
+                          variant='outline'
+                          className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
+                          asChild
+                        >
+                          <Link href='/dashboard' onClick={handleLinkClick}>
+                            Dashboard
+                          </Link>
+                        </Button>
+                        <Button
+                          variant='outline'
+                          className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
+                          asChild
+                        >
+                          <Link
+                            href='/dashboard/log-workout'
+                            onClick={handleLinkClick}
+                          >
+                            Log Workout
+                          </Link>
+                        </Button>
+                        <Button
+                          variant='outline'
+                          className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
+                          asChild
+                        >
+                          <Link
+                            href='/dashboard/charts'
+                            onClick={handleLinkClick}
+                          >
+                            Charts
+                          </Link>
+                        </Button>
+                        <Button
+                          variant='outline'
+                          className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
+                          asChild
+                        >
+                          <Link
+                            href='/dashboard/settings'
+                            onClick={handleLinkClick}
+                          >
+                            Settings
+                          </Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  // Guest user mobile navigation
+                  <>
+                    {/* Mobile Features Section */}
+                    <div className='px-4'>
+                      <h3 className='font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3'>
+                        Features
+                      </h3>
+                      <Separator className='mb-3' />
+                      <div className='space-y-2'>
+                        {features.map(feature => (
+                          <Button
+                            key={feature.title}
+                            variant='outline'
+                            className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
+                            asChild
+                          >
+                            <Link href={feature.href} onClick={handleLinkClick}>
+                              {feature.title}
+                            </Link>
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Mobile Resources Section */}
+                    <div className='px-4'>
+                      <h3 className='font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3'>
+                        Resources
+                      </h3>
+                      <Separator className='mb-3' />
+                      <div className='space-y-2'>
+                        {resources.map(resource => (
+                          <Button
+                            key={resource.title}
+                            variant='outline'
+                            className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
+                            asChild
+                          >
+                            <Link
+                              href={resource.href}
+                              onClick={handleLinkClick}
+                            >
+                              {resource.title}
+                            </Link>
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Mobile Pricing Link */}
+                    <div className='px-4'>
                       <Button
-                        key={feature.title}
                         variant='outline'
                         className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
                         asChild
                       >
-                        <Link href={feature.href} onClick={handleLinkClick}>
-                          {feature.title}
+                        <Link href='/pricing' onClick={handleLinkClick}>
+                          Pricing
                         </Link>
                       </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Mobile Resources Section */}
-                <div className='px-4'>
-                  <h3 className='font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3'>
-                    Resources
-                  </h3>
-                  <Separator className='mb-3' />
-                  <div className='space-y-2'>
-                    {resources.map(resource => (
-                      <Button
-                        key={resource.title}
-                        variant='outline'
-                        className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
-                        asChild
-                      >
-                        <Link href={resource.href} onClick={handleLinkClick}>
-                          {resource.title}
-                        </Link>
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Mobile Pricing Link */}
-                <div className='px-4'>
-                  <Button
-                    variant='outline'
-                    className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
-                    asChild
-                  >
-                    <Link href='/pricing' onClick={handleLinkClick}>
-                      Pricing
-                    </Link>
-                  </Button>
-                </div>
+                    </div>
+                  </>
+                )}
 
                 {/* Mobile Auth Buttons */}
                 <div className='pt-6 border-t space-y-3 px-4'>
                   {loading ? (
-                    <div className='w-full h-12 animate-pulse bg-gray-200 rounded-lg'></div>
+                    <div className='space-y-3'>
+                      <div className='w-full h-12 animate-pulse bg-gray-200 rounded-lg'></div>
+                      <div className='w-full h-12 animate-pulse bg-gray-200 rounded-lg'></div>
+                    </div>
                   ) : user ? (
                     <div className='space-y-3'>
                       <div className='text-center py-2'>
