@@ -30,7 +30,8 @@ export default function LoginPage() {
         window.location.href = '/dashboard';
       }
     } catch (error: any) {
-      setError(error.message || 'An error occurred during sign in');
+      // Display generic error message for authentication failures
+      setError('Incorrect email or password');
     } finally {
       setIsLoading(false);
     }
@@ -118,7 +119,7 @@ export default function LoginPage() {
           <button
             type='submit'
             disabled={isLoading}
-            className='w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-200 text-sm sm:text-base'
+            className='w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-200 text-sm sm:text-base cursor-pointer'
           >
             {isLoading ? 'Signing In...' : 'Sign In'}
           </button>
