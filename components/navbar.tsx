@@ -2,7 +2,10 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogOut } from 'lucide-react';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -76,9 +79,30 @@ const resources = [
 
 export function Navbar() {
   const [isOpen, setIsOpen] = React.useState(false);
+  const [user, setUser] = React.useState<any>(null);
+  const [loading, setLoading] = React.useState(true);
+  const router = useRouter();
+
+  React.useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      setUser(user);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   const handleLinkClick = () => {
     setIsOpen(false);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      router.push('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
   };
 
   return (
@@ -142,16 +166,37 @@ export function Navbar() {
 
         {/* Desktop Auth Buttons */}
         <div className='hidden lg:flex items-center space-x-2'>
-          <Button variant='ghost' size='sm' asChild>
-            <Link href='/login'>Sign In</Link>
-          </Button>
-          <Button
-            size='sm'
-            className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
-            asChild
-          >
-            <Link href='/signup'>Get Started</Link>
-          </Button>
+          {loading ? (
+            <div className='w-8 h-8 animate-pulse bg-gray-200 rounded-full'></div>
+          ) : user ? (
+            <div className='flex items-center space-x-3'>
+              <span className='text-sm font-medium text-gray-700'>
+                Welcome, {user.displayName || 'User'}
+              </span>
+              <Button
+                variant='ghost'
+                size='sm'
+                onClick={handleSignOut}
+                className='text-gray-600 hover:text-gray-900 cursor-pointer'
+              >
+                <LogOut className='h-4 w-4 mr-1' />
+                Sign Out
+              </Button>
+            </div>
+          ) : (
+            <>
+              <Button variant='ghost' size='sm' asChild>
+                <Link href='/login'>Sign In</Link>
+              </Button>
+              <Button
+                size='sm'
+                className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
+                asChild
+              >
+                <Link href='/signup'>Get Started</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile Navigation */}
@@ -227,25 +272,51 @@ export function Navbar() {
 
                 {/* Mobile Auth Buttons */}
                 <div className='pt-6 border-t space-y-3 px-4'>
-                  <Button
-                    variant='outline'
-                    size='lg'
-                    className='w-full border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
-                    asChild
-                  >
-                    <Link href='/login' onClick={handleLinkClick}>
-                      Sign In
-                    </Link>
-                  </Button>
-                  <Button
-                    size='lg'
-                    className='w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold shadow-lg hover:shadow-purple-500/25 transition-all duration-200'
-                    asChild
-                  >
-                    <Link href='/signup' onClick={handleLinkClick}>
-                      Get Started
-                    </Link>
-                  </Button>
+                  {loading ? (
+                    <div className='w-full h-12 animate-pulse bg-gray-200 rounded-lg'></div>
+                  ) : user ? (
+                    <div className='space-y-3'>
+                      <div className='text-center py-2'>
+                        <p className='text-sm font-medium text-gray-700'>
+                          Welcome, {user.displayName || 'User'}
+                        </p>
+                      </div>
+                      <Button
+                        variant='outline'
+                        size='lg'
+                        onClick={() => {
+                          handleSignOut();
+                          handleLinkClick();
+                        }}
+                        className='w-full border-2 border-red-300 hover:border-red-500 hover:bg-red-500/10 text-red-600 hover:text-red-700 transition-all duration-200 cursor-pointer'
+                      >
+                        <LogOut className='h-4 w-4 mr-2' />
+                        Sign Out
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <Button
+                        variant='outline'
+                        size='lg'
+                        className='w-full border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
+                        asChild
+                      >
+                        <Link href='/login' onClick={handleLinkClick}>
+                          Sign In
+                        </Link>
+                      </Button>
+                      <Button
+                        size='lg'
+                        className='w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold shadow-lg hover:shadow-purple-500/25 transition-all duration-200'
+                        asChild
+                      >
+                        <Link href='/signup' onClick={handleLinkClick}>
+                          Get Started
+                        </Link>
+                      </Button>
+                    </>
+                  )}
                 </div>
               </div>
             </SheetContent>
