@@ -77,25 +77,6 @@ const resources = [
   },
 ];
 
-const dashboardFeatures = [
-  {
-    title: 'Log Workout',
-    href: '/dashboard/log-workout',
-    description: 'Quickly log your workout session and track your exercises.',
-  },
-  {
-    title: 'Charts',
-    href: '/dashboard/charts',
-    description:
-      'View detailed progress charts and analytics for your fitness journey.',
-  },
-  {
-    title: 'Settings',
-    href: '/dashboard/settings',
-    description: 'Manage your account settings and preferences.',
-  },
-];
-
 export function Navbar() {
   const [isOpen, setIsOpen] = React.useState(false);
   const [user, setUser] = React.useState<any>(null);
@@ -128,7 +109,10 @@ export function Navbar() {
     <header className='sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
       <div className='container flex h-16 items-center justify-between'>
         <div className='mr-4 flex'>
-          <Link href='/' className='mr-6 flex items-center space-x-2'>
+          <Link
+            href={user ? '/dashboard' : '/'}
+            className='mr-6 flex items-center space-x-2'
+          >
             <div className='h-6 w-6 rounded bg-gradient-to-r from-purple-500 to-pink-500' />
             <span className='font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent'>
               PR Tracker
@@ -142,19 +126,9 @@ export function Navbar() {
                 <NavigationMenuItem>
                   <div className='h-10 w-20 animate-pulse bg-gray-200 rounded'></div>
                 </NavigationMenuItem>
-              ) : user ? (
+              ) : user !== null ? (
                 // Authenticated user navigation
                 <>
-                  <NavigationMenuItem>
-                    <NavigationMenuLink asChild>
-                      <Link
-                        href='/dashboard'
-                        className={navigationMenuTriggerStyle()}
-                      >
-                        Dashboard
-                      </Link>
-                    </NavigationMenuLink>
-                  </NavigationMenuItem>
                   <NavigationMenuItem>
                     <NavigationMenuLink asChild>
                       <Link
@@ -244,11 +218,15 @@ export function Navbar() {
               <div className='w-20 h-8 animate-pulse bg-gray-200 rounded'></div>
               <div className='w-16 h-8 animate-pulse bg-gray-200 rounded'></div>
             </div>
-          ) : user ? (
+          ) : user !== null ? (
             <div className='flex items-center space-x-3'>
-              <span className='text-sm font-medium text-gray-700'>
-                Welcome, {user.displayName || 'User'}
-              </span>
+              <Button
+                size='sm'
+                className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
+                asChild
+              >
+                <Link href='/dashboard/workout'>Start Workout</Link>
+              </Button>
               <Button
                 variant='ghost'
                 size='sm'
@@ -298,7 +276,7 @@ export function Navbar() {
                       <div className='h-10 w-full animate-pulse bg-gray-200 rounded'></div>
                     </div>
                   </div>
-                ) : user ? (
+                ) : user !== null ? (
                   // Authenticated user mobile navigation
                   <>
                     {/* Mobile Dashboard Section */}
@@ -313,20 +291,11 @@ export function Navbar() {
                           className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
                           asChild
                         >
-                          <Link href='/dashboard' onClick={handleLinkClick}>
-                            Dashboard
-                          </Link>
-                        </Button>
-                        <Button
-                          variant='outline'
-                          className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
-                          asChild
-                        >
                           <Link
-                            href='/dashboard/log-workout'
+                            href='/dashboard/all-workouts'
                             onClick={handleLinkClick}
                           >
-                            Log Workout
+                            All workouts
                           </Link>
                         </Button>
                         <Button
@@ -428,13 +397,20 @@ export function Navbar() {
                       <div className='w-full h-12 animate-pulse bg-gray-200 rounded-lg'></div>
                       <div className='w-full h-12 animate-pulse bg-gray-200 rounded-lg'></div>
                     </div>
-                  ) : user ? (
+                  ) : user !== null ? (
                     <div className='space-y-3'>
-                      <div className='text-center py-2'>
-                        <p className='text-sm font-medium text-gray-700'>
-                          Welcome, {user.displayName || 'User'}
-                        </p>
-                      </div>
+                      <Button
+                        size='lg'
+                        className='w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold shadow-lg hover:shadow-purple-500/25 transition-all duration-200'
+                        asChild
+                      >
+                        <Link
+                          href='/dashboard/workout'
+                          onClick={handleLinkClick}
+                        >
+                          Start Workout
+                        </Link>
+                      </Button>
                       <Button
                         variant='outline'
                         size='lg'
