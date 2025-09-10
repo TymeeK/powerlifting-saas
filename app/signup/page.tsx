@@ -2,17 +2,86 @@
 
 import { useState } from 'react';
 import { Separator } from '@/components/ui/separator';
+import { signUp, SignUpData } from '@/lib/firebase';
 
 export default function SignupPage() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMismatch, setPasswordMismatch] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const checkPasswordMatch = (pwd: string, confirmPwd: string) => {
+    if (confirmPwd.length > 0 && pwd !== confirmPwd) {
+      setPasswordMismatch(true);
+    } else {
+      setPasswordMismatch(false);
+    }
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    checkPasswordMatch(newPassword, confirmPassword);
+  };
+
+  const handleConfirmPasswordChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const newConfirmPassword = e.target.value;
+    setConfirmPassword(newConfirmPassword);
+    checkPasswordMatch(password, newConfirmPassword);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission logic here
-    console.log({ firstName, lastName, password, confirmPassword });
+    setError('');
+    setSuccess(false);
+
+    // Check if passwords match before submitting
+    if (password !== confirmPassword) {
+      setPasswordMismatch(true);
+      setError('Passwords do not match');
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const signUpData: SignUpData = {
+        firstName,
+        lastName,
+        email,
+        password,
+        confirmPassword,
+      };
+
+      const result = await signUp(signUpData);
+
+      if (result.success) {
+        setSuccess(true);
+        // Reset form
+        setFirstName('');
+        setLastName('');
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
+        setPasswordMismatch(false);
+
+        // Redirect to dashboard or login page after a short delay
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 2000);
+      }
+    } catch (error: any) {
+      setError(error.message || 'An error occurred during sign up');
+    } finally {
+      setIsLoading(false);
+    }
   };
   return (
     <main className='min-h-screen w-screen max-w-full overflow-x-hidden flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-4 sm:px-6 lg:px-8 py-8 relative z-0'>
@@ -80,6 +149,8 @@ export default function SignupPage() {
                 type='email'
                 id='email'
                 name='email'
+                value={email}
+                onChange={e => setEmail(e.target.value)}
                 placeholder='Enter your email'
                 className='w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-black bg-white border-2 border-purple-300 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 placeholder-gray-500 text-sm sm:text-base'
                 required
@@ -98,7 +169,7 @@ export default function SignupPage() {
                 id='password'
                 name='password'
                 value={password}
-                onChange={e => setPassword(e.target.value)}
+                onChange={handlePasswordChange}
                 placeholder='Create a password'
                 className='w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-black bg-white border-2 border-purple-300 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 placeholder-gray-500 text-sm sm:text-base'
                 required
@@ -117,21 +188,82 @@ export default function SignupPage() {
                 id='confirmPassword'
                 name='confirmPassword'
                 value={confirmPassword}
-                onChange={e => setConfirmPassword(e.target.value)}
+                onChange={handleConfirmPasswordChange}
                 placeholder='Confirm your password'
-                className='w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-black bg-white border-2 border-purple-300 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 placeholder-gray-500 text-sm sm:text-base'
+                className={`w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-black bg-white border-2 focus:outline-none focus:ring-2 placeholder-gray-500 text-sm sm:text-base ${
+                  passwordMismatch
+                    ? 'border-red-400 focus:border-red-500 focus:ring-red-200'
+                    : 'border-purple-300 focus:border-purple-500 focus:ring-purple-200'
+                }`}
                 required
               />
+              {passwordMismatch && (
+                <p className='mt-1 text-sm text-red-400 flex items-center'>
+                  <svg
+                    className='w-4 h-4 mr-1'
+                    fill='currentColor'
+                    viewBox='0 0 20 20'
+                  >
+                    <path
+                      fillRule='evenodd'
+                      d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
+                      clipRule='evenodd'
+                    />
+                  </svg>
+                  Passwords do not match
+                </p>
+              )}
             </div>
           </div>
 
           <button
             type='submit'
-            className='w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-200 text-sm sm:text-base'
+            disabled={isLoading}
+            className='w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-200 text-sm sm:text-base'
           >
-            Create Account
+            {isLoading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
+
+        {/* Error Message */}
+        {error && (
+          <div className='mt-4 p-3 bg-red-500/10 border border-red-500/20 rounded-lg'>
+            <p className='text-sm text-red-400 flex items-center'>
+              <svg
+                className='w-4 h-4 mr-2'
+                fill='currentColor'
+                viewBox='0 0 20 20'
+              >
+                <path
+                  fillRule='evenodd'
+                  d='M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z'
+                  clipRule='evenodd'
+                />
+              </svg>
+              {error}
+            </p>
+          </div>
+        )}
+
+        {/* Success Message */}
+        {success && (
+          <div className='mt-4 p-3 bg-green-500/10 border border-green-500/20 rounded-lg'>
+            <p className='text-sm text-green-400 flex items-center'>
+              <svg
+                className='w-4 h-4 mr-2'
+                fill='currentColor'
+                viewBox='0 0 20 20'
+              >
+                <path
+                  fillRule='evenodd'
+                  d='M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z'
+                  clipRule='evenodd'
+                />
+              </svg>
+              Account created successfully! Redirecting to login page...
+            </p>
+          </div>
+        )}
 
         {/* Divider */}
         <div className='flex items-center my-4 sm:my-6'>

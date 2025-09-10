@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import LoginPage from '@/app/login/page';
+import { signIn } from '@/lib/firebase';
 
 // Mock Next.js router
 const mockPush = vi.fn();
@@ -11,7 +12,22 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
+// Mock Firebase
+vi.mock('@/lib/firebase', () => ({
+  signIn: vi.fn(),
+}));
+
+// Mock window.location
+Object.defineProperty(window, 'location', {
+  value: {
+    href: '',
+  },
+  writable: true,
+});
+
 describe('LoginPage', () => {
+  const mockSignIn = vi.mocked(signIn);
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -142,40 +158,134 @@ describe('LoginPage', () => {
   });
 
   describe('Form Submission', () => {
-    it('prevents form submission with empty required fields', async () => {
+    it('calls Firebase signIn with correct data on successful submission', async () => {
       const user = userEvent.setup();
+      mockSignIn.mockResolvedValue({
+        success: true,
+        user: {
+          uid: '123',
+          email: 'test@example.com',
+          displayName: 'Test User',
+        },
+      });
+
       render(<LoginPage />);
 
-      const form = screen
-        .getByRole('button', { name: /sign in/i })
-        .closest('form');
+      const emailInput = screen.getByLabelText(/email address/i);
+      const passwordInput = screen.getByLabelText(/password/i);
+      const rememberMeCheckbox = screen.getByRole('checkbox', {
+        name: /remember me/i,
+      });
       const submitButton = screen.getByRole('button', { name: /sign in/i });
 
-      // Try to submit empty form
+      // Fill in form data
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.click(rememberMeCheckbox);
+
       await user.click(submitButton);
 
-      // Form should not submit due to HTML5 validation
-      expect(form).toBeInTheDocument();
+      // Verify Firebase signIn was called with correct data
+      expect(mockSignIn).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        password: 'password123',
+        rememberMe: true,
+      });
     });
 
-    it('allows form submission with valid input', async () => {
+    it('shows loading state during form submission', async () => {
       const user = userEvent.setup();
+      // Mock a delayed response
+      mockSignIn.mockImplementation(
+        () =>
+          new Promise(resolve =>
+            setTimeout(
+              () =>
+                resolve({
+                  success: true,
+                  user: {
+                    uid: '123',
+                    email: 'test@example.com',
+                    displayName: 'Test User',
+                  },
+                }),
+              100
+            )
+          )
+      );
+
       render(<LoginPage />);
 
       const emailInput = screen.getByLabelText(/email address/i);
       const passwordInput = screen.getByLabelText(/password/i);
       const submitButton = screen.getByRole('button', { name: /sign in/i });
 
-      // Fill in valid data
       await user.type(emailInput, 'test@example.com');
       await user.type(passwordInput, 'password123');
+      await user.click(submitButton);
 
-      // Form should be valid now
-      expect(emailInput).toHaveValue('test@example.com');
-      expect(passwordInput).toHaveValue('password123');
+      // Check loading state
+      expect(screen.getByText('Signing In...')).toBeInTheDocument();
+      expect(submitButton).toBeDisabled();
+    });
 
-      // Note: In a real app, you'd test the actual submission logic here
-      // For now, we're just testing that the form accepts valid input
+    it('redirects on successful login', async () => {
+      const user = userEvent.setup();
+      mockSignIn.mockResolvedValue({
+        success: true,
+        user: {
+          uid: '123',
+          email: 'test@example.com',
+          displayName: 'Test User',
+        },
+      });
+
+      render(<LoginPage />);
+
+      const emailInput = screen.getByLabelText(/email address/i);
+      const passwordInput = screen.getByLabelText(/password/i);
+      const submitButton = screen.getByRole('button', { name: /sign in/i });
+
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'password123');
+      await user.click(submitButton);
+
+      // Verify redirect happens
+      await waitFor(() => {
+        expect(window.location.href).toBe('/');
+      });
+    });
+
+    it('shows error message on login failure', async () => {
+      const user = userEvent.setup();
+      mockSignIn.mockRejectedValue(new Error('Invalid credentials'));
+
+      render(<LoginPage />);
+
+      const emailInput = screen.getByLabelText(/email address/i);
+      const passwordInput = screen.getByLabelText(/password/i);
+      const submitButton = screen.getByRole('button', { name: /sign in/i });
+
+      await user.type(emailInput, 'test@example.com');
+      await user.type(passwordInput, 'wrongpassword');
+      await user.click(submitButton);
+
+      await waitFor(() => {
+        expect(screen.getByText('Invalid credentials')).toBeInTheDocument();
+      });
+    });
+
+    it('prevents form submission with empty required fields', async () => {
+      const user = userEvent.setup();
+      render(<LoginPage />);
+
+      const submitButton = screen.getByRole('button', { name: /sign in/i });
+
+      // Try to submit empty form
+      await user.click(submitButton);
+
+      // Firebase should not be called
+      expect(mockSignIn).not.toHaveBeenCalled();
     });
   });
 
