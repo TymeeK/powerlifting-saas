@@ -49,6 +49,8 @@ export default function WorkoutPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [workoutCount, setWorkoutCount] = useState<number | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -242,9 +244,9 @@ export default function WorkoutPage() {
         // Clear sets state
         setSets({});
 
-        setSaveSuccess(true);
-        // Clear success message after 3 seconds
-        setTimeout(() => setSaveSuccess(false), 3000);
+        // Show confirmation screen
+        setWorkoutCount(result.totalWorkouts);
+        setShowConfirmation(true);
       }
     } catch (error: any) {
       console.error('Error saving workout:', error);
@@ -294,7 +296,7 @@ export default function WorkoutPage() {
             <Button
               onClick={handleSaveWorkout}
               disabled={isSaving}
-              className='bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed'
+              className='bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer'
             >
               <Save className='h-4 w-4 mr-2' />
               {isSaving ? 'Saving...' : 'Save Workout'}
@@ -341,7 +343,7 @@ export default function WorkoutPage() {
               <Button
                 onClick={() => setShowAddExercise(true)}
                 size='sm'
-                className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg'
+                className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg cursor-pointer'
               >
                 <Plus className='h-4 w-4 mr-1' />
                 Add Exercise
@@ -369,7 +371,7 @@ export default function WorkoutPage() {
                 </div>
                 <Button
                   onClick={() => setShowAddExercise(true)}
-                  className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
+                  className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white cursor-pointer'
                 >
                   <Plus className='h-4 w-4 mr-2' />
                   Add Your First Exercise
@@ -416,7 +418,7 @@ export default function WorkoutPage() {
                 <div className='flex space-x-3'>
                   <Button
                     onClick={editingExercise ? saveEditExercise : addExercise}
-                    className='flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
+                    className='flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white cursor-pointer'
                   >
                     <Check className='h-4 w-4 mr-2' />
                     {editingExercise ? 'Save Changes' : 'Add Exercise'}
@@ -424,7 +426,7 @@ export default function WorkoutPage() {
                   <Button
                     onClick={cancelEdit}
                     variant='outline'
-                    className='flex-1 border-white/20 text-white hover:bg-white/10'
+                    className='flex-1 border-white/20 text-white hover:bg-white/10 cursor-pointer'
                   >
                     Cancel
                   </Button>
@@ -475,7 +477,7 @@ export default function WorkoutPage() {
                             size='sm'
                             variant='ghost'
                             onClick={() => startEditExercise(exercise.id)}
-                            className='h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-white/10'
+                            className='h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-white/10 cursor-pointer'
                           >
                             <Edit className='h-3 w-3' />
                           </Button>
@@ -483,7 +485,7 @@ export default function WorkoutPage() {
                             size='sm'
                             variant='ghost'
                             onClick={() => deleteExercise(exercise.id)}
-                            className='h-8 w-8 p-0 text-gray-400 hover:text-red-400 hover:bg-red-500/10'
+                            className='h-8 w-8 p-0 text-gray-400 hover:text-red-400 hover:bg-red-500/10 cursor-pointer'
                           >
                             <Trash2 className='h-3 w-3' />
                           </Button>
@@ -581,8 +583,8 @@ export default function WorkoutPage() {
                                 }
                                 className={`${
                                   set.completed
-                                    ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg'
-                                    : 'border-green-300 hover:border-green-500 hover:bg-green-500/10 text-green-400'
+                                    ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg cursor-pointer'
+                                    : 'border-green-300 hover:border-green-500 hover:bg-green-500/10 text-green-400 cursor-pointer'
                                 }`}
                               >
                                 <Check className='h-4 w-4 mr-1' />
@@ -598,7 +600,7 @@ export default function WorkoutPage() {
                     <Button
                       onClick={() => addSetForExercise(exercise.id)}
                       variant='outline'
-                      className='w-full border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-purple-400 hover:text-purple-300 mt-4'
+                      className='w-full border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-purple-400 hover:text-purple-300 mt-4 cursor-pointer'
                     >
                       <Plus className='h-4 w-4 mr-2' />
                       Add Set
@@ -610,6 +612,64 @@ export default function WorkoutPage() {
           </div>
         )}
       </div>
+
+      {/* Workout Confirmation Screen */}
+      {showConfirmation && (
+        <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'>
+          <Card className='bg-slate-800 border-white/20 w-full max-w-md'>
+            <CardContent className='p-8 text-center'>
+              <div className='mb-6'>
+                <div className='w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4'>
+                  <Check className='h-10 w-10 text-green-400' />
+                </div>
+                <h2 className='text-2xl font-bold text-white mb-2'>
+                  Congratulations! 🎉
+                </h2>
+                <p className='text-purple-200 text-lg'>
+                  That's your {workoutCount}
+                  {getOrdinalSuffix(workoutCount || 0)} workout!
+                </p>
+              </div>
+
+              <div className='space-y-3'>
+                <Button
+                  onClick={() => {
+                    setShowConfirmation(false);
+                    setExercises([]);
+                    setSets({});
+                  }}
+                  className='w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white cursor-pointer'
+                >
+                  Start New Workout
+                </Button>
+                <Button
+                  onClick={() => router.push('/dashboard')}
+                  variant='outline'
+                  className='w-full border-white/20 text-white hover:bg-white/10 cursor-pointer'
+                >
+                  Back to Dashboard
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </main>
   );
+}
+
+// Helper function to get ordinal suffix (1st, 2nd, 3rd, etc.)
+function getOrdinalSuffix(num: number): string {
+  const j = num % 10;
+  const k = num % 100;
+  if (j === 1 && k !== 11) {
+    return 'st';
+  }
+  if (j === 2 && k !== 12) {
+    return 'nd';
+  }
+  if (j === 3 && k !== 13) {
+    return 'rd';
+  }
+  return 'th';
 }

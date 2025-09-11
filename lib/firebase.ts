@@ -232,11 +232,16 @@ export const saveWorkout = async (
     const userWorkoutsRef = collection(db, 'users', userId, 'workouts');
     const docRef = await addDoc(userWorkoutsRef, workoutData);
 
+    // Get total workout count for this user
+    const querySnapshot = await getDocs(userWorkoutsRef);
+    const totalWorkouts = querySnapshot.size;
+
     console.log('Workout saved successfully with ID:', docRef.id);
 
     return {
       success: true,
       workoutId: docRef.id,
+      totalWorkouts,
       message: 'Workout saved successfully!',
     };
   } catch (error: any) {
