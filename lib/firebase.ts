@@ -373,4 +373,63 @@ export const deleteExerciseFromLibrary = async (
   }
 };
 
+// Past Exercises Functions
+
+// Get all unique exercises from user's past workouts
+export const getPastExercises = async (userId: string) => {
+  try {
+    const userWorkoutsRef = collection(db, 'users', userId, 'workouts');
+    const querySnapshot = await getDocs(userWorkoutsRef);
+
+    const exerciseMap = new Map<
+      string,
+      {
+        name: string;
+        category: string;
+        lastUsed: Date;
+        totalWorkouts: number;
+      }
+    >();
+
+    querySnapshot.forEach(doc => {
+      const workoutData = doc.data();
+      if (workoutData.exercises && Array.isArray(workoutData.exercises)) {
+        const workoutDate = workoutData.createdAt?.toDate() || new Date();
+
+        workoutData.exercises.forEach((exercise: WorkoutExercise) => {
+          const existing = exerciseMap.get(exercise.name);
+          if (existing) {
+            // Update with more recent date and increment count
+            if (workoutDate > existing.lastUsed) {
+              existing.lastUsed = workoutDate;
+            }
+            existing.totalWorkouts += 1;
+          } else {
+            // Add new exercise
+            exerciseMap.set(exercise.name, {
+              name: exercise.name,
+              category: exercise.category,
+              lastUsed: workoutDate,
+              totalWorkouts: 1,
+            });
+          }
+        });
+      }
+    });
+
+    // Convert map to array and sort by last used date (most recent first)
+    const pastExercises = Array.from(exerciseMap.values()).sort(
+      (a, b) => b.lastUsed.getTime() - a.lastUsed.getTime()
+    );
+
+    return {
+      success: true,
+      exercises: pastExercises,
+    };
+  } catch (error: any) {
+    console.error('Error fetching past exercises:', error);
+    throw new Error('Failed to fetch past exercises');
+  }
+};
+
 export default app;
