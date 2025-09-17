@@ -1,63 +1,102 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { auth } from '@/lib/firebase';
+import {
+  auth,
+  saveWorkout,
+  getPastExercises,
+  type WorkoutExercise,
+  type UserExercise,
+} from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { Plus, Edit, Trash2, Check, Dumbbell, Target } from 'lucide-react';
+import { Check, Dumbbell } from 'lucide-react';
+
+// Import reusable components and utilities
+import AddExerciseModal from '@/components/workout/AddExerciseModal';
+import PastExercisesModal from '@/components/workout/PastExercisesModal';
+import FloatingActionMenu from '@/components/workout/FloatingActionMenu';
+import ExerciseCard from '@/components/workout/ExerciseCard';
+import LoadingScreen from '@/components/workout/LoadingScreen';
+import WorkoutConfirmationModal from '@/components/workout/WorkoutConfirmationModal';
+import EmptyStateCard from '@/components/workout/EmptyStateCard';
+import { buttonVariants } from '@/lib/button-variants';
+import {
+  type WorkoutState,
+  type ModalState,
+  type FormState,
+  type LoadingState,
+  type ErrorState,
+  saveSetsToStorage,
+  loadSetsFromStorage,
+  createNewExercise,
+  addSetToExercise,
+  updateSetInExercise,
+  toggleSetComplete,
+  getExerciseProgress,
+  getOrdinalSuffix,
+} from '@/lib/workout-utils';
 
 export default function WorkoutPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [currentExercise, setCurrentExercise] = useState(0);
-  const [sets, setSets] = useState<{
-    [exerciseId: string]: Array<{
-      reps: number;
-      weight: number;
-      completed: boolean;
-    }>;
-  }>({});
-  const [exercises, setExercises] = useState<
-    Array<{ id: string; name: string; category: string }>
+
+  // Grouped state management
+  const [workoutState, setWorkoutState] = useState<WorkoutState>({
+    exercises: [],
+    sets: {},
+  });
+
+  const [modalState, setModalState] = useState<ModalState>({
+    showAddExercise: false,
+    showPastExercises: false,
+    showConfirmation: false,
+    editingExercise: null,
+  });
+
+  const [formState, setFormState] = useState<FormState>({
+    newExerciseName: '',
+    newExerciseCategory: '',
+  });
+
+  const [loadingState, setLoadingState] = useState<LoadingState>({
+    isSaving: false,
+    loadingPastExercises: false,
+  });
+
+  const [errorState, setErrorState] = useState<ErrorState>({
+    saveError: null,
+    saveSuccess: false,
+  });
+
+  const [workoutCount, setWorkoutCount] = useState<number | null>(null);
+  const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
+  const [isHoveringFloatingButton, setIsHoveringFloatingButton] =
+    useState(false);
+  const [pastExercises, setPastExercises] = useState<
+    Array<{
+      name: string;
+      category: string;
+      lastUsed: Date;
+      totalWorkouts: number;
+    }>
   >([]);
-  const [showAddExercise, setShowAddExercise] = useState(false);
-  const [newExerciseName, setNewExerciseName] = useState('');
-  const [newExerciseCategory, setNewExerciseCategory] = useState('');
-  const [editingExercise, setEditingExercise] = useState<string | null>(null);
+
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
+    const unsubscribe = onAuthStateChanged(auth, async user => {
       if (user) {
         setUser(user);
-        // Load exercises from localStorage
-        const savedExercises = localStorage.getItem('exercises');
-        if (savedExercises) {
-          setExercises(JSON.parse(savedExercises));
-        } else {
-          // Add some default exercises
-          const defaultExercises = [
-            { id: '1', name: 'Bench Press', category: 'Chest' },
-            { id: '2', name: 'Squat', category: 'Legs' },
-            { id: '3', name: 'Deadlift', category: 'Back' },
-            { id: '4', name: 'Overhead Press', category: 'Shoulders' },
-            { id: '5', name: 'Pull-ups', category: 'Back' },
-          ];
-          setExercises(defaultExercises);
-          localStorage.setItem('exercises', JSON.stringify(defaultExercises));
-        }
+
+        // Start with empty exercises - no persistence between sessions
+        setWorkoutState(prev => ({ ...prev, exercises: [] }));
+
+        // Load sets from localStorage
+        const savedSets = loadSetsFromStorage();
+        setWorkoutState(prev => ({ ...prev, sets: savedSets }));
       } else {
         // User is not logged in, redirect to login
         router.push('/login');
@@ -68,126 +107,185 @@ export default function WorkoutPage() {
     return () => unsubscribe();
   }, [router]);
 
-  // Helper function to get current exercise's sets
-  const getCurrentExerciseSets = () => {
-    if (exercises.length === 0) return [];
-    const currentExerciseId = exercises[currentExercise]?.id;
-    return currentExerciseId ? sets[currentExerciseId] || [] : [];
+  // Save sets to localStorage whenever sets change
+  useEffect(() => {
+    if (Object.keys(workoutState.sets).length > 0) {
+      saveSetsToStorage(workoutState.sets);
+    }
+  }, [workoutState.sets]);
+
+  // Helper function to get sets for a specific exercise
+  const getExerciseSets = (exerciseId: string) => {
+    return workoutState.sets[exerciseId] || [];
   };
 
-  const addSet = () => {
-    if (exercises.length === 0) return;
-    const currentExerciseId = exercises[currentExercise].id;
-    setSets(prev => ({
+  const addSetForExercise = (exerciseId: string) => {
+    setWorkoutState(prev => ({
       ...prev,
-      [currentExerciseId]: [
-        ...(prev[currentExerciseId] || []),
-        { reps: 0, weight: 0, completed: false },
-      ],
+      sets: addSetToExercise(prev.sets, exerciseId),
     }));
   };
 
-  const updateSet = (
+  const updateSetForExercise = (
+    exerciseId: string,
     index: number,
     field: 'reps' | 'weight',
     value: number
   ) => {
-    if (exercises.length === 0) return;
-    const currentExerciseId = exercises[currentExercise].id;
-    setSets(prev => ({
+    setWorkoutState(prev => ({
       ...prev,
-      [currentExerciseId]: (prev[currentExerciseId] || []).map((set, i) =>
-        i === index ? { ...set, [field]: value } : set
-      ),
+      sets: updateSetInExercise(prev.sets, exerciseId, index, field, value),
     }));
   };
 
-  const toggleSetComplete = (index: number) => {
-    if (exercises.length === 0) return;
-    const currentExerciseId = exercises[currentExercise].id;
-    setSets(prev => ({
+  const toggleSetCompleteForExercise = (exerciseId: string, index: number) => {
+    setWorkoutState(prev => ({
       ...prev,
-      [currentExerciseId]: (prev[currentExerciseId] || []).map((set, i) =>
-        i === index ? { ...set, completed: !set.completed } : set
-      ),
+      sets: toggleSetComplete(prev.sets, exerciseId, index),
     }));
   };
 
-  const addExercise = () => {
-    if (newExerciseName.trim() && newExerciseCategory.trim()) {
-      const newExercise = {
-        id: Date.now().toString(),
-        name: newExerciseName.trim(),
-        category: newExerciseCategory.trim(),
-      };
-      const updatedExercises = [...exercises, newExercise];
-      setExercises(updatedExercises);
-      localStorage.setItem('exercises', JSON.stringify(updatedExercises));
-      setNewExerciseName('');
-      setNewExerciseCategory('');
-      setShowAddExercise(false);
+  const handleAddExercise = (name: string, category: string) => {
+    const newExercise = createNewExercise(name, category);
+    setWorkoutState(prev => ({
+      ...prev,
+      exercises: [...prev.exercises, newExercise],
+    }));
+    setModalState(prev => ({
+      ...prev,
+      showAddExercise: false,
+      editingExercise: null,
+    }));
+  };
+
+  const handleEditExercise = (name: string, category: string) => {
+    if (modalState.editingExercise) {
+      setWorkoutState(prev => ({
+        ...prev,
+        exercises: prev.exercises.map(ex =>
+          ex.id === modalState.editingExercise
+            ? { ...ex, name: name.trim(), category: category.trim() }
+            : ex
+        ),
+      }));
+      setModalState(prev => ({
+        ...prev,
+        showAddExercise: false,
+        editingExercise: null,
+      }));
     }
   };
 
   const deleteExercise = (id: string) => {
-    const updatedExercises = exercises.filter(ex => ex.id !== id);
-    setExercises(updatedExercises);
-    localStorage.setItem('exercises', JSON.stringify(updatedExercises));
-    if (currentExercise >= updatedExercises.length) {
-      setCurrentExercise(Math.max(0, updatedExercises.length - 1));
-    }
+    setWorkoutState(prev => ({
+      ...prev,
+      exercises: prev.exercises.filter(ex => ex.id !== id),
+      sets: (() => {
+        const newSets = { ...prev.sets };
+        delete newSets[id];
+        return newSets;
+      })(),
+    }));
   };
 
   const startEditExercise = (id: string) => {
-    const exercise = exercises.find(ex => ex.id === id);
+    const exercise = workoutState.exercises.find(ex => ex.id === id);
     if (exercise) {
-      setNewExerciseName(exercise.name);
-      setNewExerciseCategory(exercise.category);
-      setEditingExercise(id);
-      setShowAddExercise(true);
+      setFormState({
+        newExerciseName: exercise.name,
+        newExerciseCategory: exercise.category,
+      });
+      setModalState(prev => ({
+        ...prev,
+        editingExercise: id,
+        showAddExercise: true,
+      }));
     }
   };
 
-  const saveEditExercise = () => {
-    if (
-      editingExercise &&
-      newExerciseName.trim() &&
-      newExerciseCategory.trim()
-    ) {
-      const updatedExercises = exercises.map(ex =>
-        ex.id === editingExercise
-          ? {
-              ...ex,
-              name: newExerciseName.trim(),
-              category: newExerciseCategory.trim(),
-            }
-          : ex
+  const loadPastExercises = async () => {
+    if (!user) return;
+
+    setLoadingState(prev => ({ ...prev, loadingPastExercises: true }));
+    try {
+      const result = await getPastExercises(user.uid);
+      if (result.success) {
+        setPastExercises(result.exercises);
+        setModalState(prev => ({ ...prev, showPastExercises: true }));
+      }
+    } catch (error: any) {
+      console.error('Error loading past exercises:', error);
+      setErrorState(prev => ({
+        ...prev,
+        saveError: 'Failed to load past exercises',
+      }));
+    } finally {
+      setLoadingState(prev => ({ ...prev, loadingPastExercises: false }));
+    }
+  };
+
+  const addPastExerciseToWorkout = (
+    exerciseName: string,
+    exerciseCategory: string
+  ) => {
+    const newExercise = createNewExercise(exerciseName, exerciseCategory);
+    setWorkoutState(prev => ({
+      ...prev,
+      exercises: [...prev.exercises, newExercise],
+    }));
+    setModalState(prev => ({ ...prev, showPastExercises: false }));
+  };
+
+  const handleSaveWorkout = async () => {
+    if (!user) {
+      setErrorState(prev => ({
+        ...prev,
+        saveError: 'You must be logged in to save workouts',
+      }));
+      return;
+    }
+
+    setLoadingState(prev => ({ ...prev, isSaving: true }));
+    setErrorState(prev => ({ ...prev, saveError: null, saveSuccess: false }));
+
+    try {
+      // Prepare workout data
+      const workoutExercises: WorkoutExercise[] = workoutState.exercises.map(
+        exercise => ({
+          id: exercise.id,
+          name: exercise.name,
+          category: exercise.category,
+          sets: workoutState.sets[exercise.id] || [],
+        })
       );
-      setExercises(updatedExercises);
-      localStorage.setItem('exercises', JSON.stringify(updatedExercises));
-      setNewExerciseName('');
-      setNewExerciseCategory('');
-      setEditingExercise(null);
-      setShowAddExercise(false);
-    }
-  };
 
-  const cancelEdit = () => {
-    setNewExerciseName('');
-    setNewExerciseCategory('');
-    setEditingExercise(null);
-    setShowAddExercise(false);
+      // Save to Firestore with 'end' state
+      const result = await saveWorkout(user.uid, workoutExercises, 'end');
+
+      if (result.success) {
+        // Clear local storage
+        localStorage.removeItem('workoutSets');
+
+        // Clear sets state
+        setWorkoutState(prev => ({ ...prev, sets: {} }));
+
+        // Show confirmation screen
+        setWorkoutCount(result.totalWorkouts);
+        setModalState(prev => ({ ...prev, showConfirmation: true }));
+      }
+    } catch (error: any) {
+      console.error('Error saving workout:', error);
+      setErrorState(prev => ({
+        ...prev,
+        saveError: error.message || 'Failed to save workout',
+      }));
+    } finally {
+      setLoadingState(prev => ({ ...prev, isSaving: false }));
+    }
   };
 
   if (loading) {
-    return (
-      <main className='min-h-screen w-screen max-w-full overflow-x-hidden flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-4 sm:px-6 lg:px-8 py-8'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4'></div>
-          <p className='text-purple-200'>Loading...</p>
-        </div>
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   if (!user) {
@@ -202,380 +300,146 @@ export default function WorkoutPage() {
       <div className='w-full max-w-6xl mx-auto'>
         {/* Header */}
         <div className='mb-8'>
-          <div className='flex items-center gap-3 mb-4'>
-            <div className='p-3 rounded-full bg-purple-500/20'>
-              <Dumbbell className='h-8 w-8 text-purple-400' />
-            </div>
-            <div>
-              <h1 className='text-3xl sm:text-4xl font-bold text-white'>
-                Workout Session
-              </h1>
-              <p className='text-purple-200 text-lg'>
-                Ready to crush your fitness goals, {firstName}?
-              </p>
+          <div className='mb-4'>
+            <div className='flex items-center gap-3'>
+              <div className='p-3 rounded-full bg-purple-500/20'>
+                <Dumbbell className='h-8 w-8 text-purple-400' />
+              </div>
+              <div>
+                <h1 className='text-3xl sm:text-4xl font-bold text-white'>
+                  Workout Session
+                </h1>
+                <p className='text-purple-200 text-lg'>
+                  Ready to crush your fitness goals, {firstName}?
+                </p>
+              </div>
             </div>
           </div>
           <Separator className='bg-purple-500/20' />
         </div>
 
-        {/* Exercise Selection */}
-        <Card className='bg-white/10 backdrop-blur-sm border-white/20 mb-8'>
-          <CardHeader>
-            <div className='flex items-center justify-between'>
-              <div className='flex items-center gap-3'>
-                <div className='p-2 rounded-lg bg-purple-500/20'>
-                  <Target className='h-5 w-5 text-purple-400' />
-                </div>
-                <div>
-                  <CardTitle className='text-white text-xl'>
-                    {exercises.length > 0
-                      ? `Current Exercise: ${
-                          exercises[currentExercise]?.name || 'Select Exercise'
-                        }`
-                      : 'No Exercises Available'}
-                  </CardTitle>
-                  <CardDescription className='text-purple-200'>
-                    {exercises.length > 0
-                      ? `Category: ${
-                          exercises[currentExercise]?.category || ''
-                        }`
-                      : 'Add exercises to get started'}
-                  </CardDescription>
-                </div>
-              </div>
-              <Button
-                onClick={() => setShowAddExercise(true)}
-                size='sm'
-                className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg'
-              >
-                <Plus className='h-4 w-4 mr-1' />
-                Add Exercise
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className='space-y-4'>
-              {/* Exercise Selection */}
-              {exercises.length > 0 && (
-                <div className='mb-6'>
-                  <div className='flex items-center justify-between mb-4'>
-                    <h3 className='text-white font-semibold text-lg'>
-                      Select Exercise:
-                    </h3>
-                    <Badge
-                      variant='secondary'
-                      className='bg-purple-500/20 text-purple-200 border-purple-500/30'
-                    >
-                      {exercises.length} exercises
-                    </Badge>
-                  </div>
-                  <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
-                    {exercises.map((exercise, index) => (
-                      <Card
-                        key={exercise.id}
-                        className={`cursor-pointer transition-all duration-200 hover:scale-105 ${
-                          currentExercise === index
-                            ? 'bg-purple-500/20 border-purple-500 shadow-lg shadow-purple-500/25'
-                            : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
-                        }`}
-                        onClick={() => setCurrentExercise(index)}
-                      >
-                        <CardContent className='p-4'>
-                          <div className='flex items-center justify-between'>
-                            <div className='flex-1'>
-                              <div className='text-white font-medium text-lg mb-1'>
-                                {exercise.name}
-                              </div>
-                              <Badge
-                                variant='outline'
-                                className='text-purple-200 border-purple-500/30'
-                              >
-                                {exercise.category}
-                              </Badge>
-                            </div>
-                            <div className='flex space-x-1 ml-2'>
-                              <Button
-                                size='sm'
-                                variant='ghost'
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  startEditExercise(exercise.id);
-                                }}
-                                className='h-8 w-8 p-0 text-gray-400 hover:text-white hover:bg-white/10'
-                              >
-                                <Edit className='h-3 w-3' />
-                              </Button>
-                              <Button
-                                size='sm'
-                                variant='ghost'
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  deleteExercise(exercise.id);
-                                }}
-                                className='h-8 w-8 p-0 text-gray-400 hover:text-red-400 hover:bg-red-500/10'
-                              >
-                                <Trash2 className='h-3 w-3' />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              )}
+        {/* Success/Error Messages */}
+        {errorState.saveSuccess && (
+          <Alert className='bg-green-500/10 border-green-500/30 mb-6'>
+            <Check className='h-4 w-4' />
+            <AlertDescription className='text-green-200'>
+              Workout saved successfully! Your progress has been recorded.
+            </AlertDescription>
+          </Alert>
+        )}
 
-              {/* Add/Edit Exercise Modal */}
-              {showAddExercise && (
-                <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'>
-                  <Card className='bg-slate-800 border-white/20 w-full max-w-md'>
-                    <CardHeader>
-                      <CardTitle className='text-white'>
-                        {editingExercise ? 'Edit Exercise' : 'Add New Exercise'}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className='space-y-4'>
-                      <div>
-                        <label className='text-white text-sm font-medium mb-2 block'>
-                          Exercise Name
-                        </label>
-                        <input
-                          type='text'
-                          value={newExerciseName}
-                          onChange={e => setNewExerciseName(e.target.value)}
-                          placeholder='e.g., Bench Press'
-                          className='w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500'
-                        />
-                      </div>
-                      <div>
-                        <label className='text-white text-sm font-medium mb-2 block'>
-                          Category
-                        </label>
-                        <input
-                          type='text'
-                          value={newExerciseCategory}
-                          onChange={e => setNewExerciseCategory(e.target.value)}
-                          placeholder='e.g., Chest, Legs, Back'
-                          className='w-full p-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500'
-                        />
-                      </div>
-                      <div className='flex space-x-3'>
-                        <Button
-                          onClick={
-                            editingExercise ? saveEditExercise : addExercise
-                          }
-                          className='flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
-                        >
-                          <Check className='h-4 w-4 mr-2' />
-                          {editingExercise ? 'Save Changes' : 'Add Exercise'}
-                        </Button>
-                        <Button
-                          onClick={cancelEdit}
-                          variant='outline'
-                          className='flex-1 border-white/20 text-white hover:bg-white/10'
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
+        {errorState.saveError && (
+          <Alert className='bg-red-500/10 border-red-500/30 mb-6'>
+            <AlertDescription className='text-red-200'>
+              {errorState.saveError}
+            </AlertDescription>
+          </Alert>
+        )}
 
-              {/* Sets List */}
-              {exercises.length > 0 ? (
-                <>
-                  {(() => {
-                    const currentSets = getCurrentExerciseSets();
-                    return (
-                      currentSets.length > 0 && (
-                        <div className='mb-4'>
-                          <div className='flex items-center justify-between mb-2'>
-                            <h3 className='text-white font-semibold'>
-                              Sets Progress
-                            </h3>
-                            <Badge
-                              variant='secondary'
-                              className='bg-green-500/20 text-green-200 border-green-500/30'
-                            >
-                              {currentSets.filter(set => set.completed).length}{' '}
-                              / {currentSets.length} completed
-                            </Badge>
-                          </div>
-                          <Progress
-                            value={
-                              (currentSets.filter(set => set.completed).length /
-                                currentSets.length) *
-                              100
-                            }
-                            className='h-2 mb-4'
-                          />
-                        </div>
-                      )
-                    );
-                  })()}
+        {/* Exercise Management Header - Only show when no exercises */}
+        {workoutState.exercises.length === 0 && (
+          <EmptyStateCard
+            onAddFirstExercise={() =>
+              setModalState(prev => ({ ...prev, showAddExercise: true }))
+            }
+          />
+        )}
 
-                  <div className='space-y-3'>
-                    {getCurrentExerciseSets().map((set, index) => (
-                      <Card
-                        key={index}
-                        className={`transition-all duration-200 ${
-                          set.completed
-                            ? 'bg-green-500/10 border-green-500/30 shadow-lg shadow-green-500/10'
-                            : 'bg-white/5 border-white/10 hover:bg-white/10'
-                        }`}
-                      >
-                        <CardContent className='p-4'>
-                          <div className='flex items-center space-x-4'>
-                            <div className='flex items-center justify-center w-12 h-12 rounded-full bg-purple-500/20 border-2 border-purple-500/30'>
-                              <span className='text-white font-bold text-lg'>
-                                {index + 1}
-                              </span>
-                            </div>
+        {/* Add/Edit Exercise Modal */}
+        <AddExerciseModal
+          isOpen={modalState.showAddExercise}
+          onClose={() =>
+            setModalState(prev => ({
+              ...prev,
+              showAddExercise: false,
+              editingExercise: null,
+            }))
+          }
+          onSave={
+            modalState.editingExercise ? handleEditExercise : handleAddExercise
+          }
+          editingExercise={
+            modalState.editingExercise
+              ? workoutState.exercises.find(
+                  ex => ex.id === modalState.editingExercise
+                ) || null
+              : null
+          }
+        />
 
-                            <div className='flex-1 grid grid-cols-1 md:grid-cols-2 gap-4'>
-                              <div className='space-y-2'>
-                                <label className='text-purple-200 text-sm font-medium block'>
-                                  Reps
-                                </label>
-                                <input
-                                  type='number'
-                                  value={set.reps === 0 ? '' : set.reps}
-                                  onChange={e =>
-                                    updateSet(
-                                      index,
-                                      'reps',
-                                      parseInt(e.target.value) || 0
-                                    )
-                                  }
-                                  className='w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-center focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
-                                />
-                              </div>
+        {/* Past Exercises Modal */}
+        <PastExercisesModal
+          isOpen={modalState.showPastExercises}
+          onClose={() =>
+            setModalState(prev => ({ ...prev, showPastExercises: false }))
+          }
+          exercises={pastExercises}
+          loading={loadingState.loadingPastExercises}
+          onAddExercise={addPastExerciseToWorkout}
+        />
 
-                              <div className='space-y-2'>
-                                <label className='text-purple-200 text-sm font-medium block'>
-                                  Weight (lbs)
-                                </label>
-                                <input
-                                  type='number'
-                                  value={set.weight === 0 ? '' : set.weight}
-                                  onChange={e =>
-                                    updateSet(
-                                      index,
-                                      'weight',
-                                      parseInt(e.target.value) || 0
-                                    )
-                                  }
-                                  className='w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white text-center focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
-                                />
-                              </div>
-                            </div>
+        {/* Individual Exercise Cards */}
+        {workoutState.exercises.length > 0 && (
+          <div className='space-y-6'>
+            {workoutState.exercises.map(exercise => {
+              const exerciseProgress = getExerciseProgress(
+                workoutState.sets,
+                exercise.id
+              );
 
-                            <Button
-                              size='sm'
-                              variant={set.completed ? 'default' : 'outline'}
-                              onClick={() => toggleSetComplete(index)}
-                              className={`${
-                                set.completed
-                                  ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg'
-                                  : 'border-green-300 hover:border-green-500 hover:bg-green-500/10 text-green-400'
-                              }`}
-                            >
-                              <Check className='h-4 w-4 mr-1' />
-                              {set.completed ? 'Done' : 'Complete'}
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
+              return (
+                <ExerciseCard
+                  key={exercise.id}
+                  exercise={exercise}
+                  sets={getExerciseSets(exercise.id)}
+                  exerciseProgress={exerciseProgress}
+                  onAddSet={addSetForExercise}
+                  onUpdateSet={updateSetForExercise}
+                  onToggleSetComplete={toggleSetCompleteForExercise}
+                  onEditExercise={startEditExercise}
+                  onDeleteExercise={deleteExercise}
+                />
+              );
+            })}
+          </div>
+        )}
 
-                  {/* Add Set Button */}
-                  <Button
-                    onClick={addSet}
-                    variant='outline'
-                    className='w-full border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-purple-400 hover:text-purple-300 mt-4'
-                  >
-                    <Plus className='h-4 w-4 mr-2' />
-                    Add Set
-                  </Button>
-                </>
-              ) : (
-                <div className='text-center py-8'>
-                  <div className='text-purple-200 text-lg mb-4'>
-                    No exercises available. Add your first exercise to get
-                    started!
-                  </div>
-                  <Button
-                    onClick={() => setShowAddExercise(true)}
-                    className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
-                  >
-                    <Plus className='h-4 w-4 mr-2' />
-                    Add Your First Exercise
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Quick Actions */}
-        <Card className='bg-white/10 backdrop-blur-sm border-white/20'>
-          <CardHeader>
-            <div className='flex items-center gap-3'>
-              <div className='p-2 rounded-lg bg-blue-500/20'>
-                <Target className='h-5 w-5 text-blue-400' />
-              </div>
-              <div>
-                <CardTitle className='text-white text-xl'>
-                  Quick Actions
-                </CardTitle>
-                <CardDescription className='text-purple-200'>
-                  Manage your workout session and track progress
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
-              <Button
-                variant='outline'
-                className='h-16 border-2 border-blue-300 hover:border-blue-500 hover:bg-blue-500/10 text-blue-400 hover:text-blue-300 transition-all duration-200 hover:scale-105'
-                onClick={() => router.push('/dashboard')}
-              >
-                <div className='text-center'>
-                  <div className='font-semibold'>Back to Dashboard</div>
-                  <div className='text-xs opacity-75'>
-                    Return to main dashboard
-                  </div>
-                </div>
-              </Button>
-              <Button
-                variant='outline'
-                className='h-16 border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-purple-400 hover:text-purple-300 transition-all duration-200 hover:scale-105'
-                onClick={() => router.push('/dashboard/log-workout')}
-              >
-                <div className='text-center'>
-                  <div className='font-semibold'>Log Previous Workout</div>
-                  <div className='text-xs opacity-75'>Record past sessions</div>
-                </div>
-              </Button>
-              <Button
-                variant='outline'
-                className='h-16 border-2 border-green-300 hover:border-green-500 hover:bg-green-500/10 text-green-400 hover:text-green-300 transition-all duration-200 hover:scale-105'
-                onClick={() => router.push('/dashboard/charts')}
-              >
-                <div className='text-center'>
-                  <div className='font-semibold'>View Progress</div>
-                  <div className='text-xs opacity-75'>
-                    Track your improvements
-                  </div>
-                </div>
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Floating Action Menu */}
+        <FloatingActionMenu
+          isOpen={isFloatingMenuOpen}
+          onToggle={() => setIsFloatingMenuOpen(!isFloatingMenuOpen)}
+          onMouseEnter={() => setIsHoveringFloatingButton(true)}
+          onMouseLeave={() => {
+            setIsHoveringFloatingButton(false);
+            setIsFloatingMenuOpen(false);
+          }}
+          onSaveWorkout={handleSaveWorkout}
+          onAddExercise={() => {
+            setModalState(prev => ({ ...prev, showAddExercise: true }));
+            setIsFloatingMenuOpen(false);
+          }}
+          onShowPastExercises={() => {
+            loadPastExercises();
+            setIsFloatingMenuOpen(false);
+          }}
+          isSaving={loadingState.isSaving}
+          loadingPastExercises={loadingState.loadingPastExercises}
+        />
       </div>
+
+      {/* Workout Confirmation Screen */}
+      <WorkoutConfirmationModal
+        isOpen={modalState.showConfirmation}
+        workoutCount={workoutCount}
+        onStartNewWorkout={() => {
+          setModalState(prev => ({
+            ...prev,
+            showConfirmation: false,
+          }));
+          setWorkoutState({ exercises: [], sets: {} });
+        }}
+        onBackToDashboard={() => router.push('/dashboard')}
+      />
     </main>
   );
 }
