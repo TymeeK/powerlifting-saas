@@ -14,8 +14,16 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { PageBreadcrumb } from '@/components/ui/page-breadcrumb';
 import LoadingScreen from '@/components/workout/LoadingScreen';
-import { Calendar, Clock, Dumbbell, Trophy, ArrowLeft } from 'lucide-react';
+import {
+  Calendar,
+  Clock,
+  Dumbbell,
+  Trophy,
+  ArrowLeft,
+  Home,
+} from 'lucide-react';
 import Link from 'next/link';
 
 // Workout data interface
@@ -101,14 +109,17 @@ export default function PastWorkoutsPage() {
   return (
     <main className='min-h-screen w-screen max-w-full overflow-x-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-4 sm:px-6 lg:px-8 py-8'>
       <div className='w-full max-w-6xl mx-auto'>
+        {/* Breadcrumb Navigation */}
+        <PageBreadcrumb items={[{ label: 'Past Workouts' }]} className='mb-6' />
+
         {/* Header */}
         <div className='flex items-center justify-between mb-8'>
           <div className='flex items-center space-x-4'>
             <Button
-              variant='ghost'
+              variant='outline'
               size='sm'
               asChild
-              className='text-purple-200 hover:text-white hover:bg-purple-500/20'
+              className='border-purple-400/30 text-purple-200 hover:text-white hover:bg-purple-500/20 hover:border-purple-400/50 transition-all duration-200'
             >
               <Link href='/dashboard'>
                 <ArrowLeft className='h-4 w-4 mr-2' />

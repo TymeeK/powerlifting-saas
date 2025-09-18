@@ -12,6 +12,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { PageBreadcrumb } from '@/components/ui/page-breadcrumb';
 import { Check, Dumbbell } from 'lucide-react';
 
 // Import reusable components and utilities
@@ -298,6 +299,14 @@ export default function WorkoutPage() {
   return (
     <main className='min-h-screen w-screen max-w-full overflow-x-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-4 sm:px-6 lg:px-8 py-8'>
       <div className='w-full max-w-6xl mx-auto'>
+        {/* Breadcrumb Navigation */}
+        <PageBreadcrumb
+          items={[
+            { label: 'Record Workout', icon: <Dumbbell className='h-4 w-4' /> },
+          ]}
+          className='mb-6'
+        />
+
         {/* Header */}
         <div className='mb-8'>
           <div className='mb-4'>
