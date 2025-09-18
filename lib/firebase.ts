@@ -432,4 +432,75 @@ export const getPastExercises = async (userId: string) => {
   }
 };
 
+// Get all past workouts for a user
+export const getPastWorkouts = async (userId: string) => {
+  try {
+    const userWorkoutsRef = collection(db, 'users', userId, 'workouts');
+    const querySnapshot = await getDocs(userWorkoutsRef);
+
+    const workouts: any[] = [];
+    querySnapshot.forEach(doc => {
+      const data = doc.data();
+      const workoutDate = data.createdAt?.toDate() || new Date();
+
+      // Calculate workout duration (this would need to be stored or calculated)
+      // For now, we'll estimate based on number of exercises and sets
+      const totalSets =
+        data.exercises?.reduce(
+          (total: number, exercise: WorkoutExercise) =>
+            total + (exercise.sets?.length || 0),
+          0
+        ) || 0;
+      const estimatedMinutes = Math.max(30, totalSets * 2); // Rough estimate
+      const hours = Math.floor(estimatedMinutes / 60);
+      const minutes = estimatedMinutes % 60;
+      const duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+      // Calculate total volume
+      const totalVolume =
+        data.exercises?.reduce((total: number, exercise: WorkoutExercise) => {
+          return (
+            total +
+            (exercise.sets?.reduce(
+              (exerciseTotal: number, set: WorkoutSet) =>
+                exerciseTotal + set.reps * set.weight,
+              0
+            ) || 0)
+          );
+        }, 0) || 0;
+
+      // Count personal records (this would need to be calculated based on previous workouts)
+      // For now, we'll set to 0 as we don't have PR tracking logic yet
+      const personalRecords = 0;
+
+      workouts.push({
+        id: doc.id,
+        date: workoutDate.toISOString().split('T')[0], // YYYY-MM-DD format
+        duration,
+        exercises:
+          data.exercises?.map((exercise: WorkoutExercise) => ({
+            name: exercise.name,
+            sets: exercise.sets?.length || 0,
+            reps: exercise.sets?.map((set: WorkoutSet) => set.reps) || [],
+            weight: exercise.sets?.map((set: WorkoutSet) => set.weight) || [],
+          })) || [],
+        totalVolume,
+        personalRecords,
+        createdAt: workoutDate,
+      });
+    });
+
+    // Sort by creation date (newest first)
+    workouts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+
+    return {
+      success: true,
+      workouts,
+    };
+  } catch (error: any) {
+    console.error('Error fetching past workouts:', error);
+    throw new Error('Failed to fetch past workouts');
+  }
+};
+
 export default app;

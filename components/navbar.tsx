@@ -132,10 +132,10 @@ export function Navbar() {
                   <NavigationMenuItem>
                     <NavigationMenuLink asChild>
                       <Link
-                        href='/dashboard/log-workout'
+                        href='/dashboard/past-workouts'
                         className={navigationMenuTriggerStyle()}
                       >
-                        Log Workout
+                        Past workouts
                       </Link>
                     </NavigationMenuLink>
                   </NavigationMenuItem>
@@ -225,7 +225,7 @@ export function Navbar() {
                 className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white'
                 asChild
               >
-                <Link href='/dashboard/workout'>Start Workout</Link>
+                <Link href='/dashboard/workout'>Record Workout</Link>
               </Button>
               <Button
                 variant='ghost'
@@ -405,7 +405,7 @@ export function Navbar() {
                         asChild
                       >
                         <Link
-                          href='/dashboard/workout'
+                          href='/dashboard/record-workout'
                           onClick={handleLinkClick}
                         >
                           Start Workout
