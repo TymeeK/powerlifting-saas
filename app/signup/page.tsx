@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { signUp, SignUpData } from '@/lib/firebase';
 
@@ -306,12 +307,12 @@ export default function SignupPage() {
         <div className='text-center mt-6 sm:mt-8'>
           <p className='text-xs sm:text-sm text-purple-200'>
             Already have an account?{' '}
-            <a
+            <Link
               href='/login'
               className='text-purple-300 hover:text-white font-medium transition-colors duration-200'
             >
               Sign in
-            </a>
+            </Link>
           </p>
         </div>
 
@@ -319,19 +320,19 @@ export default function SignupPage() {
         <div className='text-center mt-4 sm:mt-6'>
           <p className='text-xs sm:text-sm text-purple-300'>
             By creating an account, you agree to our{' '}
-            <a
+            <Link
               href='/terms'
               className='underline hover:text-white transition-colors duration-200'
             >
               Terms of Service
-            </a>{' '}
+            </Link>{' '}
             and{' '}
-            <a
+            <Link
               href='/privacy'
               className='underline hover:text-white transition-colors duration-200'
             >
               Privacy Policy
-            </a>
+            </Link>
           </p>
         </div>
       </div>

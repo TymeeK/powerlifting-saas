@@ -292,10 +292,10 @@ export function Navbar() {
                           asChild
                         >
                           <Link
-                            href='/dashboard/all-workouts'
+                            href='/dashboard/past-workouts'
                             onClick={handleLinkClick}
                           >
-                            All workouts
+                            Past workouts
                           </Link>
                         </Button>
                         <Button
@@ -405,7 +405,7 @@ export function Navbar() {
                         asChild
                       >
                         <Link
-                          href='/dashboard/record-workout'
+                          href='/dashboard/workout'
                           onClick={handleLinkClick}
                         >
                           Start Workout

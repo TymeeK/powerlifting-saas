@@ -8,6 +8,25 @@ interface ComingSoonPageProps {
   };
 }
 
+// Generate static params for all possible slug combinations
+export async function generateStaticParams() {
+  // Since this is a catch-all route for "coming soon" pages,
+  // we'll generate a few common paths and let the dynamic behavior
+  // handle any other paths at runtime
+  return [
+    { slug: ['features'] },
+    { slug: ['pricing'] },
+    { slug: ['about'] },
+    { slug: ['contact'] },
+    { slug: ['help'] },
+    { slug: ['docs'] },
+    { slug: ['api'] },
+    { slug: ['blog'] },
+    { slug: ['support'] },
+    { slug: ['faq'] },
+  ];
+}
+
 export default function ComingSoonPage({ params }: ComingSoonPageProps) {
   const slug = params.slug.join('/');
   const pageTitle = slug
