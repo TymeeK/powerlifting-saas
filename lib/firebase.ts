@@ -551,25 +551,27 @@ export const getWeeklySummary = async (userId: string) => {
       }
 
       // Calculate workout duration (estimate based on sets)
-      const totalSets = data.exercises?.reduce(
-        (total: number, exercise: WorkoutExercise) =>
-          total + (exercise.sets?.length || 0),
-        0
-      ) || 0;
+      const totalSets =
+        data.exercises?.reduce(
+          (total: number, exercise: WorkoutExercise) =>
+            total + (exercise.sets?.length || 0),
+          0
+        ) || 0;
       const estimatedMinutes = Math.max(30, totalSets * 2);
       totalTime += estimatedMinutes;
 
       // Calculate total volume
-      const workoutVolume = data.exercises?.reduce((total: number, exercise: WorkoutExercise) => {
-        return (
-          total +
-          (exercise.sets?.reduce(
-            (exerciseTotal: number, set: WorkoutSet) =>
-              exerciseTotal + set.reps * set.weight,
-            0
-          ) || 0)
-        );
-      }, 0) || 0;
+      const workoutVolume =
+        data.exercises?.reduce((total: number, exercise: WorkoutExercise) => {
+          return (
+            total +
+            (exercise.sets?.reduce(
+              (exerciseTotal: number, set: WorkoutSet) =>
+                exerciseTotal + set.reps * set.weight,
+              0
+            ) || 0)
+          );
+        }, 0) || 0;
       totalVolume += workoutVolume;
 
       // Track last workout date
@@ -580,7 +582,9 @@ export const getWeeklySummary = async (userId: string) => {
 
     // Calculate current streak
     if (workoutDates.length > 0) {
-      const sortedDates = workoutDates.sort((a, b) => b.getTime() - a.getTime());
+      const sortedDates = workoutDates.sort(
+        (a, b) => b.getTime() - a.getTime()
+      );
       let streak = 0;
       let currentDate = new Date();
       currentDate.setHours(0, 0, 0, 0);
@@ -588,9 +592,11 @@ export const getWeeklySummary = async (userId: string) => {
       for (const workoutDate of sortedDates) {
         const workoutDay = new Date(workoutDate);
         workoutDay.setHours(0, 0, 0, 0);
-        
-        const daysDiff = Math.floor((currentDate.getTime() - workoutDay.getTime()) / (1000 * 60 * 60 * 24));
-        
+
+        const daysDiff = Math.floor(
+          (currentDate.getTime() - workoutDay.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
         if (daysDiff === streak) {
           streak++;
           currentDate = new Date(workoutDay);
@@ -610,7 +616,10 @@ export const getWeeklySummary = async (userId: string) => {
     const caloriesBurned = Math.round(totalTime * 10);
 
     // Calculate goal progress (assuming 4 workouts per week goal)
-    const goalProgress = Math.min(100, Math.round((thisWeekWorkouts / 4) * 100));
+    const goalProgress = Math.min(
+      100,
+      Math.round((thisWeekWorkouts / 4) * 100)
+    );
 
     // Calculate active days this week
     const activeDays = new Set();
@@ -632,7 +641,7 @@ export const getWeeklySummary = async (userId: string) => {
         totalWorkouts,
         personalRecords,
         currentStreak,
-        totalTime: Math.round(totalTime / 60 * 10) / 10, // Convert to hours with 1 decimal
+        totalTime: Math.round((totalTime / 60) * 10) / 10, // Convert to hours with 1 decimal
         caloriesBurned,
         goalProgress,
         activeDays: activeDays.size,

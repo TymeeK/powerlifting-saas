@@ -36,7 +36,9 @@ interface WeeklySummaryData {
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [summaryData, setSummaryData] = useState<WeeklySummaryData | null>(null);
+  const [summaryData, setSummaryData] = useState<WeeklySummaryData | null>(
+    null
+  );
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const router = useRouter();
