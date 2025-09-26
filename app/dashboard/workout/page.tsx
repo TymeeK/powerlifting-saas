@@ -146,6 +146,17 @@ export default function WorkoutPage() {
     }));
   };
 
+  const deleteSetForExercise = (exerciseId: string, index: number) => {
+    setWorkoutState(prev => ({
+      ...prev,
+      sets: {
+        ...prev.sets,
+        [exerciseId]:
+          prev.sets[exerciseId]?.filter((_, i) => i !== index) || [],
+      },
+    }));
+  };
+
   const handleAddExercise = (name: string, category: string) => {
     const newExercise = createNewExercise(name, category);
     setWorkoutState(prev => ({
@@ -405,6 +416,7 @@ export default function WorkoutPage() {
                   onAddSet={addSetForExercise}
                   onUpdateSet={updateSetForExercise}
                   onToggleSetComplete={toggleSetCompleteForExercise}
+                  onDeleteSet={deleteSetForExercise}
                   onEditExercise={startEditExercise}
                   onDeleteExercise={deleteExercise}
                 />
