@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { signIn, LoginData } from '@/lib/firebase';
 
@@ -107,12 +108,12 @@ export default function LoginPage() {
             </div>
 
             <div className='text-xs sm:text-sm'>
-              <a
+              <Link
                 href='/forgot-password'
                 className='font-medium text-purple-300 hover:text-white transition-colors duration-200'
               >
                 Forgot your password?
-              </a>
+              </Link>
             </div>
           </div>
 
@@ -186,12 +187,12 @@ export default function LoginPage() {
         <div className='text-center mt-6 sm:mt-8'>
           <p className='text-xs sm:text-sm text-purple-200'>
             Don't have an account?{' '}
-            <a
+            <Link
               href='/signup'
               className='text-purple-300 hover:text-white font-medium transition-colors duration-200'
             >
               Sign up
-            </a>
+            </Link>
           </p>
         </div>
       </div>
