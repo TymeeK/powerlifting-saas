@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Check } from 'lucide-react';
+import { Check, Trash } from 'lucide-react';
 import {
   buttonVariants,
   cardVariants,
@@ -23,6 +23,7 @@ interface SetCardProps {
     value: number
   ) => void;
   onToggleComplete: (exerciseId: string, index: number) => void;
+  onDeleteSet: (exerciseId: string, index: number) => void;
 }
 
 export default function SetCard({
@@ -31,6 +32,7 @@ export default function SetCard({
   exerciseId,
   onUpdateSet,
   onToggleComplete,
+  onDeleteSet,
 }: SetCardProps) {
   return (
     <div className='px-3 py-2'>
@@ -88,6 +90,14 @@ export default function SetCard({
           )} flex-shrink-0 w-10 h-10 p-0`}
         >
           <Check className='h-4 w-4' />
+        </Button>
+        <Button
+          size='sm'
+          variant='outline'
+          onClick={() => onDeleteSet(exerciseId, setIndex)}
+          className={`${buttonVariants.delete} flex-shrink-0 w-10 h-10 p-0`}
+        >
+          <Trash className='h-4 w-4 text-red-500' />
         </Button>
       </div>
     </div>
