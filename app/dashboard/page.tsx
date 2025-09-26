@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { auth } from '@/lib/firebase';
+import { auth, getWeeklySummary } from '@/lib/firebase';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import {
@@ -18,15 +18,56 @@ import WeeklySummaryCard from '@/components/dashboard/WeeklySummaryCard';
 import QuickActionsCard from '@/components/dashboard/QuickActionsCard';
 import LoadingScreen from '@/components/workout/LoadingScreen';
 
+interface WeeklySummaryData {
+  thisWeekWorkouts: number;
+  lastWeekWorkouts: number;
+  thisMonthWorkouts: number;
+  totalWorkouts: number;
+  personalRecords: number;
+  currentStreak: number;
+  totalTime: number;
+  caloriesBurned: number;
+  goalProgress: number;
+  activeDays: number;
+  totalVolume: number;
+  lastWorkoutDate: Date | null;
+}
+
 export default function DashboardPage() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [summaryData, setSummaryData] = useState<WeeklySummaryData | null>(
+    null
+  );
+  const [summaryLoading, setSummaryLoading] = useState(false);
+  const [summaryError, setSummaryError] = useState<string | null>(null);
   const router = useRouter();
+
+  // Fetch summary data when user is available
+  const fetchSummaryData = async (userId: string) => {
+    setSummaryLoading(true);
+    setSummaryError(null);
+    try {
+      const result = await getWeeklySummary(userId);
+      if (result.success) {
+        setSummaryData(result.summary);
+      } else {
+        setSummaryError('Failed to load summary data');
+      }
+    } catch (error: any) {
+      console.error('Error fetching summary data:', error);
+      setSummaryError(error.message || 'Failed to load summary data');
+    } finally {
+      setSummaryLoading(false);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, user => {
       if (user) {
         setUser(user);
+        // Fetch summary data when user is authenticated
+        fetchSummaryData(user.uid);
       } else {
         // User is not logged in, redirect to login
         router.push('/login');
@@ -60,39 +101,56 @@ export default function DashboardPage() {
         {/* User Profile Section */}
         <UserProfileCard user={user} />
 
-        {/* Hero Summary Panel */}
-        <WeeklySummaryCard />
+        {/* Workout Call-to-Action */}
+        <Card className='bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-400/40 mb-8'>
+          <CardContent className='text-center p-8'>
+            <div className='text-6xl mb-4'>💪</div>
+            <h2 className='text-2xl sm:text-3xl font-bold text-white mb-3'>
+              Ready to Crush Your Goals?
+            </h2>
+            <p className='text-purple-200 text-lg mb-6 max-w-2xl mx-auto'>
+              Start your workout session and track your progress. Every rep
+              counts towards your fitness journey!
+            </p>
+            <Button
+              onClick={() => router.push('/dashboard/workout')}
+              size='lg'
+              className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold px-8 py-4 text-lg rounded-full shadow-xl hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-105'
+            >
+              🏋️‍♂️ Start Workout Now
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        {/* <QuickActionsCard /> */}
 
         {/* Motivational Alert */}
-        <Alert className='bg-green-500/10 border-green-500/30 mb-8'>
+        {/* <Alert className='bg-green-500/10 border-green-500/30 mb-8'>
           <AlertDescription className='text-green-200 text-center'>
             🎉 Great job! You're on a 7-day streak. Keep up the momentum!
           </AlertDescription>
-        </Alert>
+        </Alert> */}
 
-        {/* Quick Actions */}
-        <QuickActionsCard />
+        {/* Hero Summary Panel */}
+        {summaryError ? (
+          <Alert className='bg-red-500/10 border-red-500/30 mb-8'>
+            <AlertDescription className='text-red-200 text-center'>
+              ⚠️ {summaryError}
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <WeeklySummaryCard data={summaryData} loading={summaryLoading} />
+        )}
 
-        <Card className='bg-white/10 backdrop-blur-sm border-white/20 mb-8'>
-          <CardHeader>
-            <CardTitle className='text-white text-xl sm:text-2xl'>
-              Dashboard Coming Soon
-            </CardTitle>
-            <CardDescription className='text-purple-200'>
-              This is where you'll be able to track your personal records and
-              view your progress.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-
-        <Button
+        {/* <Button
           onClick={handleSignOut}
           variant='destructive'
           size='lg'
           className='bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 shadow-lg hover:shadow-red-500/25'
         >
           Sign Out
-        </Button>
+        </Button> */}
       </div>
     </main>
   );
