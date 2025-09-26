@@ -32,6 +32,9 @@ import {
   type ErrorState,
   saveSetsToStorage,
   loadSetsFromStorage,
+  saveWorkoutStateToStorage,
+  loadWorkoutStateFromStorage,
+  clearWorkoutStateFromStorage,
   createNewExercise,
   addSetToExercise,
   updateSetInExercise,
@@ -92,12 +95,14 @@ export default function WorkoutPage() {
       if (user) {
         setUser(user);
 
-        // Start with empty exercises - no persistence between sessions
-        setWorkoutState(prev => ({ ...prev, exercises: [] }));
-
-        // Load sets from localStorage
-        const savedSets = loadSetsFromStorage();
-        setWorkoutState(prev => ({ ...prev, sets: savedSets }));
+        // Try to load complete saved workout state first
+        const savedWorkoutState = loadWorkoutStateFromStorage();
+        if (savedWorkoutState) {
+          setWorkoutState(savedWorkoutState);
+        } else {
+          // Start with empty state if no saved workout
+          setWorkoutState({ exercises: [], sets: {} });
+        }
       } else {
         // User is not logged in, redirect to login
         router.push('/login');
@@ -108,12 +113,15 @@ export default function WorkoutPage() {
     return () => unsubscribe();
   }, [router]);
 
-  // Save sets to localStorage whenever sets change
+  // Auto-save complete workout state whenever it changes
   useEffect(() => {
-    if (Object.keys(workoutState.sets).length > 0) {
-      saveSetsToStorage(workoutState.sets);
+    if (
+      workoutState.exercises.length > 0 ||
+      Object.keys(workoutState.sets).length > 0
+    ) {
+      saveWorkoutStateToStorage(workoutState);
     }
-  }, [workoutState.sets]);
+  }, [workoutState]);
 
   // Helper function to get sets for a specific exercise
   const getExerciseSets = (exerciseId: string) => {
@@ -275,11 +283,11 @@ export default function WorkoutPage() {
       const result = await saveWorkout(user.uid, workoutExercises, 'end');
 
       if (result.success) {
-        // Clear local storage
-        localStorage.removeItem('workoutSets');
+        // Clear all workout data from storage
+        clearWorkoutStateFromStorage();
 
-        // Clear sets state
-        setWorkoutState(prev => ({ ...prev, sets: {} }));
+        // Clear state
+        setWorkoutState({ exercises: [], sets: {} });
 
         // Show confirmation screen
         setWorkoutCount(result.totalWorkouts);

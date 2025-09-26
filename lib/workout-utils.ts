@@ -56,6 +56,45 @@ export const loadSetsFromStorage = (): WorkoutState['sets'] => {
   return {};
 };
 
+// Complete workout state persistence
+export const saveWorkoutStateToStorage = (workoutState: WorkoutState) => {
+  try {
+    localStorage.setItem('currentWorkout', JSON.stringify(workoutState));
+  } catch (error) {
+    console.error('Error saving workout state to localStorage:', error);
+  }
+};
+
+export const loadWorkoutStateFromStorage = (): WorkoutState | null => {
+  try {
+    const savedWorkout = localStorage.getItem('currentWorkout');
+    if (savedWorkout) {
+      const parsed = JSON.parse(savedWorkout);
+      // Convert date strings back to Date objects
+      if (parsed.exercises) {
+        parsed.exercises = parsed.exercises.map((exercise: any) => ({
+          ...exercise,
+          createdAt: new Date(exercise.createdAt),
+          updatedAt: new Date(exercise.updatedAt),
+        }));
+      }
+      return parsed;
+    }
+  } catch (error) {
+    console.error('Error loading workout state from localStorage:', error);
+  }
+  return null;
+};
+
+export const clearWorkoutStateFromStorage = () => {
+  try {
+    localStorage.removeItem('currentWorkout');
+    localStorage.removeItem('workoutSets');
+  } catch (error) {
+    console.error('Error clearing workout state from localStorage:', error);
+  }
+};
+
 // Exercise management utilities
 export const createNewExercise = (
   name: string,
