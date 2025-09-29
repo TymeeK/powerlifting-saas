@@ -32,6 +32,9 @@ import {
   type ErrorState,
   saveSetsToStorage,
   loadSetsFromStorage,
+  saveWorkoutStateToStorage,
+  loadWorkoutStateFromStorage,
+  clearWorkoutStateFromStorage,
   createNewExercise,
   addSetToExercise,
   updateSetInExercise,
@@ -76,6 +79,7 @@ export default function WorkoutPage() {
   const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
   const [isHoveringFloatingButton, setIsHoveringFloatingButton] =
     useState(false);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
   const [pastExercises, setPastExercises] = useState<
     Array<{
       name: string;
@@ -87,33 +91,84 @@ export default function WorkoutPage() {
 
   const router = useRouter();
 
+  // Hover management functions
+  const handleMouseEnter = () => {
+    setIsHoveringFloatingButton(true);
+    // Clear any existing timeout
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      setHoverTimeout(null);
+    }
+    // Open menu on hover
+    setIsFloatingMenuOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsHoveringFloatingButton(false);
+    // Set a delay before closing the menu
+    const timeout = setTimeout(() => {
+      setIsFloatingMenuOpen(false);
+    }, 300); // 300ms delay
+    setHoverTimeout(timeout);
+  };
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+      }
+    };
+  }, [hoverTimeout]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async user => {
       if (user) {
         setUser(user);
-
-        // Start with empty exercises - no persistence between sessions
-        setWorkoutState(prev => ({ ...prev, exercises: [] }));
-
-        // Load sets from localStorage
-        const savedSets = loadSetsFromStorage();
-        setWorkoutState(prev => ({ ...prev, sets: savedSets }));
+        setLoading(false);
       } else {
         // User is not logged in, redirect to login
         router.push('/login');
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
   }, [router]);
 
-  // Save sets to localStorage whenever sets change
+  // Load saved workout state after user is authenticated
+
   useEffect(() => {
-    if (Object.keys(workoutState.sets).length > 0) {
-      saveSetsToStorage(workoutState.sets);
+    if (!user || typeof window === 'undefined') return;
+
+    console.log('User authenticated, loading saved workout state...');
+    const savedWorkoutState = loadWorkoutStateFromStorage();
+    console.log('Loading from storage:', savedWorkoutState);
+    if (savedWorkoutState) {
+      console.log('Restoring workout state from storage');
+      setWorkoutState(savedWorkoutState);
+    } else {
+      console.log('No saved workout state found, starting fresh');
+      // Start with empty state if no saved workout
+      setWorkoutState({ exercises: [], sets: {} });
     }
-  }, [workoutState.sets]);
+  }, [user]);
+
+  // Auto-save complete workout state whenever it changes
+  useEffect(() => {
+    // Only run on client side and when user is authenticated
+    if (typeof window === 'undefined' || !user) return;
+
+    console.log('Workout state changed:', workoutState);
+    if (
+      workoutState.exercises.length > 0 ||
+      Object.keys(workoutState.sets).length > 0
+    ) {
+      console.log('Saving workout state to storage...');
+      saveWorkoutStateToStorage(workoutState);
+      console.log('Workout state saved to localStorage');
+    }
+  }, [workoutState, user]);
 
   // Helper function to get sets for a specific exercise
   const getExerciseSets = (exerciseId: string) => {
@@ -275,11 +330,11 @@ export default function WorkoutPage() {
       const result = await saveWorkout(user.uid, workoutExercises, 'end');
 
       if (result.success) {
-        // Clear local storage
-        localStorage.removeItem('workoutSets');
+        // Clear all workout data from storage
+        clearWorkoutStateFromStorage();
 
-        // Clear sets state
-        setWorkoutState(prev => ({ ...prev, sets: {} }));
+        // Clear state
+        setWorkoutState({ exercises: [], sets: {} });
 
         // Show confirmation screen
         setWorkoutCount(result.totalWorkouts);
@@ -429,11 +484,8 @@ export default function WorkoutPage() {
         <FloatingActionMenu
           isOpen={isFloatingMenuOpen}
           onToggle={() => setIsFloatingMenuOpen(!isFloatingMenuOpen)}
-          onMouseEnter={() => setIsHoveringFloatingButton(true)}
-          onMouseLeave={() => {
-            setIsHoveringFloatingButton(false);
-            setIsFloatingMenuOpen(false);
-          }}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
           onSaveWorkout={handleSaveWorkout}
           onAddExercise={() => {
             setModalState(prev => ({ ...prev, showAddExercise: true }));
@@ -445,6 +497,7 @@ export default function WorkoutPage() {
           }}
           isSaving={loadingState.isSaving}
           loadingPastExercises={loadingState.loadingPastExercises}
+          isHovering={isHoveringFloatingButton}
         />
       </div>
 

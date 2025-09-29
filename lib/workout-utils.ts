@@ -56,6 +56,69 @@ export const loadSetsFromStorage = (): WorkoutState['sets'] => {
   return {};
 };
 
+// Complete workout state persistence
+export const saveWorkoutStateToStorage = (workoutState: WorkoutState) => {
+  // Only run on client side
+  if (typeof window === 'undefined') {
+    console.log('Not running on server side');
+    return;
+  }
+
+  try {
+    console.log('Saving to localStorage:', workoutState);
+    console.log('localStorage available:', typeof localStorage !== 'undefined');
+    localStorage.setItem('currentWorkout', JSON.stringify(workoutState));
+    console.log('Successfully saved to localStorage');
+
+    // Verify the save worked
+    const verification = localStorage.getItem('currentWorkout');
+    console.log(
+      'Verification - data in localStorage:',
+      verification ? 'YES' : 'NO'
+    );
+  } catch (error) {
+    console.error('Error saving workout state to localStorage:', error);
+  }
+};
+
+export const loadWorkoutStateFromStorage = (): WorkoutState | null => {
+  // Only run on client side
+  if (typeof window === 'undefined') {
+    console.log('Not running on server side');
+    return null;
+  }
+
+  try {
+    const savedWorkout = localStorage.getItem('currentWorkout');
+    console.log('Raw localStorage data:', savedWorkout);
+    if (savedWorkout) {
+      const parsed = JSON.parse(savedWorkout);
+      console.log('Parsed workout state:', parsed);
+      // Convert date strings back to Date objects
+      if (parsed.exercises) {
+        parsed.exercises = parsed.exercises.map((exercise: any) => ({
+          ...exercise,
+          createdAt: new Date(exercise.createdAt),
+          updatedAt: new Date(exercise.updatedAt),
+        }));
+      }
+      return parsed;
+    }
+  } catch (error) {
+    console.error('Error loading workout state from localStorage:', error);
+  }
+  return null;
+};
+
+export const clearWorkoutStateFromStorage = () => {
+  try {
+    localStorage.removeItem('currentWorkout');
+    localStorage.removeItem('workoutSets');
+  } catch (error) {
+    console.error('Error clearing workout state from localStorage:', error);
+  }
+};
+
 // Exercise management utilities
 export const createNewExercise = (
   name: string,

@@ -7,7 +7,6 @@ import {
 } from '@/lib/button-variants';
 
 interface Set {
-  weightUnit: 'lbs' | 'kg';
   weight: number;
   reps: number;
   completed: boolean;
