@@ -108,22 +108,24 @@ export default function PastWorkoutsPage() {
 
   return (
     <main className='min-h-screen w-screen max-w-full overflow-x-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-4 sm:px-6 lg:px-8 py-8'>
+      <Button
+        variant='outline'
+        size='sm'
+        asChild
+        className='border-purple-400/30 text-purple-200 hover:text-white hover:bg-purple-500/20 hover:border-purple-400/50 transition-all duration-200'
+      >
+        <Link href='/dashboard'>
+          <ArrowLeft className='h-4 w-4 mr-2' />
+          Back to Dashboard
+        </Link>
+      </Button>
+
       <div className='w-full max-w-6xl mx-auto'>
         {/* Header */}
+
         <div className='flex items-center justify-between mb-8'>
           <div className='flex items-center space-x-4'>
-            <Button
-              variant='outline'
-              size='sm'
-              asChild
-              className='border-purple-400/30 text-purple-200 hover:text-white hover:bg-purple-500/20 hover:border-purple-400/50 transition-all duration-200'
-            >
-              <Link href='/dashboard'>
-                <ArrowLeft className='h-4 w-4 mr-2' />
-                Back to Dashboard
-              </Link>
-            </Button>
-            <div>
+            <div className='mt-4'>
               <h1 className='text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent'>
                 Past Workouts
               </h1>
