@@ -489,7 +489,6 @@ export default function WorkoutPage() {
           }}
           isSaving={loadingState.isSaving}
           loadingPastExercises={loadingState.loadingPastExercises}
-          isHovering={isHoveringFloatingButton}
         />
       </div>
 
