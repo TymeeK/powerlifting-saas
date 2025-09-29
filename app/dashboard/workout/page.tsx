@@ -42,6 +42,7 @@ import {
   getExerciseProgress,
   getOrdinalSuffix,
 } from '@/lib/workout-utils';
+import BackButton from '@/components/back-button';
 
 export default function WorkoutPage() {
   const [user, setUser] = useState<any>(null);
@@ -365,6 +366,7 @@ export default function WorkoutPage() {
   return (
     <main className='min-h-screen w-screen max-w-full overflow-x-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-4 sm:px-6 lg:px-8 py-8'>
       <div className='w-full max-w-6xl mx-auto'>
+        <BackButton />
         {/* Header */}
         <div className='mb-8'>
           <div className='mb-4'>
