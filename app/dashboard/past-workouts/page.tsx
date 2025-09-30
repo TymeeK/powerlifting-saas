@@ -312,7 +312,7 @@ export default function PastWorkoutsPage() {
                           className='bg-white/5 rounded-lg p-4'
                         >
                           <div className='flex items-center justify-between mb-2'>
-                            <h5 className='text-white font-medium'>
+                            <h5 className='text-white font-bold text-lg underline'>
                               {exercise.name}
                             </h5>
                             <span className='text-purple-200 text-sm'>
