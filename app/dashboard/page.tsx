@@ -27,6 +27,23 @@ interface WeeklySummaryData {
   lastWorkoutDate: Date | null;
 }
 
+const workoutCallToActionCards = [
+  {
+    title: 'Ready to Crush Your Goals?',
+    description:
+      'Start your workout session and track your progress. Every rep counts towards your fitness journey!',
+    buttonText: 'Start Workout Now',
+    buttonLink: '/dashboard/workout',
+  },
+  {
+    title: 'Ready to View Your Past Workouts?',
+    description:
+      'View your past workout sessions and track your progress. Every rep counts towards your fitness journey!',
+    buttonText: 'View Past Workouts Now',
+    buttonLink: '/dashboard/past-workouts',
+  },
+];
+
 const WorkoutCallToActionCard = ({
   router,
   title,
