@@ -126,10 +126,10 @@ export default function DashboardPage() {
           <CardContent className='text-center p-8'>
             <div className='text-6xl mb-4'>🏋️‍♂️</div>
             <h2 className='text-2xl sm:text-3xl font-bold text-white mb-3'>
-              Ready to Crush Your Goals?
+              Ready to View Your Past Workouts?
             </h2>
             <p className='text-purple-200 text-lg mb-6 max-w-2xl mx-auto'>
-              Start your workout session and track your progress. Every rep
+              View your past workout sessions and track your progress. Every rep
               counts towards your fitness journey!
             </p>
           </CardContent>
