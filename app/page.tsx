@@ -38,23 +38,22 @@ export default function LandingPage() {
   // If user is logged in, they will be redirected, so this won't render
   return (
     <main className='min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white'>
-      {/* Header - Top Left */}
-      <header className='absolute top-0 left-0 p-6 sm:p-8 z-10'>
-        <div className='flex items-center space-x-3'>
-          <div className='w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center'>
-            <span className='text-white font-bold text-lg'>PR</span>
-          </div>
-          <div>
-            <h1 className='text-xl font-bold text-white'>PR Tracker</h1>
-            <p className='text-purple-200 text-sm'>Fitness Companion</p>
-          </div>
-        </div>
-      </header>
-
       {/* Main Content */}
       <div className='flex flex-col lg:flex-row min-h-screen'>
         {/* Left Side - Content */}
         <div className='flex-1 flex flex-col justify-center px-6 sm:px-8 lg:px-16 pt-20 lg:pt-0'>
+          {/* Header - Moved inside content area */}
+          <header className='mb-8'>
+            <div className='flex items-center space-x-3'>
+              <div className='w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center'>
+                <span className='text-white font-bold text-lg'>PR</span>
+              </div>
+              <div>
+                <h1 className='text-xl font-bold text-white'>PR Tracker</h1>
+                <p className='text-purple-200 text-sm'>Fitness Companion</p>
+              </div>
+            </div>
+          </header>
           <div className='max-w-2xl'>
             <div className='mb-8'>
               <h2 className='text-4xl sm:text-5xl lg:text-6xl font-bold mb-6 leading-tight'>
