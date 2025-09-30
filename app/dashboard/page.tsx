@@ -27,7 +27,14 @@ interface WeeklySummaryData {
   lastWorkoutDate: Date | null;
 }
 
-const workoutCallToActionCards = [
+type WorkoutCallToActionCard = {
+  title: string;
+  description: string;
+  buttonText: string;
+  buttonLink: string;
+};
+
+const workoutCallToActionCards: WorkoutCallToActionCard[] = [
   {
     title: 'Ready to Crush Your Goals?',
     description:
