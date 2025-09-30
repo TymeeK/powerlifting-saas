@@ -107,12 +107,12 @@ export default function PastWorkoutsPage() {
         {/* Header */}
 
         <div className='flex items-center justify-between mb-8'>
-          <div className='flex items-center space-x-4'>
+          <div className='flex items-center space-x-2 sm:space-x-4'>
             <div className='mt-4'>
-              <h1 className='text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent'>
+              <h1 className='text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent'>
                 Past Workouts
               </h1>
-              <p className='text-purple-200 mt-2'>
+              <p className='text-purple-200 mt-2 text-sm sm:text-base'>
                 Track your progress and celebrate your achievements
               </p>
             </div>
@@ -120,9 +120,9 @@ export default function PastWorkoutsPage() {
         </div>
 
         {/* Stats Overview */}
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-8'>
           <Card className='bg-white/10 backdrop-blur-sm border-white/20'>
-            <CardContent className='p-6'>
+            <CardContent className='p-4 sm:p-6'>
               <div className='flex items-center space-x-3'>
                 <div className='p-2 bg-purple-500/20 rounded-lg'>
                   <Dumbbell className='h-6 w-6 text-purple-400' />
@@ -138,7 +138,7 @@ export default function PastWorkoutsPage() {
           </Card>
 
           <Card className='bg-white/10 backdrop-blur-sm border-white/20'>
-            <CardContent className='p-6'>
+            <CardContent className='p-4 sm:p-6'>
               <div className='flex items-center space-x-3'>
                 <div className='p-2 bg-green-500/20 rounded-lg'>
                   <Trophy className='h-6 w-6 text-green-400' />
@@ -157,7 +157,7 @@ export default function PastWorkoutsPage() {
           </Card>
 
           <Card className='bg-white/10 backdrop-blur-sm border-white/20'>
-            <CardContent className='p-6'>
+            <CardContent className='p-4 sm:p-6'>
               <div className='flex items-center space-x-3'>
                 <div className='p-2 bg-blue-500/20 rounded-lg'>
                   <Clock className='h-6 w-6 text-blue-400' />
@@ -276,7 +276,7 @@ export default function PastWorkoutsPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-6'>
+                  <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6'>
                     <div className='text-center'>
                       <p className='text-2xl font-bold text-white'>
                         {workout.exercises.length}
@@ -319,16 +319,16 @@ export default function PastWorkoutsPage() {
                               {exercise.sets} sets
                             </span>
                           </div>
-                          <div className='grid grid-cols-2 sm:grid-cols-4 gap-2'>
+                          <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2'>
                             {exercise.sets > 0 &&
                               Array.from(
                                 { length: exercise.sets },
                                 (_, setIndex) => (
                                   <div
                                     key={setIndex}
-                                    className='bg-white/10 rounded p-2 text-center'
+                                    className='bg-white/10 rounded p-2 sm:p-3 text-center'
                                   >
-                                    <p className='text-white text-sm font-medium'>
+                                    <p className='text-white text-xs sm:text-sm font-medium'>
                                       {exercise.reps[setIndex]} ×{' '}
                                       {exercise.weight[setIndex]}lbs
                                     </p>
