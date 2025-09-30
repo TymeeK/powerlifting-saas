@@ -262,11 +262,14 @@ export function Navbar() {
                 <span className='sr-only'>Open menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side='right' className='w-[300px] sm:w-[400px]'>
-              <SheetHeader>
+            <SheetContent
+              side='right'
+              className='w-[300px] sm:w-[400px] flex flex-col'
+            >
+              <SheetHeader className='flex-shrink-0'>
                 <SheetTitle className='text-left'>Navigation</SheetTitle>
               </SheetHeader>
-              <div className='flex flex-col space-y-4 mt-6'>
+              <div className='flex-1 overflow-y-auto space-y-4 mt-6'>
                 {loading ? (
                   // Loading state for mobile
                   <div className='px-4'>
@@ -391,7 +394,7 @@ export function Navbar() {
                 )}
 
                 {/* Mobile Auth Buttons */}
-                <div className='pt-6 border-t space-y-3 px-4'>
+                <div className='flex-shrink-0 pt-6 border-t space-y-3 px-4'>
                   {loading ? (
                     <div className='space-y-3'>
                       <div className='w-full h-12 animate-pulse bg-gray-200 rounded-lg'></div>
