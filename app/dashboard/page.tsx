@@ -122,7 +122,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className='bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-400/40 mb-8'>
           <CardContent className='text-center p-8'>
             <div className='text-6xl mb-4'>🏋️‍♂️</div>
             <h2 className='text-2xl sm:text-3xl font-bold text-white mb-3'>
