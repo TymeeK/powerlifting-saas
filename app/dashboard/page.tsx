@@ -34,7 +34,7 @@ type WorkoutCallToActionCard = {
   buttonLink: string;
 };
 
-const workoutCallToActionCards: WorkoutCallToActionCard[] = [
+const workoutCallToActionCards = [
   {
     title: 'Ready to Crush Your Goals?',
     description:
@@ -155,20 +155,16 @@ export default function DashboardPage() {
         <UserProfileCard user={user} />
 
         <div className='flex flex-row gap-4'>
-          <WorkoutCallToActionCard
-            router={router}
-            title='Ready to Crush Your Goals?'
-            description='Start your workout session and track your progress. Every rep counts towards your fitness journey!'
-            buttonText='Start Workout Now'
-            buttonLink='/dashboard/workout'
-          />
-          <WorkoutCallToActionCard
-            router={router}
-            title='Ready to View Your Past Workouts?'
-            description='View your past workout sessions and track your progress. Every rep counts towards your fitness journey!'
-            buttonText='View Past Workouts Now'
-            buttonLink='/dashboard/past-workouts'
-          />
+          {workoutCallToActionCards.map(card => (
+            <WorkoutCallToActionCard
+              key={card.title}
+              router={router}
+              title={card.title}
+              description={card.description}
+              buttonText={card.buttonText}
+              buttonLink={card.buttonLink}
+            />
+          ))}
         </div>
 
         {/* Quick Actions */}
