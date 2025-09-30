@@ -57,7 +57,7 @@ export default function LandingPage() {
               <div className='w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center'>
                 <span className='text-white font-bold text-lg'>PR</span>
               </div>
-              <div>
+              <div className='mt-4'>
                 <h1 className='text-xl font-bold text-white'>PR Tracker</h1>
                 <p className='text-purple-200 text-sm'>Fitness Companion</p>
               </div>
