@@ -102,45 +102,47 @@ export default function DashboardPage() {
         <UserProfileCard user={user} />
 
         {/* Workout Call-to-Action */}
-        <Card className='bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-400/40 mb-8'>
-          <CardContent className='text-center p-8'>
-            <div className='text-6xl mb-4'>💪</div>
-            <h2 className='text-2xl sm:text-3xl font-bold text-white mb-3'>
-              Ready to Crush Your Goals?
-            </h2>
-            <p className='text-purple-200 text-lg mb-6 max-w-2xl mx-auto'>
-              Start your workout session and track your progress. Every rep
-              counts towards your fitness journey!
-            </p>
-            <Button
-              onClick={() => router.push('/dashboard/workout')}
-              size='lg'
-              className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold px-8 py-4 text-lg rounded-full shadow-xl hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-105 hover:cursor-pointer'
-            >
-              🏋️‍♂️ Start Workout Now
-            </Button>
-          </CardContent>
-        </Card>
+        <div className='flex flex-row gap-4'>
+          <Card className='bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-400/40 mb-8'>
+            <CardContent className='text-center p-8'>
+              <div className='text-6xl mb-4'>💪</div>
+              <h2 className='text-2xl sm:text-3xl font-bold text-white mb-3'>
+                Ready to Crush Your Goals?
+              </h2>
+              <p className='text-purple-200 text-lg mb-6 max-w-2xl mx-auto'>
+                Start your workout session and track your progress. Every rep
+                counts towards your fitness journey!
+              </p>
+              <Button
+                onClick={() => router.push('/dashboard/workout')}
+                size='lg'
+                className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold px-8 py-4 text-lg rounded-full shadow-xl hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-105 hover:cursor-pointer'
+              >
+                🏋️‍♂️ Start Workout Now
+              </Button>
+            </CardContent>
+          </Card>
 
-        <Card className='bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-400/40 mb-8'>
-          <CardContent className='text-center p-8'>
-            <div className='text-6xl mb-4'>🏋️‍♂️</div>
-            <h2 className='text-2xl sm:text-3xl font-bold text-white mb-3'>
-              Ready to View Your Past Workouts?
-            </h2>
-            <p className='text-purple-200 text-lg mb-6 max-w-2xl mx-auto'>
-              View your past workout sessions and track your progress. Every rep
-              counts towards your fitness journey!
-            </p>
-            <Button
-              onClick={() => router.push('/dashboard/past-workouts')}
-              size='lg'
-              className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold px-8 py-4 text-lg rounded-full shadow-xl hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-105 hover:cursor-pointer'
-            >
-              🏋️‍♂️ View Past Workouts Now
-            </Button>
-          </CardContent>
-        </Card>
+          <Card className='bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-400/40 mb-8'>
+            <CardContent className='text-center p-8'>
+              <div className='text-6xl mb-4'>🏋️‍♂️</div>
+              <h2 className='text-2xl sm:text-3xl font-bold text-white mb-3'>
+                Ready to View Your Past Workouts?
+              </h2>
+              <p className='text-purple-200 text-lg mb-6 max-w-2xl mx-auto'>
+                View your past workout sessions and track your progress. Every
+                rep counts towards your fitness journey!
+              </p>
+              <Button
+                onClick={() => router.push('/dashboard/past-workouts')}
+                size='lg'
+                className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold px-8 py-4 text-lg rounded-full shadow-xl hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-105 hover:cursor-pointer'
+              >
+                🏋️‍♂️ View Past Workouts Now
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Quick Actions */}
         {/* <QuickActionsCard /> */}
