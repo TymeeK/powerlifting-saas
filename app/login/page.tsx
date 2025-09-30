@@ -156,7 +156,7 @@ export default function LoginPage() {
         </div>
 
         {/* Social Login */}
-        <div className='space-y-2 sm:space-y-3'>
+        {/* <div className='space-y-2 sm:space-y-3'>
           <button
             type='button'
             className='w-full bg-white hover:bg-gray-50 text-gray-900 px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold border-2 border-gray-200 hover:border-gray-300 transition-all duration-200 flex items-center justify-center space-x-2'
@@ -181,7 +181,7 @@ export default function LoginPage() {
             </svg>
             <span className='text-sm sm:text-base'>Continue with Google</span>
           </button>
-        </div>
+        </div> */}
 
         {/* Signup Link */}
         <div className='text-center mt-6 sm:mt-8'>
