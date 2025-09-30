@@ -115,7 +115,7 @@ export default function DashboardPage() {
             <Button
               onClick={() => router.push('/dashboard/workout')}
               size='lg'
-              className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold px-8 py-4 text-lg rounded-full shadow-xl hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-105'
+              className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold px-8 py-4 text-lg rounded-full shadow-xl hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-105 hover:cursor-pointer'
             >
               🏋️‍♂️ Start Workout Now
             </Button>
@@ -135,7 +135,7 @@ export default function DashboardPage() {
             <Button
               onClick={() => router.push('/dashboard/past-workouts')}
               size='lg'
-              className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold px-8 py-4 text-lg rounded-full shadow-xl hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-105'
+              className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold px-8 py-4 text-lg rounded-full shadow-xl hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-105 hover:cursor-pointer'
             >
               🏋️‍♂️ View Past Workouts Now
             </Button>
