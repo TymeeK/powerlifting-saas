@@ -154,7 +154,7 @@ export default function DashboardPage() {
         {/* User Profile Section */}
         <UserProfileCard user={user} />
 
-        <div className='flex flex-row gap-4'>
+        <div className='flex flex-col sm:flex-row gap-4'>
           {workoutCallToActionCards.map(card => (
             <WorkoutCallToActionCard
               key={card.title}
