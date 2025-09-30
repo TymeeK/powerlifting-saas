@@ -83,7 +83,7 @@ export default function LandingPage() {
             <div className='flex flex-col sm:flex-row gap-4 mb-12'>
               <Button
                 size='lg'
-                className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-purple-500/25 text-lg px-8 py-4 rounded-2xl'
+                className=' hover:cursor-pointer bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white shadow-lg hover:shadow-purple-500/25 text-lg px-8 py-4 rounded-2xl'
               >
                 Start Tracking Now
               </Button>
