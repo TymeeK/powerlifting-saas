@@ -54,7 +54,7 @@ export default function LandingPage() {
           {/* Header - Moved inside content area */}
           <header className='mb-8'>
             <div className='flex items-center space-x-3'>
-              <div className='w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center'>
+              <div className='w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mt-4'>
                 <span className='text-white font-bold text-lg'>PR</span>
               </div>
               <div className='mt-4'>
