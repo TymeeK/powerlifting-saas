@@ -12,7 +12,6 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import { PageBreadcrumb } from '@/components/ui/page-breadcrumb';
 import { Check, Dumbbell } from 'lucide-react';
 
 // Import reusable components and utilities
@@ -42,7 +41,7 @@ import {
   getExerciseProgress,
   getOrdinalSuffix,
 } from '@/lib/workout-utils';
-import BackButton from '@/components/back-button';
+import BackToDashboardButton from '@/components/back-button';
 
 export default function WorkoutPage() {
   const [user, setUser] = useState<any>(null);
@@ -366,9 +365,9 @@ export default function WorkoutPage() {
   return (
     <main className='min-h-screen w-screen max-w-full overflow-x-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-4 sm:px-6 lg:px-8 py-8'>
       <div className='w-full max-w-6xl mx-auto'>
-        <BackButton />
+        <BackToDashboardButton />
         {/* Header */}
-        <div className='mb-8'>
+        <div className='mb-8 mt-6'>
           <div className='mb-4'>
             <div className='flex items-center gap-3'>
               <div className='p-3 rounded-full bg-purple-500/20'>
