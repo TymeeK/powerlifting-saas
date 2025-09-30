@@ -132,6 +132,13 @@ export default function DashboardPage() {
               View your past workout sessions and track your progress. Every rep
               counts towards your fitness journey!
             </p>
+            <Button
+              onClick={() => router.push('/dashboard/past-workouts')}
+              size='lg'
+              className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold px-8 py-4 text-lg rounded-full shadow-xl hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-105'
+            >
+              🏋️‍♂️ View Past Workouts Now
+            </Button>
           </CardContent>
         </Card>
 
