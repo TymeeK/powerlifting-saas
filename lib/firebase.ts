@@ -5,6 +5,7 @@ import {
   createUserWithEmailAndPassword,
   updateProfile,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import {
   getFirestore,
@@ -204,6 +205,37 @@ export const signIn = async (loginData: LoginData) => {
         break;
       case 'auth/too-many-requests':
         errorMessage = 'Too many failed attempts. Please try again later';
+        break;
+      default:
+        errorMessage = error.message || errorMessage;
+    }
+
+    throw new Error(errorMessage);
+  }
+};
+
+// Password reset function
+export const resetPassword = async (email: string) => {
+  try {
+    await sendPasswordResetEmail(auth, email);
+
+    return {
+      success: true,
+      message: 'Password reset email sent successfully!',
+    };
+  } catch (error: any) {
+    // Handle specific Firebase errors
+    let errorMessage = 'An error occurred while sending password reset email';
+
+    switch (error.code) {
+      case 'auth/user-not-found':
+        errorMessage = 'No account found with this email address';
+        break;
+      case 'auth/invalid-email':
+        errorMessage = 'Invalid email address';
+        break;
+      case 'auth/too-many-requests':
+        errorMessage = 'Too many requests. Please try again later';
         break;
       default:
         errorMessage = error.message || errorMessage;
