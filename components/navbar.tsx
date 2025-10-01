@@ -114,7 +114,7 @@ export function Navbar() {
             className='mr-6 flex items-center space-x-2'
           >
             <div className='h-6 w-6 rounded bg-gradient-to-r from-purple-500 to-pink-500' />
-            <span className='font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent'>
+            <span className='font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent hover:cursor-pointer'>
               PR Tracker
             </span>
           </Link>
