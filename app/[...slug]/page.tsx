@@ -24,6 +24,9 @@ export async function generateStaticParams() {
     { slug: ['blog'] },
     { slug: ['support'] },
     { slug: ['faq'] },
+    { slug: ['dashboard', 'charts'] },
+    { slug: ['dashboard', 'settings'] },
+    { slug: ['dashboard', 'past-workouts'] },
   ];
 }
 
