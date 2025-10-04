@@ -18,6 +18,10 @@ import {
   Trophy,
   Zap,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { auth } from '@/lib/firebase-config';
+import { onAuthStateChanged } from 'firebase/auth';
 
 // Prefilled data for the three main lifts
 const exerciseData = {
@@ -83,6 +87,25 @@ const overallStats = {
 };
 
 export default function ChartsPage() {
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
+      if (user) {
+        setUser(user);
+        setLoading(false);
+      } else {
+        // User is not logged in, redirect to login
+        router.push('/login');
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
   const getProgressPercentage = (current: number, target: number) => {
     return Math.min((current / target) * 100, 100);
   };
