@@ -58,5 +58,6 @@ export const SIGNUP_SELECTORS = {
   privacyLink: () => screen.getByRole('link', { name: /privacy policy/i }),
   passwordMismatchWarning: () => screen.queryByText('Passwords do not match'),
   errorMessage: () => screen.queryByText(/error occurred during sign up/i),
+  errorMessageEmptyFields: () => screen.queryByText(/all fields are required/i),
   successMessage: () => screen.queryByText(/account created successfully/i),
 } as const;

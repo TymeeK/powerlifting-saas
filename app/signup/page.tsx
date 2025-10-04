@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { signUp, SignUpData } from '@/lib/firebase';
@@ -15,6 +15,15 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [isFormFilled, setIsFormFilled] = useState(false);
+
+  useEffect(() => {
+    if (firstName && lastName && email && password && confirmPassword) {
+      setIsFormFilled(true);
+    } else {
+      setIsFormFilled(false);
+    }
+  }, [firstName, lastName, email, password, confirmPassword]);
 
   const checkPasswordMatch = (pwd: string, confirmPwd: string) => {
     if (confirmPwd.length > 0 && pwd !== confirmPwd) {
@@ -47,6 +56,11 @@ export default function SignupPage() {
     if (password !== confirmPassword) {
       setPasswordMismatch(true);
       setError('Passwords do not match');
+      return;
+    }
+
+    if (!isFormFilled) {
+      setError('All fields are required');
       return;
     }
 
@@ -219,8 +233,8 @@ export default function SignupPage() {
 
           <button
             type='submit'
-            disabled={isLoading}
-            className='w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-200 text-sm sm:text-base'
+            disabled={isLoading || !isFormFilled}
+            className='w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-semibold text-white shadow-lg hover:shadow-purple-500/25 transition-all duration-200 text-sm sm:text-base hover:cursor-pointer'
           >
             {isLoading ? 'Creating Account...' : 'Create Account'}
           </button>

@@ -126,10 +126,9 @@ describe('Signup Page', () => {
       expect(SIGNUP_SELECTORS.passwordMismatchWarning()).toBeInTheDocument();
     });
 
-    // it('shows error message when form is submitted with empty fields', async () => {
-    //   const { submitButton } = getFormInputs();
-    //   await user.click(submitButton);
-    //   expect(SIGNUP_SELECTORS.errorMessage()).toBeInTheDocument();
-    // });
+    it('disables submit button when form fields are empty', () => {
+      const { submitButton } = getFormInputs();
+      expect(submitButton).toBeDisabled();
+    });
   });
 });
