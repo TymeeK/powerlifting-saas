@@ -3,6 +3,13 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import LoginPage from '@/app/login/page';
 import { signIn } from '@/lib/firebase';
+import {
+  TEST_DATA,
+  LOGIN_SELECTORS,
+  CSS_CLASSES,
+  expectClasses,
+  createLoginHelpers,
+} from '../../utils';
 
 // Mock Next.js router
 const mockPush = vi.fn();
@@ -25,188 +32,19 @@ Object.defineProperty(window, 'location', {
   writable: true,
 });
 
-// Test constants
-const TEST_DATA = {
-  email: 'test@example.com',
-  password: 'password123',
-  wrongPassword: 'wrongpassword',
-  invalidEmail: 'invalid-email',
-  user: {
-    uid: '123',
-    email: 'test@example.com',
-    displayName: 'Test User',
-  },
-} as const;
-
-const SELECTORS = {
-  emailInput: () => screen.getByLabelText(/email address/i),
-  passwordInput: () => screen.getByLabelText(/password/i),
-  rememberMeCheckbox: () =>
-    screen.getByRole('checkbox', { name: /remember me/i }),
-  submitButton: () => screen.getByRole('button', { name: /sign in/i }),
-  submitButtonLoading: () =>
-    screen.getByRole('button', { name: /signing in/i }),
-  forgotPasswordLink: () =>
-    screen.getByRole('link', { name: /forgot your password/i }),
-  signupLink: () => screen.getByRole('link', { name: /sign up/i }),
-  mainHeading: () => screen.getByRole('heading', { name: /sign in/i }),
-  mainElement: () => screen.getByRole('main'),
-  form: () => document.querySelector('form'),
-  errorMessage: () => screen.getByText('Incorrect email or password'),
-  loadingText: () => screen.getByText('Signing In...'),
-  orText: () => screen.getByText('or'),
-  separators: () =>
-    screen
-      .getAllByRole('none')
-      .filter(el => el.getAttribute('data-slot') === 'separator'),
-} as const;
-
-const CSS_CLASSES = {
-  responsive: {
-    heading: ['text-2xl', 'sm:text-3xl', 'md:text-4xl', 'lg:text-5xl'],
-    mainPadding: ['px-4', 'sm:px-6', 'lg:px-8', 'py-8'],
-    container: ['max-w-sm', 'sm:max-w-md', 'lg:max-w-lg', 'xl:max-w-xl'],
-    formSpacing: ['space-y-4', 'sm:space-y-6'],
-    formFields: ['space-y-3', 'sm:space-y-4'],
-    input: ['px-3', 'sm:px-4', 'py-2.5', 'sm:py-3', 'text-sm', 'sm:text-base'],
-    button: ['px-4', 'sm:px-6', 'py-2.5', 'sm:py-3', 'text-sm', 'sm:text-base'],
-    rememberMeContainer: [
-      'flex-col',
-      'sm:flex-row',
-      'sm:items-center',
-      'sm:justify-between',
-      'space-y-3',
-      'sm:space-y-0',
-    ],
-  },
-  gradients: {
-    main: [
-      'bg-gradient-to-br',
-      'from-slate-900',
-      'via-purple-900',
-      'to-slate-900',
-    ],
-    heading: [
-      'bg-gradient-to-r',
-      'from-white',
-      'to-purple-200',
-      'bg-clip-text',
-      'text-transparent',
-    ],
-    button: [
-      'bg-gradient-to-r',
-      'from-purple-500',
-      'to-pink-500',
-      'hover:from-purple-600',
-      'hover:to-pink-600',
-    ],
-  },
-  error: {
-    container: [
-      'mt-4',
-      'p-3',
-      'bg-red-500/10',
-      'border',
-      'border-red-500/20',
-      'rounded-lg',
-    ],
-    text: ['text-sm', 'text-red-400', 'flex', 'items-center'],
-    icon: ['w-4', 'h-4', 'mr-2'],
-  },
-  separator: ['flex-1', 'bg-purple-400/30'],
-  orText: ['px-3', 'sm:px-4', 'text-purple-200', 'text-xs', 'sm:text-sm'],
-  hover: {
-    button: ['hover:shadow-purple-500/25', 'transition-all', 'duration-200'],
-    link: ['hover:text-white', 'transition-colors', 'duration-200'],
-  },
-  disabled: [
-    'disabled:from-gray-400',
-    'disabled:to-gray-500',
-    'disabled:cursor-not-allowed',
-  ],
-} as const;
-
 describe('LoginPage', () => {
   const mockSignIn = vi.mocked(signIn);
-
-  // Helper functions
-  const fillForm = async (
-    user: any,
-    data: { email?: string; password?: string; rememberMe?: boolean } = {}
-  ) => {
-    const {
-      email = TEST_DATA.email,
-      password = TEST_DATA.password,
-      rememberMe = false,
-    } = data;
-
-    await user.type(SELECTORS.emailInput(), email);
-    await user.type(SELECTORS.passwordInput(), password);
-
-    if (rememberMe) {
-      await user.click(SELECTORS.rememberMeCheckbox());
-    }
-  };
-
-  const submitForm = async (user: any) => {
-    await user.click(SELECTORS.submitButton());
-  };
-
-  const mockSuccessfulSignIn = () => {
-    mockSignIn.mockResolvedValue({
-      success: true,
-      user: TEST_DATA.user,
-    });
-  };
-
-  const mockFailedSignIn = (error = 'Invalid credentials') => {
-    mockSignIn.mockRejectedValue(new Error(error));
-  };
-
-  const mockDelayedSignIn = (delay = 100) => {
-    mockSignIn.mockImplementation(
-      () =>
-        new Promise(resolve =>
-          setTimeout(
-            () =>
-              resolve({
-                success: true,
-                user: TEST_DATA.user,
-              }),
-            delay
-          )
-        )
-    );
-  };
-
-  const expectErrorToBeVisible = () => {
-    expect(SELECTORS.errorMessage()).toBeInTheDocument();
-  };
-
-  const expectErrorToBeHidden = () => {
-    expect(
-      screen.queryByText('Incorrect email or password')
-    ).not.toBeInTheDocument();
-  };
-
-  const expectLoadingState = () => {
-    expect(SELECTORS.loadingText()).toBeInTheDocument();
-    expect(SELECTORS.submitButtonLoading()).toBeDisabled();
-  };
-
-  const expectNotLoadingState = () => {
-    expect(screen.queryByText('Signing In...')).not.toBeInTheDocument();
-    expect(SELECTORS.submitButton()).not.toBeDisabled();
-  };
-
-  const expectClasses = (
-    element: HTMLElement | null,
-    classes: readonly string[]
-  ) => {
-    classes.forEach(className => {
-      expect(element).toHaveClass(className);
-    });
-  };
+  const {
+    fillForm,
+    submitForm,
+    mockSuccessfulSignIn,
+    mockFailedSignIn,
+    mockDelayedSignIn,
+    expectErrorToBeVisible,
+    expectErrorToBeHidden,
+    expectLoadingState,
+    expectNotLoadingState,
+  } = createLoginHelpers(mockSignIn);
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -216,22 +54,22 @@ describe('LoginPage', () => {
     it('renders the login page with all required elements', () => {
       render(<LoginPage />);
 
-      expect(SELECTORS.mainHeading()).toBeInTheDocument();
+      expect(LOGIN_SELECTORS.mainHeading()).toBeInTheDocument();
       expect(screen.getByText('Welcome to PR Tracker')).toBeInTheDocument();
-      expect(SELECTORS.emailInput()).toBeInTheDocument();
-      expect(SELECTORS.passwordInput()).toBeInTheDocument();
-      expect(SELECTORS.rememberMeCheckbox()).toBeInTheDocument();
-      expect(SELECTORS.submitButton()).toBeInTheDocument();
-      expect(SELECTORS.forgotPasswordLink()).toBeInTheDocument();
+      expect(LOGIN_SELECTORS.emailInput()).toBeInTheDocument();
+      expect(LOGIN_SELECTORS.passwordInput()).toBeInTheDocument();
+      expect(LOGIN_SELECTORS.rememberMeCheckbox()).toBeInTheDocument();
+      expect(LOGIN_SELECTORS.submitButton('sign in')).toBeInTheDocument();
+      expect(LOGIN_SELECTORS.forgotPasswordLink()).toBeInTheDocument();
       expect(screen.getByText("Don't have an account?")).toBeInTheDocument();
-      expect(SELECTORS.signupLink()).toBeInTheDocument();
+      expect(LOGIN_SELECTORS.signupLink()).toBeInTheDocument();
     });
 
     it('renders form inputs with correct attributes', () => {
       render(<LoginPage />);
 
-      const emailInput = SELECTORS.emailInput();
-      const passwordInput = SELECTORS.passwordInput();
+      const emailInput = LOGIN_SELECTORS.emailInput();
+      const passwordInput = LOGIN_SELECTORS.passwordInput();
 
       expect(emailInput).toHaveAttribute('type', 'email');
       expect(emailInput).toHaveAttribute('required');
@@ -248,7 +86,7 @@ describe('LoginPage', () => {
     it('renders forgot password link', () => {
       render(<LoginPage />);
 
-      const forgotPasswordLink = SELECTORS.forgotPasswordLink();
+      const forgotPasswordLink = LOGIN_SELECTORS.forgotPasswordLink();
       expect(forgotPasswordLink).toBeInTheDocument();
       expect(forgotPasswordLink).toHaveAttribute(
         'href',
@@ -259,7 +97,7 @@ describe('LoginPage', () => {
     it('renders signup link with correct href', () => {
       render(<LoginPage />);
 
-      const signupLink = SELECTORS.signupLink();
+      const signupLink = LOGIN_SELECTORS.signupLink();
       expect(signupLink).toBeInTheDocument();
       expect(signupLink).toHaveAttribute('href', '/signup');
     });
@@ -270,7 +108,7 @@ describe('LoginPage', () => {
       const user = userEvent.setup();
       render(<LoginPage />);
 
-      const emailInput = SELECTORS.emailInput();
+      const emailInput = LOGIN_SELECTORS.emailInput();
       await user.type(emailInput, TEST_DATA.email);
 
       expect(emailInput).toHaveValue(TEST_DATA.email);
@@ -280,7 +118,7 @@ describe('LoginPage', () => {
       const user = userEvent.setup();
       render(<LoginPage />);
 
-      const passwordInput = SELECTORS.passwordInput();
+      const passwordInput = LOGIN_SELECTORS.passwordInput();
       await user.type(passwordInput, TEST_DATA.password);
 
       expect(passwordInput).toHaveValue(TEST_DATA.password);
@@ -290,7 +128,7 @@ describe('LoginPage', () => {
       const user = userEvent.setup();
       render(<LoginPage />);
 
-      const rememberMeCheckbox = SELECTORS.rememberMeCheckbox();
+      const rememberMeCheckbox = LOGIN_SELECTORS.rememberMeCheckbox();
 
       expect(rememberMeCheckbox).not.toBeChecked();
 
@@ -307,8 +145,8 @@ describe('LoginPage', () => {
 
       await submitForm(user);
 
-      expect(SELECTORS.emailInput()).toBeInvalid();
-      expect(SELECTORS.passwordInput()).toBeInvalid();
+      expect(LOGIN_SELECTORS.emailInput()).toBeInvalid();
+      expect(LOGIN_SELECTORS.passwordInput()).toBeInvalid();
     });
   });
 
@@ -383,15 +221,15 @@ describe('LoginPage', () => {
     it('has proper form labels and associations', () => {
       render(<LoginPage />);
 
-      expect(SELECTORS.emailInput()).toBeInTheDocument();
-      expect(SELECTORS.passwordInput()).toBeInTheDocument();
-      expect(SELECTORS.rememberMeCheckbox()).toBeInTheDocument();
+      expect(LOGIN_SELECTORS.emailInput()).toBeInTheDocument();
+      expect(LOGIN_SELECTORS.passwordInput()).toBeInTheDocument();
+      expect(LOGIN_SELECTORS.rememberMeCheckbox()).toBeInTheDocument();
     });
 
     it('has proper heading hierarchy', () => {
       render(<LoginPage />);
 
-      const mainHeading = SELECTORS.mainHeading();
+      const mainHeading = LOGIN_SELECTORS.mainHeading();
       expect(mainHeading).toBeInTheDocument();
       expect(mainHeading.tagName).toBe('H1');
     });
@@ -399,27 +237,27 @@ describe('LoginPage', () => {
     it('has proper button roles', () => {
       render(<LoginPage />);
 
-      expect(SELECTORS.submitButton()).toBeInTheDocument();
+      expect(LOGIN_SELECTORS.submitButton('sign in')).toBeInTheDocument();
     });
 
     it('has proper form structure with main landmark', () => {
       render(<LoginPage />);
 
-      expect(SELECTORS.mainElement()).toBeInTheDocument();
+      expect(LOGIN_SELECTORS.mainElement()).toBeInTheDocument();
     });
 
     it('has proper form element with role', () => {
       render(<LoginPage />);
 
-      expect(SELECTORS.form()).toBeInTheDocument();
+      expect(LOGIN_SELECTORS.form()).toBeInTheDocument();
     });
 
     it('has proper label associations for all form controls', () => {
       render(<LoginPage />);
 
-      expect(SELECTORS.emailInput()).toHaveAttribute('id', 'email');
-      expect(SELECTORS.passwordInput()).toHaveAttribute('id', 'password');
-      expect(SELECTORS.rememberMeCheckbox()).toHaveAttribute(
+      expect(LOGIN_SELECTORS.emailInput()).toHaveAttribute('id', 'email');
+      expect(LOGIN_SELECTORS.passwordInput()).toHaveAttribute('id', 'password');
+      expect(LOGIN_SELECTORS.rememberMeCheckbox()).toHaveAttribute(
         'id',
         'remember-me'
       );
@@ -430,13 +268,13 @@ describe('LoginPage', () => {
       render(<LoginPage />);
 
       await user.tab();
-      expect(SELECTORS.emailInput()).toHaveFocus();
+      expect(LOGIN_SELECTORS.emailInput()).toHaveFocus();
 
       await user.tab();
-      expect(SELECTORS.passwordInput()).toHaveFocus();
+      expect(LOGIN_SELECTORS.passwordInput()).toHaveFocus();
 
       await user.tab();
-      expect(SELECTORS.rememberMeCheckbox()).toHaveFocus();
+      expect(LOGIN_SELECTORS.rememberMeCheckbox()).toHaveFocus();
     });
   });
 
@@ -444,17 +282,17 @@ describe('LoginPage', () => {
     it('applies correct CSS classes for responsive design', () => {
       render(<LoginPage />);
 
-      const mainElement = SELECTORS.mainElement();
+      const mainElement = LOGIN_SELECTORS.mainElement();
       expect(mainElement).toHaveClass('min-h-screen', 'w-screen', 'max-w-full');
 
-      const heading = SELECTORS.mainHeading();
+      const heading = LOGIN_SELECTORS.mainHeading();
       expectClasses(heading, CSS_CLASSES.responsive.heading);
     });
 
     it('applies gradient styling to main heading', () => {
       render(<LoginPage />);
 
-      const heading = SELECTORS.mainHeading();
+      const heading = LOGIN_SELECTORS.mainHeading();
       expectClasses(heading, CSS_CLASSES.gradients.heading);
     });
   });
@@ -464,7 +302,7 @@ describe('LoginPage', () => {
       const user = userEvent.setup();
       render(<LoginPage />);
 
-      const emailInput = SELECTORS.emailInput();
+      const emailInput = LOGIN_SELECTORS.emailInput();
       await user.type(emailInput, TEST_DATA.invalidEmail);
 
       expect(emailInput).toBeInvalid();
@@ -476,9 +314,9 @@ describe('LoginPage', () => {
 
       await fillForm(user, { rememberMe: true });
 
-      expect(SELECTORS.emailInput()).toHaveValue(TEST_DATA.email);
-      expect(SELECTORS.passwordInput()).toHaveValue(TEST_DATA.password);
-      expect(SELECTORS.rememberMeCheckbox()).toBeChecked();
+      expect(LOGIN_SELECTORS.emailInput()).toHaveValue(TEST_DATA.email);
+      expect(LOGIN_SELECTORS.passwordInput()).toHaveValue(TEST_DATA.password);
+      expect(LOGIN_SELECTORS.rememberMeCheckbox()).toBeChecked();
     });
 
     it('clears error message when form is resubmitted', async () => {
@@ -528,7 +366,7 @@ describe('LoginPage', () => {
       await submitForm(user);
 
       await waitFor(() => {
-        const errorMessage = SELECTORS.errorMessage();
+        const errorMessage = LOGIN_SELECTORS.errorMessage();
         expect(errorMessage).toBeInTheDocument();
 
         const errorContainer = errorMessage.closest('div');
@@ -563,8 +401,8 @@ describe('LoginPage', () => {
         expectErrorToBeVisible();
       });
 
-      await user.clear(SELECTORS.emailInput());
-      await user.clear(SELECTORS.passwordInput());
+      await user.clear(LOGIN_SELECTORS.emailInput());
+      await user.clear(LOGIN_SELECTORS.passwordInput());
       await fillForm(user);
 
       mockSuccessfulSignIn();
@@ -580,14 +418,14 @@ describe('LoginPage', () => {
     it('applies responsive text sizing for heading', () => {
       render(<LoginPage />);
 
-      const heading = SELECTORS.mainHeading();
+      const heading = LOGIN_SELECTORS.mainHeading();
       expectClasses(heading, CSS_CLASSES.responsive.heading);
     });
 
     it('applies responsive spacing and padding', () => {
       render(<LoginPage />);
 
-      const mainElement = SELECTORS.mainElement();
+      const mainElement = LOGIN_SELECTORS.mainElement();
       expectClasses(mainElement, CSS_CLASSES.responsive.mainPadding);
 
       const container = mainElement.querySelector('div');
@@ -597,7 +435,7 @@ describe('LoginPage', () => {
     it('applies responsive form spacing', () => {
       render(<LoginPage />);
 
-      const form = SELECTORS.form();
+      const form = LOGIN_SELECTORS.form();
       expectClasses(form, CSS_CLASSES.responsive.formSpacing);
 
       const formFields = form?.querySelector('div');
@@ -609,14 +447,14 @@ describe('LoginPage', () => {
     it('applies responsive input styling', () => {
       render(<LoginPage />);
 
-      const emailInput = SELECTORS.emailInput();
+      const emailInput = LOGIN_SELECTORS.emailInput();
       expectClasses(emailInput, CSS_CLASSES.responsive.input);
     });
 
     it('applies responsive button styling', () => {
       render(<LoginPage />);
 
-      const submitButton = SELECTORS.submitButton();
+      const submitButton = LOGIN_SELECTORS.submitButton('sign in');
       expectClasses(submitButton, CSS_CLASSES.responsive.button);
     });
 
@@ -639,21 +477,21 @@ describe('LoginPage', () => {
     it('applies gradient background to main container', () => {
       render(<LoginPage />);
 
-      const mainElement = SELECTORS.mainElement();
+      const mainElement = LOGIN_SELECTORS.mainElement();
       expectClasses(mainElement, CSS_CLASSES.gradients.main);
     });
 
     it('applies gradient text to heading', () => {
       render(<LoginPage />);
 
-      const heading = SELECTORS.mainHeading();
+      const heading = LOGIN_SELECTORS.mainHeading();
       expectClasses(heading, CSS_CLASSES.gradients.heading);
     });
 
     it('applies gradient styling to submit button', () => {
       render(<LoginPage />);
 
-      const submitButton = SELECTORS.submitButton();
+      const submitButton = LOGIN_SELECTORS.submitButton('sign in');
       expectClasses(submitButton, CSS_CLASSES.gradients.button);
     });
 
@@ -666,7 +504,7 @@ describe('LoginPage', () => {
       await fillForm(user);
       await submitForm(user);
 
-      const submitButton = SELECTORS.submitButtonLoading();
+      const submitButton = LOGIN_SELECTORS.submitButtonLoading('signing in');
       expectClasses(submitButton, CSS_CLASSES.disabled);
       expect(submitButton).toBeDisabled();
     });
@@ -674,13 +512,13 @@ describe('LoginPage', () => {
     it('applies hover effects to interactive elements', () => {
       render(<LoginPage />);
 
-      const submitButton = SELECTORS.submitButton();
+      const submitButton = LOGIN_SELECTORS.submitButton('sign in');
       expectClasses(submitButton, CSS_CLASSES.hover.button);
 
-      const forgotPasswordLink = SELECTORS.forgotPasswordLink();
+      const forgotPasswordLink = LOGIN_SELECTORS.forgotPasswordLink();
       expectClasses(forgotPasswordLink, CSS_CLASSES.hover.link);
 
-      const signupLink = SELECTORS.signupLink();
+      const signupLink = LOGIN_SELECTORS.signupLink();
       expectClasses(signupLink, CSS_CLASSES.hover.link);
     });
   });
@@ -689,7 +527,7 @@ describe('LoginPage', () => {
     it('renders separator with proper styling', () => {
       render(<LoginPage />);
 
-      const separators = SELECTORS.separators();
+      const separators = LOGIN_SELECTORS.separators();
       expect(separators).toHaveLength(2);
 
       separators.forEach(separator => {
@@ -700,7 +538,7 @@ describe('LoginPage', () => {
     it('renders "or" text between separators', () => {
       render(<LoginPage />);
 
-      const orText = SELECTORS.orText();
+      const orText = LOGIN_SELECTORS.orText();
       expect(orText).toBeInTheDocument();
       expectClasses(orText, CSS_CLASSES.orText);
     });
@@ -711,7 +549,7 @@ describe('LoginPage', () => {
       const user = userEvent.setup();
       render(<LoginPage />);
 
-      await user.type(SELECTORS.passwordInput(), TEST_DATA.password);
+      await user.type(LOGIN_SELECTORS.passwordInput(), TEST_DATA.password);
       await submitForm(user);
 
       expect(mockSignIn).not.toHaveBeenCalled();
@@ -721,7 +559,7 @@ describe('LoginPage', () => {
       const user = userEvent.setup();
       render(<LoginPage />);
 
-      await user.type(SELECTORS.emailInput(), TEST_DATA.email);
+      await user.type(LOGIN_SELECTORS.emailInput(), TEST_DATA.email);
       await submitForm(user);
 
       expect(mockSignIn).not.toHaveBeenCalled();
@@ -731,7 +569,7 @@ describe('LoginPage', () => {
       const user = userEvent.setup();
       render(<LoginPage />);
 
-      const emailInput = SELECTORS.emailInput();
+      const emailInput = LOGIN_SELECTORS.emailInput();
       await user.type(emailInput, TEST_DATA.invalidEmail);
       await user.tab();
 
