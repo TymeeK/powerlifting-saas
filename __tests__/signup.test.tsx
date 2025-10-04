@@ -75,7 +75,7 @@ describe('Signup Page', () => {
     );
   });
 
-  it('renders form inputs with correct attributes', () => {
+  it('renders form inputs with empty initial values', () => {
     const {
       firstNameInput,
       lastNameInput,
