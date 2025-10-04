@@ -117,13 +117,14 @@ describe('Signup Page', () => {
       expect(confirmPasswordInput).toHaveValue('password');
     });
 
-    // it('shows password mismatch warning when passwords do not match', async () => {
-    //   const { passwordInput, confirmPasswordInput } = getFormInputs();
-    //   await user.type(passwordInput, 'password');
-    //   await user.type(confirmPasswordInput, 'password1');
-    //   await user.click(submitButton);
-    //   expect(SIGNUP_SELECTORS.passwordMismatchWarning()).toBeInTheDocument();
-    // });
+    it('shows password mismatch warning when passwords do not match', async () => {
+      const { passwordInput, confirmPasswordInput, submitButton } =
+        getFormInputs();
+      await user.type(passwordInput, 'password');
+      await user.type(confirmPasswordInput, 'password1');
+      await user.click(submitButton);
+      expect(SIGNUP_SELECTORS.passwordMismatchWarning()).toBeInTheDocument();
+    });
 
     // it('shows error message when form is submitted with empty fields', async () => {
     //   const { submitButton } = getFormInputs();
