@@ -1,6 +1,10 @@
 import { expect } from 'vitest';
 import { screen } from '@testing-library/react';
-import { LOGIN_SELECTORS, FORGOT_PASSWORD_SELECTORS } from './selectors';
+import {
+  LOGIN_SELECTORS,
+  FORGOT_PASSWORD_SELECTORS,
+  SIGNUP_SELECTORS,
+} from './selectors';
 import { TEST_DATA } from './test-data';
 
 // Common helper function for CSS class assertions
@@ -176,6 +180,117 @@ export const createForgotPasswordHelpers = (mockResetPassword: any) => {
     expectErrorToBeHidden,
     expectSuccessToBeVisible,
     expectSuccessToBeHidden,
+    expectLoadingState,
+    expectNotLoadingState,
+  };
+};
+
+// Signup-specific helper functions
+export const createSignupHelpers = (mockSignUp: any) => {
+  const fillForm = async (
+    user: any,
+    data: {
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+      password?: string;
+      confirmPassword?: string;
+    } = {}
+  ) => {
+    const {
+      firstName = 'John',
+      lastName = 'Doe',
+      email = TEST_DATA.email,
+      password = TEST_DATA.password,
+      confirmPassword = TEST_DATA.password,
+    } = data;
+
+    if (firstName)
+      await user.type(SIGNUP_SELECTORS.firstNameInput(), firstName);
+    if (lastName) await user.type(SIGNUP_SELECTORS.lastNameInput(), lastName);
+    if (email) await user.type(SIGNUP_SELECTORS.emailInput(), email);
+    if (password) await user.type(SIGNUP_SELECTORS.passwordInput(), password);
+    if (confirmPassword)
+      await user.type(SIGNUP_SELECTORS.confirmPasswordInput(), confirmPassword);
+  };
+
+  const submitForm = async (user: any) => {
+    await user.click(SIGNUP_SELECTORS.submitButton());
+  };
+
+  const mockSuccessfulSignUp = () => {
+    mockSignUp.mockResolvedValue({
+      success: true,
+      user: TEST_DATA.user,
+    });
+  };
+
+  const mockFailedSignUp = (error = 'An error occurred during sign up') => {
+    mockSignUp.mockRejectedValue(new Error(error));
+  };
+
+  const mockDelayedSignUp = (delay = 100) => {
+    mockSignUp.mockImplementation(
+      () =>
+        new Promise(resolve =>
+          setTimeout(
+            () =>
+              resolve({
+                success: true,
+                user: TEST_DATA.user,
+              }),
+            delay
+          )
+        )
+    );
+  };
+
+  const expectErrorToBeVisible = () => {
+    expect(SIGNUP_SELECTORS.errorMessage()).toBeInTheDocument();
+  };
+
+  const expectErrorToBeHidden = () => {
+    expect(SIGNUP_SELECTORS.errorMessage()).not.toBeInTheDocument();
+  };
+
+  const expectSuccessToBeVisible = () => {
+    expect(SIGNUP_SELECTORS.successMessage()).toBeInTheDocument();
+  };
+
+  const expectSuccessToBeHidden = () => {
+    expect(SIGNUP_SELECTORS.successMessage()).not.toBeInTheDocument();
+  };
+
+  const expectPasswordMismatchWarning = () => {
+    expect(SIGNUP_SELECTORS.passwordMismatchWarning()).toBeInTheDocument();
+  };
+
+  const expectPasswordMismatchHidden = () => {
+    expect(SIGNUP_SELECTORS.passwordMismatchWarning()).not.toBeInTheDocument();
+  };
+
+  const expectLoadingState = () => {
+    expect(screen.getByText('Creating Account...')).toBeInTheDocument();
+    expect(SIGNUP_SELECTORS.submitButtonLoading()).toBeDisabled();
+  };
+
+  const expectNotLoadingState = () => {
+    expect(screen.queryByText('Creating Account...')).not.toBeInTheDocument();
+    expect(SIGNUP_SELECTORS.submitButton()).not.toBeDisabled();
+  };
+
+  return {
+    fillForm,
+    submitForm,
+    mockSuccessfulSignUp,
+    mockFailedSignUp,
+    mockDelayedSignUp,
+    expectErrorToBeVisible,
+    expectErrorToBeHidden,
+    expectSuccessToBeVisible,
+    expectSuccessToBeHidden,
+    expectPasswordMismatchWarning,
+    expectPasswordMismatchHidden,
     expectLoadingState,
     expectNotLoadingState,
   };
