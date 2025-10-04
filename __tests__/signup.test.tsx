@@ -18,8 +18,11 @@ describe('Signup Page', () => {
       emailInput: SIGNUP_SELECTORS.emailInput(),
       passwordInput: SIGNUP_SELECTORS.passwordInput(),
       confirmPasswordInput: SIGNUP_SELECTORS.confirmPasswordInput(),
+      submitButton: SIGNUP_SELECTORS.submitButton(),
     };
   };
+
+  const user = userEvent.setup();
 
   beforeEach(() => {
     render(<SignupPage />);
@@ -88,38 +91,44 @@ describe('Signup Page', () => {
     expect(confirmPasswordInput).toHaveValue('');
   });
 
-  it('allows user to type in first name field', async () => {
-    const user = userEvent.setup();
-    const { firstNameInput } = getFormInputs();
-    await user.type(firstNameInput, 'John');
-    expect(firstNameInput).toHaveValue('John');
-  });
+  describe('Form Interaction', () => {
+    it('allows user to type in all form fields', async () => {
+      const {
+        firstNameInput,
+        lastNameInput,
+        emailInput,
+        passwordInput,
+        confirmPasswordInput,
+      } = getFormInputs();
 
-  it('allows user to type in last name field', async () => {
-    const user = userEvent.setup();
-    const { lastNameInput } = getFormInputs();
-    await user.type(lastNameInput, 'Doe');
-    expect(lastNameInput).toHaveValue('Doe');
-  });
+      await user.type(firstNameInput, 'John');
+      expect(firstNameInput).toHaveValue('John');
 
-  it('allows user to type in email field', async () => {
-    const user = userEvent.setup();
-    const { emailInput } = getFormInputs();
-    await user.type(emailInput, 'john.doe@example.com');
-    expect(emailInput).toHaveValue('john.doe@example.com');
-  });
+      await user.type(lastNameInput, 'Doe');
+      expect(lastNameInput).toHaveValue('Doe');
 
-  it('allows user to type in password field', async () => {
-    const user = userEvent.setup();
-    const { passwordInput } = getFormInputs();
-    await user.type(passwordInput, 'password');
-    expect(passwordInput).toHaveValue('password');
-  });
+      await user.type(emailInput, 'john.doe@example.com');
+      expect(emailInput).toHaveValue('john.doe@example.com');
 
-  it('allows user to type in confirm password field', async () => {
-    const user = userEvent.setup();
-    const { confirmPasswordInput } = getFormInputs();
-    await user.type(confirmPasswordInput, 'password');
-    expect(confirmPasswordInput).toHaveValue('password');
+      await user.type(passwordInput, 'password');
+      expect(passwordInput).toHaveValue('password');
+
+      await user.type(confirmPasswordInput, 'password');
+      expect(confirmPasswordInput).toHaveValue('password');
+    });
+
+    // it('shows password mismatch warning when passwords do not match', async () => {
+    //   const { passwordInput, confirmPasswordInput } = getFormInputs();
+    //   await user.type(passwordInput, 'password');
+    //   await user.type(confirmPasswordInput, 'password1');
+    //   await user.click(submitButton);
+    //   expect(SIGNUP_SELECTORS.passwordMismatchWarning()).toBeInTheDocument();
+    // });
+
+    // it('shows error message when form is submitted with empty fields', async () => {
+    //   const { submitButton } = getFormInputs();
+    //   await user.click(submitButton);
+    //   expect(SIGNUP_SELECTORS.errorMessage()).toBeInTheDocument();
+    // });
   });
 });
