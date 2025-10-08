@@ -125,10 +125,35 @@ describe('Signup Page', () => {
       await user.click(submitButton);
       expect(SIGNUP_SELECTORS.passwordMismatchWarning()).toBeInTheDocument();
     });
+  });
 
+  describe('Form Validation & Button State', () => {
     it('disables submit button when form fields are empty', () => {
       const { submitButton } = getFormInputs();
       expect(submitButton).toBeDisabled();
+    });
+
+    // it('shows error message when form is submitted with empty fields', async () => {
+    //   const { submitButton } = getFormInputs();
+    //   await user.click(submitButton);
+    //   expect(SIGNUP_SELECTORS.errorMessageEmptyFields()).toBeInTheDocument();
+    // });
+
+    it('enables submit button when form fields are filled', async () => {
+      const {
+        firstNameInput,
+        lastNameInput,
+        emailInput,
+        passwordInput,
+        confirmPasswordInput,
+        submitButton,
+      } = getFormInputs();
+      await user.type(firstNameInput, 'John');
+      await user.type(lastNameInput, 'Doe');
+      await user.type(emailInput, 'john.doe@example.com');
+      await user.type(passwordInput, 'password');
+      await user.type(confirmPasswordInput, 'password');
+      expect(submitButton).toBeEnabled();
     });
   });
 });
