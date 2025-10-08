@@ -133,11 +133,11 @@ describe('Signup Page', () => {
       expect(submitButton).toBeDisabled();
     });
 
-    // it('shows error message when form is submitted with empty fields', async () => {
-    //   const { submitButton } = getFormInputs();
-    //   await user.click(submitButton);
-    //   expect(SIGNUP_SELECTORS.errorMessageEmptyFields()).toBeInTheDocument();
-    // });
+    it('Submit button is disabled when form is submitted with empty fields', async () => {
+      const { submitButton } = getFormInputs();
+      await user.click(submitButton);
+      expect(submitButton).toBeDisabled();
+    });
 
     it('enables submit button when form fields are filled', async () => {
       const {
