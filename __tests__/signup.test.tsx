@@ -10,23 +10,28 @@ vi.mock('@/lib/firebase', () => ({
   signUp: vi.fn(),
 }));
 
-describe('Signup Page', () => {
-  const getFormInputs = () => {
-    return {
-      firstNameInput: SIGNUP_SELECTORS.firstNameInput(),
-      lastNameInput: SIGNUP_SELECTORS.lastNameInput(),
-      emailInput: SIGNUP_SELECTORS.emailInput(),
-      passwordInput: SIGNUP_SELECTORS.passwordInput(),
-      confirmPasswordInput: SIGNUP_SELECTORS.confirmPasswordInput(),
-      submitButton: SIGNUP_SELECTORS.submitButton(),
-    };
+// Shared test utilities
+const getFormInputs = () => {
+  return {
+    firstNameInput: SIGNUP_SELECTORS.firstNameInput(),
+    lastNameInput: SIGNUP_SELECTORS.lastNameInput(),
+    emailInput: SIGNUP_SELECTORS.emailInput(),
+    passwordInput: SIGNUP_SELECTORS.passwordInput(),
+    confirmPasswordInput: SIGNUP_SELECTORS.confirmPasswordInput(),
+    submitButton: SIGNUP_SELECTORS.submitButton(),
   };
+};
 
-  const user = userEvent.setup();
+const user = userEvent.setup();
 
+const setupTest = () => {
+  render(<SignupPage />);
+  vi.clearAllMocks();
+};
+
+describe('Signup Page Rendering', () => {
   beforeEach(() => {
-    render(<SignupPage />);
-    vi.clearAllMocks();
+    setupTest();
   });
 
   it('renders the signup page', () => {
@@ -90,81 +95,87 @@ describe('Signup Page', () => {
     expect(passwordInput).toHaveValue('');
     expect(confirmPasswordInput).toHaveValue('');
   });
+});
 
-  describe('Form Interaction', () => {
-    it('allows user to type in all form fields', async () => {
-      const {
-        firstNameInput,
-        lastNameInput,
-        emailInput,
-        passwordInput,
-        confirmPasswordInput,
-      } = getFormInputs();
-
-      await user.type(firstNameInput, 'John');
-      expect(firstNameInput).toHaveValue('John');
-
-      await user.type(lastNameInput, 'Doe');
-      expect(lastNameInput).toHaveValue('Doe');
-
-      await user.type(emailInput, 'john.doe@example.com');
-      expect(emailInput).toHaveValue('john.doe@example.com');
-
-      await user.type(passwordInput, 'password');
-      expect(passwordInput).toHaveValue('password');
-
-      await user.type(confirmPasswordInput, 'password');
-      expect(confirmPasswordInput).toHaveValue('password');
-    });
-
-    it('shows password mismatch warning when passwords do not match', async () => {
-      const { passwordInput, confirmPasswordInput } = getFormInputs();
-      await user.type(passwordInput, 'password');
-      await user.type(confirmPasswordInput, 'password1');
-      expect(SIGNUP_SELECTORS.passwordMismatchWarning()).toBeInTheDocument();
-    });
-
-    it('hides password mismatch warning when passwords match', async () => {
-      const { passwordInput, confirmPasswordInput } = getFormInputs();
-      await user.type(passwordInput, 'password');
-      await user.type(confirmPasswordInput, 'password456');
-      expect(SIGNUP_SELECTORS.passwordMismatchWarning()).toBeInTheDocument();
-
-      await user.clear(confirmPasswordInput);
-      await user.type(confirmPasswordInput, 'password');
-      expect(
-        SIGNUP_SELECTORS.passwordMismatchWarning()
-      ).not.toBeInTheDocument();
-    });
+describe('Signup Form Interaction', () => {
+  beforeEach(() => {
+    setupTest();
   });
 
-  describe('Form Validation & Button State', () => {
-    it('disables submit button when form fields are empty', () => {
-      const { submitButton } = getFormInputs();
-      expect(submitButton).toBeDisabled();
-    });
+  it('allows user to type in all form fields', async () => {
+    const {
+      firstNameInput,
+      lastNameInput,
+      emailInput,
+      passwordInput,
+      confirmPasswordInput,
+    } = getFormInputs();
 
-    it('Submit button is disabled when form is submitted with empty fields', async () => {
-      const { submitButton } = getFormInputs();
-      await user.click(submitButton);
-      expect(submitButton).toBeDisabled();
-    });
+    await user.type(firstNameInput, 'John');
+    expect(firstNameInput).toHaveValue('John');
 
-    it('enables submit button when form fields are filled', async () => {
-      const {
-        firstNameInput,
-        lastNameInput,
-        emailInput,
-        passwordInput,
-        confirmPasswordInput,
-        submitButton,
-      } = getFormInputs();
-      await user.type(firstNameInput, 'John');
-      await user.type(lastNameInput, 'Doe');
-      await user.type(emailInput, 'john.doe@example.com');
-      await user.type(passwordInput, 'password');
-      await user.type(confirmPasswordInput, 'password');
-      expect(submitButton).toBeEnabled();
-    });
+    await user.type(lastNameInput, 'Doe');
+    expect(lastNameInput).toHaveValue('Doe');
+
+    await user.type(emailInput, 'john.doe@example.com');
+    expect(emailInput).toHaveValue('john.doe@example.com');
+
+    await user.type(passwordInput, 'password');
+    expect(passwordInput).toHaveValue('password');
+
+    await user.type(confirmPasswordInput, 'password');
+    expect(confirmPasswordInput).toHaveValue('password');
+  });
+
+  it('shows password mismatch warning when passwords do not match', async () => {
+    const { passwordInput, confirmPasswordInput } = getFormInputs();
+    await user.type(passwordInput, 'password');
+    await user.type(confirmPasswordInput, 'password1');
+    expect(SIGNUP_SELECTORS.passwordMismatchWarning()).toBeInTheDocument();
+  });
+
+  it('hides password mismatch warning when passwords match', async () => {
+    const { passwordInput, confirmPasswordInput } = getFormInputs();
+    await user.type(passwordInput, 'password');
+    await user.type(confirmPasswordInput, 'password456');
+    expect(SIGNUP_SELECTORS.passwordMismatchWarning()).toBeInTheDocument();
+
+    await user.clear(confirmPasswordInput);
+    await user.type(confirmPasswordInput, 'password');
+    expect(SIGNUP_SELECTORS.passwordMismatchWarning()).not.toBeInTheDocument();
+  });
+});
+
+describe('Signup Form Validation', () => {
+  beforeEach(() => {
+    setupTest();
+  });
+
+  it('disables submit button when form fields are empty', () => {
+    const { submitButton } = getFormInputs();
+    expect(submitButton).toBeDisabled();
+  });
+
+  it('Submit button is disabled when form is submitted with empty fields', async () => {
+    const { submitButton } = getFormInputs();
+    await user.click(submitButton);
+    expect(submitButton).toBeDisabled();
+  });
+
+  it('enables submit button when form fields are filled', async () => {
+    const {
+      firstNameInput,
+      lastNameInput,
+      emailInput,
+      passwordInput,
+      confirmPasswordInput,
+      submitButton,
+    } = getFormInputs();
+    await user.type(firstNameInput, 'John');
+    await user.type(lastNameInput, 'Doe');
+    await user.type(emailInput, 'john.doe@example.com');
+    await user.type(passwordInput, 'password');
+    await user.type(confirmPasswordInput, 'password');
+    expect(submitButton).toBeEnabled();
   });
 });
