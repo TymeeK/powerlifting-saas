@@ -118,12 +118,23 @@ describe('Signup Page', () => {
     });
 
     it('shows password mismatch warning when passwords do not match', async () => {
-      const { passwordInput, confirmPasswordInput, submitButton } =
-        getFormInputs();
+      const { passwordInput, confirmPasswordInput } = getFormInputs();
       await user.type(passwordInput, 'password');
       await user.type(confirmPasswordInput, 'password1');
-      await user.click(submitButton);
       expect(SIGNUP_SELECTORS.passwordMismatchWarning()).toBeInTheDocument();
+    });
+
+    it('hides password mismatch warning when passwords match', async () => {
+      const { passwordInput, confirmPasswordInput } = getFormInputs();
+      await user.type(passwordInput, 'password');
+      await user.type(confirmPasswordInput, 'password456');
+      expect(SIGNUP_SELECTORS.passwordMismatchWarning()).toBeInTheDocument();
+
+      await user.clear(confirmPasswordInput);
+      await user.type(confirmPasswordInput, 'password');
+      expect(
+        SIGNUP_SELECTORS.passwordMismatchWarning()
+      ).not.toBeInTheDocument();
     });
   });
 
