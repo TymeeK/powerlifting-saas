@@ -96,7 +96,6 @@ export default function DashboardPage() {
   const [summaryError, setSummaryError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Fetch summary data when user is available
   const fetchSummaryData = async (userId: string) => {
     setSummaryLoading(true);
     setSummaryError(null);
@@ -119,10 +118,8 @@ export default function DashboardPage() {
     const unsubscribe = onAuthStateChanged(auth, user => {
       if (user) {
         setUser(user);
-        // Fetch summary data when user is authenticated
         fetchSummaryData(user.uid);
       } else {
-        // User is not logged in, redirect to login
         router.push('/login');
       }
       setLoading(false);
@@ -145,13 +142,12 @@ export default function DashboardPage() {
   }
 
   if (!user) {
-    return null; // Will redirect to login
+    return null;
   }
 
   return (
     <main className='min-h-screen w-screen max-w-full overflow-x-hidden flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-4 sm:px-6 lg:px-8 py-8'>
       <div className='w-full max-w-4xl text-center'>
-        {/* User Profile Section */}
         <UserProfileCard user={user} />
 
         <div className='flex flex-col sm:flex-row gap-4'>
