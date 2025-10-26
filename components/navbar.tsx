@@ -81,7 +81,13 @@ export function Navbar() {
   const [isOpen, setIsOpen] = React.useState(false);
   const [user, setUser] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
+  const [currentPath, setCurrentPath] = React.useState('');
   const router = useRouter();
+
+  React.useEffect(() => {
+    // Track current path
+    setCurrentPath(window.location.pathname);
+  }, []);
 
   React.useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, user => {
@@ -105,12 +111,16 @@ export function Navbar() {
     }
   };
 
+  // On auth pages (signup/login), always show guest navbar even if user is logged in
+  const isAuthPage = currentPath === '/signup' || currentPath === '/login';
+  const showUserNav = user !== null && !isAuthPage;
+
   return (
     <header className='sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
       <div className='container flex h-16 items-center justify-between'>
         <div className='mr-4 flex'>
           <Link
-            href={user ? '/dashboard' : '/'}
+            href={showUserNav ? '/dashboard' : '/'}
             className='mr-6 flex items-center space-x-2'
           >
             <div className='h-6 w-6 rounded bg-gradient-to-r from-purple-500 to-pink-500' />
@@ -126,7 +136,7 @@ export function Navbar() {
                 <NavigationMenuItem>
                   <div className='h-10 w-20 animate-pulse bg-gray-200 rounded'></div>
                 </NavigationMenuItem>
-              ) : user !== null ? (
+              ) : showUserNav ? (
                 // Authenticated user navigation
                 <>
                   <NavigationMenuItem>
@@ -218,7 +228,7 @@ export function Navbar() {
               <div className='w-20 h-8 animate-pulse bg-gray-200 rounded'></div>
               <div className='w-16 h-8 animate-pulse bg-gray-200 rounded'></div>
             </div>
-          ) : user !== null ? (
+          ) : showUserNav ? (
             <div className='flex items-center space-x-3'>
               <Button
                 size='sm'
@@ -279,7 +289,7 @@ export function Navbar() {
                       <div className='h-10 w-full animate-pulse bg-gray-200 rounded'></div>
                     </div>
                   </div>
-                ) : user !== null ? (
+                ) : showUserNav ? (
                   // Authenticated user mobile navigation
                   <>
                     {/* Mobile Dashboard Section */}
@@ -400,7 +410,7 @@ export function Navbar() {
                       <div className='w-full h-12 animate-pulse bg-gray-200 rounded-lg'></div>
                       <div className='w-full h-12 animate-pulse bg-gray-200 rounded-lg'></div>
                     </div>
-                  ) : user !== null ? (
+                  ) : showUserNav ? (
                     <div className='space-y-3'>
                       <Button
                         size='lg'
