@@ -22,15 +22,12 @@ import ExerciseCard from '@/components/workout/ExerciseCard';
 import LoadingScreen from '@/components/workout/LoadingScreen';
 import WorkoutConfirmationModal from '@/components/workout/WorkoutConfirmationModal';
 import EmptyStateCard from '@/components/workout/EmptyStateCard';
-import { buttonVariants } from '@/lib/button-variants';
 import {
   type WorkoutState,
   type ModalState,
   type FormState,
   type LoadingState,
   type ErrorState,
-  saveSetsToStorage,
-  loadSetsFromStorage,
   saveWorkoutStateToStorage,
   loadWorkoutStateFromStorage,
   clearWorkoutStateFromStorage,
@@ -39,7 +36,6 @@ import {
   updateSetInExercise,
   toggleSetComplete,
   getExerciseProgress,
-  getOrdinalSuffix,
 } from '@/lib/workout-utils';
 import BackToDashboardButton from '@/components/back-button';
 
@@ -62,7 +58,6 @@ export default function WorkoutPage() {
 
   const [formState, setFormState] = useState<FormState>({
     newExerciseName: '',
-    newExerciseCategory: '',
   });
 
   const [loadingState, setLoadingState] = useState<LoadingState>({
@@ -83,7 +78,6 @@ export default function WorkoutPage() {
   const [pastExercises, setPastExercises] = useState<
     Array<{
       name: string;
-      category: string;
       lastUsed: Date;
       totalWorkouts: number;
     }>
@@ -105,10 +99,10 @@ export default function WorkoutPage() {
 
   const handleMouseLeave = () => {
     setIsHoveringFloatingButton(false);
-    // Set a delay before closing the menu
+
     const timeout = setTimeout(() => {
       setIsFloatingMenuOpen(false);
-    }, 300); // 300ms delay
+    }, 300);
     setHoverTimeout(timeout);
   };
 
@@ -212,8 +206,8 @@ export default function WorkoutPage() {
     }));
   };
 
-  const handleAddExercise = (name: string, category: string) => {
-    const newExercise = createNewExercise(name, category);
+  const handleAddExercise = (name: string) => {
+    const newExercise = createNewExercise(name);
     setWorkoutState(prev => ({
       ...prev,
       exercises: [...prev.exercises, newExercise],
@@ -225,13 +219,13 @@ export default function WorkoutPage() {
     }));
   };
 
-  const handleEditExercise = (name: string, category: string) => {
+  const handleEditExercise = (name: string) => {
     if (modalState.editingExercise) {
       setWorkoutState(prev => ({
         ...prev,
         exercises: prev.exercises.map(ex =>
           ex.id === modalState.editingExercise
-            ? { ...ex, name: name.trim(), category: category.trim() }
+            ? { ...ex, name: name.trim() }
             : ex
         ),
       }));
@@ -260,7 +254,6 @@ export default function WorkoutPage() {
     if (exercise) {
       setFormState({
         newExerciseName: exercise.name,
-        newExerciseCategory: exercise.category,
       });
       setModalState(prev => ({
         ...prev,
@@ -291,11 +284,8 @@ export default function WorkoutPage() {
     }
   };
 
-  const addPastExerciseToWorkout = (
-    exerciseName: string,
-    exerciseCategory: string
-  ) => {
-    const newExercise = createNewExercise(exerciseName, exerciseCategory);
+  const addPastExerciseToWorkout = (exerciseName: string) => {
+    const newExercise = createNewExercise(exerciseName);
     setWorkoutState(prev => ({
       ...prev,
       exercises: [...prev.exercises, newExercise],
@@ -321,7 +311,6 @@ export default function WorkoutPage() {
         exercise => ({
           id: exercise.id,
           name: exercise.name,
-          category: exercise.category,
           sets: workoutState.sets[exercise.id] || [],
         })
       );
@@ -423,8 +412,10 @@ export default function WorkoutPage() {
               editingExercise: null,
             }))
           }
-          onSave={
-            modalState.editingExercise ? handleEditExercise : handleAddExercise
+          onSave={name =>
+            modalState.editingExercise
+              ? handleEditExercise(name)
+              : handleAddExercise(name)
           }
           editingExercise={
             modalState.editingExercise

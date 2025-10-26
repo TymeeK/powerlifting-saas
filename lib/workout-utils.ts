@@ -22,7 +22,6 @@ export interface ModalState {
 
 export interface FormState {
   newExerciseName: string;
-  newExerciseCategory: string;
 }
 
 export interface LoadingState {
@@ -120,15 +119,11 @@ export const clearWorkoutStateFromStorage = () => {
 };
 
 // Exercise management utilities
-export const createNewExercise = (
-  name: string,
-  category: string
-): UserExercise => {
+export const createNewExercise = (name: string): UserExercise => {
   const now = new Date();
   return {
     id: Date.now().toString(),
     name: name.trim(),
-    category: category.trim(),
     createdAt: now,
     updatedAt: now,
   };
@@ -199,11 +194,7 @@ export const getOrdinalSuffix = (num: number): string => {
 };
 
 // Validation utilities
-export const validateExerciseForm = (
-  name: string,
-  category: string
-): string | null => {
+export const validateExerciseForm = (name: string): string | null => {
   if (!name.trim()) return 'Exercise name is required';
-  if (!category.trim()) return 'Exercise category is required';
   return null;
 };

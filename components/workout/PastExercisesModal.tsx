@@ -12,7 +12,6 @@ import { formatLastUsed } from '@/lib/workout-utils';
 
 interface PastExercise {
   name: string;
-  category: string;
   lastUsed: Date;
   totalWorkouts: number;
 }
@@ -22,7 +21,7 @@ interface PastExercisesModalProps {
   onClose: () => void;
   exercises: PastExercise[];
   loading: boolean;
-  onAddExercise: (name: string, category: string) => void;
+  onAddExercise: (name: string) => void;
 }
 
 export default function PastExercisesModal({
@@ -76,9 +75,7 @@ export default function PastExercisesModal({
                 <Card
                   key={index}
                   className={cardVariants.pastExercise}
-                  onClick={() =>
-                    onAddExercise(exercise.name, exercise.category)
-                  }
+                  onClick={() => onAddExercise(exercise.name)}
                 >
                   <CardContent className='p-4'>
                     <div className='flex items-center justify-between'>
@@ -90,9 +87,6 @@ export default function PastExercisesModal({
                           <h3 className='text-white font-semibold text-lg'>
                             {exercise.name}
                           </h3>
-                          <p className='text-orange-200 text-sm'>
-                            {exercise.category}
-                          </p>
                         </div>
                       </div>
                       <div className='text-right'>

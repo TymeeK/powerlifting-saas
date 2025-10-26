@@ -52,7 +52,6 @@ export const loadUserExerciseLibrary = async (userId: string) => {
       exercises.push({
         id: doc.id,
         name: data.name,
-        category: data.category,
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate() || new Date(),
       });
@@ -75,7 +74,7 @@ export const loadUserExerciseLibrary = async (userId: string) => {
 export const updateExerciseInLibrary = async (
   userId: string,
   exerciseId: string,
-  updates: Partial<Pick<UserExercise, 'name' | 'category'>>
+  updates: Partial<Pick<UserExercise, 'name'>>
 ) => {
   try {
     const exerciseRef = doc(db, 'users', userId, 'exercises', exerciseId);
@@ -127,7 +126,6 @@ export const getPastExercises = async (userId: string) => {
       string,
       {
         name: string;
-        category: string;
         lastUsed: Date;
         totalWorkouts: number;
       }
@@ -150,7 +148,6 @@ export const getPastExercises = async (userId: string) => {
             // Add new exercise
             exerciseMap.set(exercise.name, {
               name: exercise.name,
-              category: exercise.category,
               lastUsed: workoutDate,
               totalWorkouts: 1,
             });

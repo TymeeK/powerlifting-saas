@@ -1,18 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check, X } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { buttonVariants, inputVariants } from '@/lib/button-variants';
-import { validateExerciseForm } from '@/lib/workout-utils';
 
 interface AddExerciseModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (name: string, category: string) => void;
+  onSave: (name: string) => void;
   editingExercise?: {
     id: string;
     name: string;
-    category: string;
   } | null;
 }
 
@@ -23,25 +21,35 @@ export default function AddExerciseModal({
   editingExercise,
 }: AddExerciseModalProps) {
   const [name, setName] = useState(editingExercise?.name || '');
-  const [category, setCategory] = useState(editingExercise?.category || '');
   const [error, setError] = useState<string | null>(null);
 
+  // Update name when editingExercise changes
+  useEffect(() => {
+    if (editingExercise) {
+      setName(editingExercise.name);
+    } else {
+      setName('');
+    }
+  }, [editingExercise]);
+
   const handleSave = () => {
-    const validationError = validateExerciseForm(name, category);
-    if (validationError) {
-      setError(validationError);
+    // Validate the name
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      setError('Exercise name is required');
       return;
     }
 
-    onSave(name, category);
+    // Call onSave with the trimmed name
+    onSave(trimmedName);
+
+    // Clear the form
     setName('');
-    setCategory('');
     setError(null);
   };
 
   const handleClose = () => {
     setName('');
-    setCategory('');
     setError(null);
     onClose();
   };
@@ -71,21 +79,14 @@ export default function AddExerciseModal({
               type='text'
               value={name}
               onChange={e => setName(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  handleSave();
+                }
+              }}
               placeholder='e.g., Bench Press'
               className={inputVariants.text}
-            />
-          </div>
-
-          <div>
-            <label className='text-white text-sm font-medium mb-2 block'>
-              Category
-            </label>
-            <input
-              type='text'
-              value={category}
-              onChange={e => setCategory(e.target.value)}
-              placeholder='e.g., Chest, Legs, Back'
-              className={inputVariants.text}
+              autoFocus
             />
           </div>
 

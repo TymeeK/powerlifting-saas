@@ -25,7 +25,6 @@ export interface WorkoutSet {
 export interface WorkoutExercise {
   id: string;
   name: string;
-  category: string;
   sets: WorkoutSet[];
 }
 
@@ -40,7 +39,6 @@ export interface WorkoutData {
 export interface UserExercise {
   id: string;
   name: string;
-  category: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -53,7 +51,6 @@ export interface ExerciseLibrary {
 // Past exercises interface
 export interface PastExercise {
   name: string;
-  category: string;
   lastUsed: Date;
   totalWorkouts: number;
 }

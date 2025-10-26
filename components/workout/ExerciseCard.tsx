@@ -26,7 +26,6 @@ interface Set {
 interface Exercise {
   id: string;
   name: string;
-  category: string;
 }
 
 interface ExerciseProgress {
@@ -75,9 +74,6 @@ export default function ExerciseCard({
               <CardTitle className='text-white text-lg sm:text-xl truncate'>
                 {exercise.name}
               </CardTitle>
-              <CardDescription className='text-purple-200 text-sm'>
-                {exercise.category}
-              </CardDescription>
             </div>
           </div>
           <div className='flex items-center gap-1 sm:gap-2 flex-shrink-0'>
