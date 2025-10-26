@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Separator } from '@/components/ui/separator';
 import { signUp, SignUpData } from '@/lib/firebase';
 
@@ -16,6 +17,7 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [isFormFilled, setIsFormFilled] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     if (firstName && lastName && email && password && confirmPassword) {
@@ -87,10 +89,7 @@ export default function SignupPage() {
         setConfirmPassword('');
         setPasswordMismatch(false);
 
-        // Redirect to dashboard or login page after a short delay
-        setTimeout(() => {
-          window.location.href = '/login';
-        }, 2000);
+        router.push('/dashboard');
       }
     } catch (error: any) {
       setError(error.message || 'An error occurred during sign up');
@@ -275,7 +274,7 @@ export default function SignupPage() {
                   clipRule='evenodd'
                 />
               </svg>
-              Account created successfully! Redirecting to login page...
+              Account created successfully! Redirecting to dashboard...
             </p>
           </div>
         )}
