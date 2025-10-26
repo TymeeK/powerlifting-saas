@@ -23,6 +23,7 @@ import { useRouter } from 'next/navigation';
 import { auth } from '@/lib/firebase-config';
 import { onAuthStateChanged } from 'firebase/auth';
 import LoadingScreen from '@/components/workout/LoadingScreen';
+import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
 
 // Prefilled data for the three main lifts
 const exerciseData = {
@@ -88,31 +89,15 @@ const overallStats = {
 };
 
 export default function ChartsPage() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      if (user) {
-        setUser(user);
-        setLoading(false);
-      } else {
-        router.push('/login');
-        setLoading(false);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [router]);
+  const { user, loading } = useRequireAuth('/login');
 
   if (loading) {
     return <LoadingScreen />;
   }
 
   if (!user) {
-    return null; // Will redirect to login
+    return null;
   }
 
   const getProgressPercentage = (current: number, target: number) => {
