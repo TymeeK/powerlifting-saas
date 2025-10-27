@@ -8,7 +8,6 @@ import {
   type WorkoutExercise,
   type UserExercise,
 } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
@@ -38,16 +37,16 @@ import {
   getExerciseProgress,
 } from '@/lib/workout-utils';
 import BackToDashboardButton from '@/components/back-button';
+import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
 
 export default function WorkoutPage() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
+  const { user, loading } = useRequireAuth('/login');
   // Grouped state management
   const [workoutState, setWorkoutState] = useState<WorkoutState>({
     exercises: [],
     sets: {},
   });
+  const router = useRouter();
 
   const [modalState, setModalState] = useState<ModalState>({
     showAddExercise: false,
@@ -83,8 +82,6 @@ export default function WorkoutPage() {
     }>
   >([]);
 
-  const router = useRouter();
-
   // Hover management functions
   const handleMouseEnter = () => {
     setIsHoveringFloatingButton(true);
@@ -114,21 +111,6 @@ export default function WorkoutPage() {
       }
     };
   }, [hoverTimeout]);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async user => {
-      if (user) {
-        setUser(user);
-        setLoading(false);
-      } else {
-        // User is not logged in, redirect to login
-        router.push('/login');
-        setLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [router]);
 
   // Load saved workout state after user is authenticated
 
@@ -163,6 +145,14 @@ export default function WorkoutPage() {
       console.log('Workout state saved to localStorage');
     }
   }, [workoutState, user]);
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (!user) {
+    return null;
+  }
 
   // Helper function to get sets for a specific exercise
   const getExerciseSets = (exerciseId: string) => {
@@ -339,15 +329,6 @@ export default function WorkoutPage() {
       setLoadingState(prev => ({ ...prev, isSaving: false }));
     }
   };
-
-  if (loading) {
-    return <LoadingScreen />;
-  }
-
-  if (!user) {
-    return null; // Will redirect to login
-  }
-
   // Extract first name from displayName
   const firstName = user.displayName ? user.displayName.split(' ')[0] : 'User';
 

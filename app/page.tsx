@@ -13,35 +13,17 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
+import LoadingScreen from '@/components/workout/LoadingScreen';
 
 export default function LandingPage() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      if (user) {
-        // User is logged in, redirect to dashboard
-        router.push('/dashboard');
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [router]);
+  const { loading, user } = useRequireAuth('/dashboard');
 
   if (loading) {
-    return (
-      <main className='min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-4'>
-        <div className='text-center'>
-          <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4'></div>
-          <p className='text-purple-200'>Loading...</p>
-        </div>
-      </main>
-    );
+    return <LoadingScreen />;
+  }
+  if (user) {
+    return null;
   }
 
   // If user is logged in, they will be redirected, so this won't render
