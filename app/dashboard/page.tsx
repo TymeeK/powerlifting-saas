@@ -11,6 +11,7 @@ import UserProfileCard from '@/components/dashboard/UserProfileCard';
 import WeeklySummaryCard from '@/components/dashboard/WeeklySummaryCard';
 import QuickActionsCard from '@/components/dashboard/QuickActionsCard';
 import LoadingScreen from '@/components/workout/LoadingScreen';
+import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
 
 interface WeeklySummaryData {
   thisWeekWorkouts: number;
@@ -87,14 +88,13 @@ const WorkoutCallToActionCard = ({
 };
 
 export default function DashboardPage() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading } = useRequireAuth('/login');
+  const router = useRouter();
   const [summaryData, setSummaryData] = useState<WeeklySummaryData | null>(
     null
   );
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
-  const router = useRouter();
 
   const fetchSummaryData = async (userId: string) => {
     setSummaryLoading(true);
@@ -113,20 +113,6 @@ export default function DashboardPage() {
       setSummaryLoading(false);
     }
   };
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      if (user) {
-        setUser(user);
-        fetchSummaryData(user.uid);
-      } else {
-        router.push('/login');
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [router]);
 
   const handleSignOut = async () => {
     try {
