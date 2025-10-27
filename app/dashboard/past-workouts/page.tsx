@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { auth, getPastWorkouts } from '@/lib/firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { getPastWorkouts } from '@/lib/firebase';
+
 import {
   Card,
   CardContent,
@@ -18,6 +17,7 @@ import LoadingScreen from '@/components/workout/LoadingScreen';
 import { Calendar, Clock, Dumbbell, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import BackToDashboardButton from '@/components/back-button';
+import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
 
 // Workout data interface
 interface Workout {
@@ -36,28 +36,10 @@ interface Workout {
 }
 
 export default function PastWorkoutsPage() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading } = useRequireAuth('/login');
   const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [workoutsLoading, setWorkoutsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      if (user) {
-        setUser(user);
-        // Load workouts when user is authenticated
-        loadWorkouts(user.uid);
-      } else {
-        // User is not logged in, redirect to login
-        router.push('/login');
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [router]);
 
   const loadWorkouts = async (userId: string) => {
     try {
