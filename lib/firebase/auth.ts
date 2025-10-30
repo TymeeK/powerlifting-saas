@@ -178,3 +178,15 @@ export const updateUserEmail = async (
     };
   }
 };
+
+//TODO: Implement password update functionality
+export const updateUserPassword = async (
+  currentPassword: string,
+  newPassword: string
+): Promise<{ success: boolean; message: string }> => {
+  // TODO: Implement password update functionality
+  return {
+    success: false,
+    message: 'Not implemented yet',
+  };
+};
