@@ -4,6 +4,7 @@ import {
   updateProfile,
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
+  updateEmail,
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from './config';
@@ -162,5 +163,26 @@ export const resetPassword = async (email: string) => {
     }
 
     throw new Error(errorMessage);
+  }
+};
+
+// Update email function
+export const updateUserEmail = async (
+  email: string
+): Promise<{ success: boolean; message: string }> => {
+  if (!auth.currentUser) {
+    throw new Error('No user is currently signed in');
+  }
+  try {
+    await updateEmail(auth.currentUser, email);
+    return {
+      success: true,
+      message: 'Email updated successfully!',
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error.message,
+    };
   }
 };
