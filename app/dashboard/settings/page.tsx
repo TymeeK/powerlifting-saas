@@ -12,18 +12,35 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge, User } from 'lucide-react';
+import { Badge, User, X } from 'lucide-react';
+import { updateUserEmail } from '@/lib/firebase/auth';
 
 const SettingsPage = () => {
   const { user, loading } = useRequireAuth('/login');
-  const [email, setEmail] = useState('');
 
+  const [newEmail, setNewEmail] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [successfulEmailUpdate, setSuccessfulEmailUpdate] = useState(false);
+  const [error, setError] = useState('');
   if (!user) {
     return null;
   }
   if (loading) {
     return <LoadingScreen />;
   }
+
+  const handleChangeEmail = async () => {
+    const result = await updateUserEmail(newEmail);
+    if (result.success) {
+      setSuccessfulEmailUpdate(true);
+      setError('');
+      setNewEmail('');
+      setTimeout(() => setShowModal(false), 1500);
+    } else {
+      setSuccessfulEmailUpdate(false);
+      setError(result.message);
+    }
+  };
 
   return (
     <div className='container mx-auto p-6 space-y-6'>
@@ -59,10 +76,73 @@ const SettingsPage = () => {
         </CardHeader>
         <CardContent>
           <p>Email: {user.email}</p>
-          <Button>Change Email</Button>
+          <Button
+            className='mt-4 cursor-pointer'
+            onClick={() => setShowModal(true)}
+          >
+            Change Email
+          </Button>
           <Button variant='destructive'>Delete Account</Button>
         </CardContent>
       </Card>
+
+      {showModal && (
+        <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'>
+          <Card className='w-full max-w-md'>
+            <CardHeader>
+              <div className='flex items-center justify-between'>
+                <CardTitle>Update Email Address</CardTitle>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className='text-muted-foreground hover:text-foreground cursor-pointer p-2 rounded-lg bg-muted'
+                >
+                  <X className='h-5 w-5 cursor-pointer' />
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent className='space-y-4'>
+              {error && (
+                <div className='text-red-500 text-sm bg-red-50 dark:bg-red-950 p-3 rounded'>
+                  {error}
+                </div>
+              )}
+              {successfulEmailUpdate && (
+                <div className='text-green-500 text-sm bg-green-50 dark:bg-green-950 p-3 rounded'>
+                  Email updated successfully!
+                </div>
+              )}
+              <div>
+                <label className='text-sm font-medium mb-2 block'>
+                  New Email Address
+                </label>
+                <input
+                  type='email'
+                  value={newEmail}
+                  onChange={e => setNewEmail(e.target.value)}
+                  placeholder='Enter new email address'
+                  className='w-full px-4 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary'
+                  autoFocus
+                />
+              </div>
+              <div className='flex space-x-3'>
+                <Button
+                  onClick={handleChangeEmail}
+                  className='flex-1 cursor-pointer'
+                >
+                  Update Email
+                </Button>
+                <Button
+                  onClick={() => setShowModal(false)}
+                  variant='outline'
+                  className='flex-1 cursor-pointer'
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
