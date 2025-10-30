@@ -12,7 +12,10 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge, User, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert } from '@/components/ui/alert';
+import { Badge, User, X, Lock, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { updateUserEmail } from '@/lib/firebase/auth';
 
 const SettingsPage = () => {
@@ -71,37 +74,66 @@ const SettingsPage = () => {
         </p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className='flex items-center justify-between'>
-            <div className='flex items-center gap-3'>
-              <div className='p-2 rounded-lg bg-muted'>
-                <User className='h-5 w-5 text-muted-foreground' />
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+        <Card>
+          <CardHeader>
+            <div className='flex items-center justify-between'>
+              <div className='flex items-center gap-3'>
+                <div className='p-2 rounded-lg bg-muted'>
+                  <User className='h-5 w-5 text-muted-foreground' />
+                </div>
+                <div>
+                  <CardTitle className='text-muted-foreground'>
+                    Account Information
+                  </CardTitle>
+                  <CardDescription className='text-muted-foreground'>
+                    Update your personal details
+                  </CardDescription>
+                </div>
               </div>
-              <div>
-                <CardTitle className='text-muted-foreground'>
-                  Account Information
-                </CardTitle>
-                <CardDescription className='text-muted-foreground'>
-                  Update your personal details
-                </CardDescription>
-              </div>
+              <Badge className='bg-muted text-muted-foreground border-muted/30'>
+                Active
+              </Badge>
             </div>
-            <Badge className='bg-muted text-muted-foreground border-muted/30'>
-              Active
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <p>Email: {user.email}</p>
-          <Button
-            className='mt-4 cursor-pointer'
-            onClick={() => setShowModal(true)}
-          >
-            Change Email
-          </Button>
-        </CardContent>
-      </Card>
+          </CardHeader>
+          <CardContent>
+            <p>Email: {user.email}</p>
+            <Button
+              className='mt-4 cursor-pointer'
+              onClick={() => setShowModal(true)}
+            >
+              Change Email
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className='flex items-center justify-between'>
+              <div className='flex items-center gap-3'>
+                <div className='p-2 rounded-lg bg-muted'>
+                  <Lock className='h-5 w-5 text-muted-foreground' />
+                </div>
+                <div>
+                  <CardTitle className='text-muted-foreground'>
+                    Security
+                  </CardTitle>
+                  <CardDescription className='text-muted-foreground'>
+                    Update your password
+                  </CardDescription>
+                </div>
+              </div>
+              <Badge className='bg-muted text-muted-foreground border-muted/30'>
+                Protected
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p>Password: ••••••••</p>
+            <Button className='mt-4 cursor-pointer'>Change Password</Button>
+          </CardContent>
+        </Card>
+      </div>
 
       {showModal && (
         <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'>
@@ -119,38 +151,39 @@ const SettingsPage = () => {
             </CardHeader>
             <CardContent className='space-y-4'>
               {error && (
-                <div className='text-red-500 text-sm bg-red-50 dark:bg-red-950 p-3 rounded'>
-                  {error}
-                </div>
+                <Alert
+                  variant='destructive'
+                  className='flex items-center gap-2'
+                >
+                  <AlertCircle className='h-4 w-4' />
+                  <span>{error}</span>
+                </Alert>
               )}
               {successfulEmailUpdate && (
-                <div className='text-green-500 text-sm bg-green-50 dark:bg-green-950 p-3 rounded'>
-                  Email updated successfully!
-                </div>
+                <Alert className='flex items-center gap-2 border-green-500 text-green-600 dark:border-green-800 dark:text-green-400'>
+                  <CheckCircle2 className='h-4 w-4' />
+                  <span>Email updated successfully!</span>
+                </Alert>
               )}
-              <div>
-                <label className='text-sm font-medium mb-2 block'>
-                  New Email Address
-                </label>
-                <input
+              <div className='space-y-2'>
+                <Label htmlFor='new-email'>New Email Address</Label>
+                <Input
+                  id='new-email'
                   type='email'
                   value={newEmail}
                   onChange={e => setNewEmail(e.target.value)}
                   placeholder='Enter new email address'
-                  className='w-full px-4 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary'
                   autoFocus
                 />
               </div>
-              <div>
-                <label className='text-sm font-medium mb-2 block'>
-                  Current Password
-                </label>
-                <input
+              <div className='space-y-2'>
+                <Label htmlFor='current-password'>Current Password</Label>
+                <Input
+                  id='current-password'
                   type='password'
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   placeholder='Enter your current password'
-                  className='w-full px-4 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary'
                 />
               </div>
               <p className='text-xs text-muted-foreground'>
