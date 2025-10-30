@@ -18,6 +18,53 @@ import { Alert } from '@/components/ui/alert';
 import { Badge, User, X, Lock, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { updateUserEmail } from '@/lib/firebase/auth';
 
+interface SettingsCardProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  badgeText: string;
+  contentText: string;
+  buttonText: string;
+  onButtonClick: () => void;
+}
+
+const SettingsCard = ({
+  icon,
+  title,
+  description,
+  badgeText,
+  contentText,
+  buttonText,
+  onButtonClick,
+}: SettingsCardProps) => {
+  return (
+    <Card>
+      <CardHeader>
+        <div className='flex items-center justify-between'>
+          <div className='flex items-center gap-3'>
+            <div className='p-2 rounded-lg bg-muted'>{icon}</div>
+            <div>
+              <CardTitle className='text-muted-foreground'>{title}</CardTitle>
+              <CardDescription className='text-muted-foreground'>
+                {description}
+              </CardDescription>
+            </div>
+          </div>
+          <Badge className='bg-muted text-muted-foreground border-muted/30'>
+            {badgeText}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <p>{contentText}</p>
+        <Button className='mt-4 cursor-pointer' onClick={onButtonClick}>
+          {buttonText}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+};
+
 const SettingsPage = () => {
   const { user, loading } = useRequireAuth('/login');
 
@@ -75,64 +122,25 @@ const SettingsPage = () => {
       </div>
 
       <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-        <Card>
-          <CardHeader>
-            <div className='flex items-center justify-between'>
-              <div className='flex items-center gap-3'>
-                <div className='p-2 rounded-lg bg-muted'>
-                  <User className='h-5 w-5 text-muted-foreground' />
-                </div>
-                <div>
-                  <CardTitle className='text-muted-foreground'>
-                    Account Information
-                  </CardTitle>
-                  <CardDescription className='text-muted-foreground'>
-                    Update your personal details
-                  </CardDescription>
-                </div>
-              </div>
-              <Badge className='bg-muted text-muted-foreground border-muted/30'>
-                Active
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p>Email: {user.email}</p>
-            <Button
-              className='mt-4 cursor-pointer'
-              onClick={() => setShowModal(true)}
-            >
-              Change Email
-            </Button>
-          </CardContent>
-        </Card>
+        <SettingsCard
+          icon={<User className='h-5 w-5 text-muted-foreground' />}
+          title='Account Information'
+          description='Update your personal details'
+          badgeText='Active'
+          contentText={`Email: ${user.email}`}
+          buttonText='Change Email'
+          onButtonClick={() => setShowModal(true)}
+        />
 
-        <Card>
-          <CardHeader>
-            <div className='flex items-center justify-between'>
-              <div className='flex items-center gap-3'>
-                <div className='p-2 rounded-lg bg-muted'>
-                  <Lock className='h-5 w-5 text-muted-foreground' />
-                </div>
-                <div>
-                  <CardTitle className='text-muted-foreground'>
-                    Security
-                  </CardTitle>
-                  <CardDescription className='text-muted-foreground'>
-                    Update your password
-                  </CardDescription>
-                </div>
-              </div>
-              <Badge className='bg-muted text-muted-foreground border-muted/30'>
-                Protected
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <p>Password: ••••••••</p>
-            <Button className='mt-4 cursor-pointer'>Change Password</Button>
-          </CardContent>
-        </Card>
+        <SettingsCard
+          icon={<Lock className='h-5 w-5 text-muted-foreground' />}
+          title='Security'
+          description='Update your password'
+          badgeText='Protected'
+          contentText='Password: ••••••••'
+          buttonText='Change Password'
+          onButtonClick={() => {}}
+        />
       </div>
 
       {showModal && (
