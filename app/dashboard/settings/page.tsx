@@ -16,9 +16,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert } from '@/components/ui/alert';
 import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
+import {
   Badge,
   User,
-  X,
   Lock,
   AlertCircle,
   CheckCircle2,
@@ -78,8 +86,13 @@ const SettingsPage = () => {
 
   const [newEmail, setNewEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [successfulEmailUpdate, setSuccessfulEmailUpdate] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [modalType, setModalType] = useState<
+    'email' | 'password' | 'firstName' | 'lastName' | null
+  >(null);
+  const [successMessage, setSuccessMessage] = useState('');
   const [error, setError] = useState('');
   if (!user) {
     return null;
@@ -89,32 +102,48 @@ const SettingsPage = () => {
   }
 
   const handleCloseModal = () => {
-    setShowModal(false);
+    setModalType(null);
     setNewEmail('');
     setPassword('');
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmPassword('');
     setError('');
-    setSuccessfulEmailUpdate(false);
+    setSuccessMessage('');
   };
 
-  const handleChangeEmail = async () => {
-    // Validate inputs
-    if (!newEmail || !password) {
-      setError('Please enter both email and password');
-      return;
-    }
+  const handleSubmit = async () => {
+    if (modalType === 'email') {
+      // Validate inputs
+      if (!newEmail || !password) {
+        setError('Please enter both email and password');
+        return;
+      }
 
-    const result = await updateUserEmail(newEmail, password);
-    if (result.success) {
-      setSuccessfulEmailUpdate(true);
-      setError('');
-      setNewEmail('');
-      setPassword('');
-      setTimeout(() => {
-        handleCloseModal();
-      }, 1500);
-    } else {
-      setSuccessfulEmailUpdate(false);
-      setError(result.message);
+      const result = await updateUserEmail(newEmail, password);
+      if (result.success) {
+        setSuccessMessage('Email updated successfully!');
+        setError('');
+        setTimeout(() => {
+          handleCloseModal();
+        }, 1500);
+      } else {
+        setError(result.message);
+      }
+    } else if (modalType === 'password') {
+      // Validate inputs
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        setError('All fields are required');
+        return;
+      }
+
+      if (newPassword !== confirmPassword) {
+        setError('New passwords do not match');
+        return;
+      }
+
+      // TODO: Call updateUserPassword when implemented
+      setError('Password update not yet implemented');
     }
   };
 
@@ -126,7 +155,7 @@ const SettingsPage = () => {
       badgeText: 'Active',
       contentText: `Email: ${user.email}`,
       buttonText: 'Change Email',
-      onButtonClick: () => setShowModal(true),
+      onButtonClick: () => setModalType('email'),
     },
     {
       icon: <Lock className='h-5 w-5 text-muted-foreground' />,
@@ -135,7 +164,7 @@ const SettingsPage = () => {
       badgeText: 'Protected',
       contentText: 'Password: ••••••••',
       buttonText: 'Change Password',
-      onButtonClick: () => {},
+      onButtonClick: () => setModalType('password'),
     },
     {
       icon: <UserCircle className='h-5 w-5 text-muted-foreground' />,
@@ -178,80 +207,116 @@ const SettingsPage = () => {
         ))}
       </div>
 
-      {showModal && (
-        <div className='fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4'>
-          <Card className='w-full max-w-md'>
-            <CardHeader>
-              <div className='flex items-center justify-between'>
-                <CardTitle>Update Email Address</CardTitle>
-                <button
-                  onClick={handleCloseModal}
-                  className='text-muted-foreground hover:text-foreground cursor-pointer p-2 rounded-lg bg-muted'
-                >
-                  <X className='h-5 w-5 cursor-pointer' />
-                </button>
-              </div>
-            </CardHeader>
-            <CardContent className='space-y-4'>
-              {error && (
-                <Alert
-                  variant='destructive'
-                  className='flex items-center gap-2'
-                >
-                  <AlertCircle className='h-4 w-4' />
-                  <span>{error}</span>
-                </Alert>
-              )}
-              {successfulEmailUpdate && (
-                <Alert className='flex items-center gap-2 border-green-500 text-green-600 dark:border-green-800 dark:text-green-400'>
-                  <CheckCircle2 className='h-4 w-4' />
-                  <span>Email updated successfully!</span>
-                </Alert>
-              )}
-              <div className='space-y-2'>
-                <Label htmlFor='new-email'>New Email Address</Label>
-                <Input
-                  id='new-email'
-                  type='email'
-                  value={newEmail}
-                  onChange={e => setNewEmail(e.target.value)}
-                  placeholder='Enter new email address'
-                  autoFocus
-                />
-              </div>
-              <div className='space-y-2'>
-                <Label htmlFor='current-password'>Current Password</Label>
-                <Input
-                  id='current-password'
-                  type='password'
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder='Enter your current password'
-                />
-              </div>
-              <p className='text-xs text-muted-foreground'>
-                For security reasons, you must verify your identity with your
-                current password to change your email address.
-              </p>
-              <div className='flex space-x-3'>
-                <Button
-                  onClick={handleChangeEmail}
-                  className='flex-1 cursor-pointer'
-                >
-                  Update Email
-                </Button>
-                <Button
-                  onClick={handleCloseModal}
-                  variant='outline'
-                  className='flex-1 cursor-pointer'
-                >
-                  Cancel
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <AlertDialog
+        open={!!modalType}
+        onOpenChange={open => !open && handleCloseModal()}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {modalType === 'email' && 'Update Email Address'}
+              {modalType === 'password' && 'Update Password'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {modalType === 'email' &&
+                'Change your email address. You will need to verify your identity.'}
+              {modalType === 'password' &&
+                'Update your password. Make sure it is at least 6 characters long.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className='space-y-4 py-4'>
+            {error && (
+              <Alert variant='destructive' className='flex items-center gap-2'>
+                <AlertCircle className='h-4 w-4' />
+                <span>{error}</span>
+              </Alert>
+            )}
+            {successMessage && (
+              <Alert className='flex items-center gap-2 border-green-500 text-green-600 dark:border-green-800 dark:text-green-400'>
+                <CheckCircle2 className='h-4 w-4' />
+                <span>{successMessage}</span>
+              </Alert>
+            )}
+
+            {modalType === 'email' && (
+              <>
+                <div className='space-y-2'>
+                  <Label htmlFor='new-email'>New Email Address</Label>
+                  <Input
+                    id='new-email'
+                    type='email'
+                    value={newEmail}
+                    onChange={e => setNewEmail(e.target.value)}
+                    placeholder='Enter new email address'
+                    autoFocus
+                  />
+                </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='current-password'>Current Password</Label>
+                  <Input
+                    id='current-password'
+                    type='password'
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    placeholder='Enter your current password'
+                  />
+                </div>
+                <p className='text-xs text-muted-foreground'>
+                  For security reasons, you must verify your identity with your
+                  current password to change your email address.
+                </p>
+              </>
+            )}
+
+            {modalType === 'password' && (
+              <>
+                <div className='space-y-2'>
+                  <Label htmlFor='current-password'>Current Password</Label>
+                  <Input
+                    id='current-password'
+                    type='password'
+                    value={currentPassword}
+                    onChange={e => setCurrentPassword(e.target.value)}
+                    placeholder='Enter current password'
+                    autoFocus
+                  />
+                </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='new-password'>New Password</Label>
+                  <Input
+                    id='new-password'
+                    type='password'
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    placeholder='Enter new password'
+                  />
+                </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='confirm-password'>Confirm New Password</Label>
+                  <Input
+                    id='confirm-password'
+                    type='password'
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder='Confirm new password'
+                  />
+                </div>
+              </>
+            )}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCloseModal}>
+              Cancel
+            </AlertDialogCancel>
+            <Button onClick={handleSubmit} className='cursor-pointer'>
+              {modalType === 'email' && 'Update Email'}
+              {modalType === 'password' && 'Update Password'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
