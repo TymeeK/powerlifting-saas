@@ -4,25 +4,111 @@ import userEvent from '@testing-library/user-event';
 import SettingsPage from '@/app/dashboard/settings/page';
 import { updateUserEmail } from '@/lib/firebase/auth';
 
+vi.mock('@/lib/firebase/auth', () => ({
+  updateUserEmail: vi.fn(),
+}));
+
+vi.mock('@/lib/hooks/userRequireAuth', () => ({
+  useRequireAuth: () => ({
+    user: { email: 'test@example.com', uid: '123' },
+    loading: false,
+  }),
+}));
+
 const user = userEvent.setup();
 
-const setupTest = () => {
-  render(<SettingsPage />);
-};
-
-describe('Settings Page', () => {
+describe('Settings Page - Email Update Functionality', () => {
   beforeEach(() => {
-    setupTest();
+    vi.clearAllMocks();
+    render(<SettingsPage />);
   });
 
-  it('renders the settings page', () => {
+  it('renders the settings page with user email', () => {
     expect(screen.getByText('Settings')).toBeInTheDocument();
+    expect(screen.getByText(/Email: test@example.com/i)).toBeInTheDocument();
   });
 
-  it('allows user to update their email', async () => {
-    const newEmail = 'newemail@example.com';
-    await user.type(screen.getByLabelText(/email address/i), newEmail);
-    await user.click(screen.getByRole('button', { name: /change email/i }));
-    expect(updateUserEmail).toHaveBeenCalledWith(newEmail);
+  it('opens modal when "Change Email" button is clicked and shows password field', async () => {
+    await user.click(screen.getByText('Change Email'));
+
+    // Check modal appears with both fields
+    expect(screen.getByText('Update Email Address')).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText('Enter new email address')
+    ).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText('Enter your current password')
+    ).toBeInTheDocument();
+    expect(screen.getByText(/For security reasons/i)).toBeInTheDocument();
+  });
+
+  it('shows validation error when trying to update with empty fields', async () => {
+    await user.click(screen.getByText('Change Email'));
+    await user.click(screen.getByRole('button', { name: /Update Email/i }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Please enter both email and password')
+      ).toBeInTheDocument();
+    });
+
+    // Verify updateUserEmail was NOT called
+    expect(updateUserEmail).not.toHaveBeenCalled();
+  });
+
+  it('successfully updates email when valid email and password are provided', async () => {
+    (updateUserEmail as any).mockResolvedValueOnce({
+      success: true,
+      message: 'Email updated successfully!',
+    });
+
+    await user.click(screen.getByText('Change Email'));
+    await user.type(
+      screen.getByPlaceholderText('Enter new email address'),
+      'newemail@example.com'
+    );
+    await user.type(
+      screen.getByPlaceholderText('Enter your current password'),
+      'mypassword123'
+    );
+    await user.click(screen.getByRole('button', { name: /Update Email/i }));
+
+    // Verify function was called with both email and password
+    expect(updateUserEmail).toHaveBeenCalledWith(
+      'newemail@example.com',
+      'mypassword123'
+    );
+
+    // Check success message appears
+    await waitFor(() => {
+      expect(
+        screen.getByText('Email updated successfully!')
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('displays error message when password is incorrect', async () => {
+    (updateUserEmail as any).mockResolvedValueOnce({
+      success: false,
+      message: 'Incorrect password',
+    });
+
+    await user.click(screen.getByText('Change Email'));
+    await user.type(
+      screen.getByPlaceholderText('Enter new email address'),
+      'newemail@example.com'
+    );
+    await user.type(
+      screen.getByPlaceholderText('Enter your current password'),
+      'wrongpassword'
+    );
+    await user.click(screen.getByRole('button', { name: /Update Email/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Incorrect password')).toBeInTheDocument();
+    });
+
+    // Modal should still be open
+    expect(screen.getByText('Update Email Address')).toBeInTheDocument();
   });
 });
