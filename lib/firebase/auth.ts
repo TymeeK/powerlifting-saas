@@ -5,6 +5,8 @@ import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
   updateEmail,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
 } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from './config';
@@ -166,13 +168,66 @@ export const resetPassword = async (email: string) => {
   }
 };
 
+// Re-authenticate user function
+export const reauthenticateUser = async (
+  password: string
+): Promise<{ success: boolean; message: string }> => {
+  if (!auth.currentUser || !auth.currentUser.email) {
+    return {
+      success: false,
+      message: 'No user is currently signed in',
+    };
+  }
+
+  try {
+    const credential = EmailAuthProvider.credential(
+      auth.currentUser.email,
+      password
+    );
+    await reauthenticateWithCredential(auth.currentUser, credential);
+    return {
+      success: true,
+      message: 'Re-authentication successful',
+    };
+  } catch (error: any) {
+    let errorMessage = 'Re-authentication failed';
+
+    switch (error.code) {
+      case 'auth/wrong-password':
+        errorMessage = 'Incorrect password';
+        break;
+      case 'auth/too-many-requests':
+        errorMessage = 'Too many failed attempts. Please try again later';
+        break;
+      default:
+        errorMessage = error.message || errorMessage;
+    }
+
+    return {
+      success: false,
+      message: errorMessage,
+    };
+  }
+};
+
 // Update email function
 export const updateUserEmail = async (
-  email: string
+  email: string,
+  password: string
 ): Promise<{ success: boolean; message: string }> => {
   if (!auth.currentUser) {
-    throw new Error('No user is currently signed in');
+    return {
+      success: false,
+      message: 'No user is currently signed in',
+    };
   }
+
+  // Re-authenticate user first
+  const reAuthResult = await reauthenticateUser(password);
+  if (!reAuthResult.success) {
+    return reAuthResult;
+  }
+
   try {
     await updateEmail(auth.currentUser, email);
     return {
@@ -180,9 +235,25 @@ export const updateUserEmail = async (
       message: 'Email updated successfully!',
     };
   } catch (error: any) {
+    let errorMessage = 'Failed to update email';
+
+    switch (error.code) {
+      case 'auth/email-already-in-use':
+        errorMessage = 'This email is already in use';
+        break;
+      case 'auth/invalid-email':
+        errorMessage = 'Invalid email address';
+        break;
+      case 'auth/requires-recent-login':
+        errorMessage = 'Please log in again and try';
+        break;
+      default:
+        errorMessage = error.message || errorMessage;
+    }
+
     return {
       success: false,
-      message: error.message,
+      message: errorMessage,
     };
   }
 };

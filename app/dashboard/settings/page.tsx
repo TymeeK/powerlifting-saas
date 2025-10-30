@@ -19,6 +19,7 @@ const SettingsPage = () => {
   const { user, loading } = useRequireAuth('/login');
 
   const [newEmail, setNewEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [successfulEmailUpdate, setSuccessfulEmailUpdate] = useState(false);
   const [error, setError] = useState('');
@@ -29,13 +30,30 @@ const SettingsPage = () => {
     return <LoadingScreen />;
   }
 
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setNewEmail('');
+    setPassword('');
+    setError('');
+    setSuccessfulEmailUpdate(false);
+  };
+
   const handleChangeEmail = async () => {
-    const result = await updateUserEmail(newEmail);
+    // Validate inputs
+    if (!newEmail || !password) {
+      setError('Please enter both email and password');
+      return;
+    }
+
+    const result = await updateUserEmail(newEmail, password);
     if (result.success) {
       setSuccessfulEmailUpdate(true);
       setError('');
       setNewEmail('');
-      setTimeout(() => setShowModal(false), 1500);
+      setPassword('');
+      setTimeout(() => {
+        handleCloseModal();
+      }, 1500);
     } else {
       setSuccessfulEmailUpdate(false);
       setError(result.message);
@@ -82,7 +100,6 @@ const SettingsPage = () => {
           >
             Change Email
           </Button>
-          <Button variant='destructive'>Delete Account</Button>
         </CardContent>
       </Card>
 
@@ -93,7 +110,7 @@ const SettingsPage = () => {
               <div className='flex items-center justify-between'>
                 <CardTitle>Update Email Address</CardTitle>
                 <button
-                  onClick={() => setShowModal(false)}
+                  onClick={handleCloseModal}
                   className='text-muted-foreground hover:text-foreground cursor-pointer p-2 rounded-lg bg-muted'
                 >
                   <X className='h-5 w-5 cursor-pointer' />
@@ -124,6 +141,22 @@ const SettingsPage = () => {
                   autoFocus
                 />
               </div>
+              <div>
+                <label className='text-sm font-medium mb-2 block'>
+                  Current Password
+                </label>
+                <input
+                  type='password'
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder='Enter your current password'
+                  className='w-full px-4 py-2 rounded-lg border bg-background focus:outline-none focus:ring-2 focus:ring-primary'
+                />
+              </div>
+              <p className='text-xs text-muted-foreground'>
+                For security reasons, you must verify your identity with your
+                current password to change your email address.
+              </p>
               <div className='flex space-x-3'>
                 <Button
                   onClick={handleChangeEmail}
@@ -132,7 +165,7 @@ const SettingsPage = () => {
                   Update Email
                 </Button>
                 <Button
-                  onClick={() => setShowModal(false)}
+                  onClick={handleCloseModal}
                   variant='outline'
                   className='flex-1 cursor-pointer'
                 >
