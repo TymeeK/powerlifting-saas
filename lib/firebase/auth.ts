@@ -12,22 +12,33 @@ import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from './config';
 import { SignUpData, LoginData } from './types';
 
-// Sign up function
+const AUTH_ERROR_MESSAGES: Record<string, string> = {
+  'auth/email-already-in-use': 'This email is already registered',
+  'auth/invalid-email': 'Invalid email address',
+  'auth/weak-password': 'Password is too weak',
+  'auth/user-not-found': 'No account found with this email address',
+  'auth/wrong-password': 'Incorrect password',
+  'auth/user-disabled': 'This account has been disabled',
+  'auth/too-many-requests': 'Too many failed attempts. Please try again later',
+  'auth/requires-recent-login': 'Please log in again and try',
+};
+
+const handleAuthError = (error: any, defaultMessage: string): string => {
+  return AUTH_ERROR_MESSAGES[error.code] || error.message || defaultMessage;
+};
+
 export const signUp = async (signUpData: SignUpData) => {
   const { firstName, lastName, email, password, confirmPassword } = signUpData;
 
-  // Validate passwords match
   if (password !== confirmPassword) {
     throw new Error('Passwords do not match');
   }
 
-  // Validate password length
   if (password.length < 6) {
     throw new Error('Password must be at least 6 characters long');
   }
 
   try {
-    // Create user with email and password
     console.log('Creating user with email:', email);
     const userCredential = await createUserWithEmailAndPassword(
       auth,
@@ -37,12 +48,10 @@ export const signUp = async (signUpData: SignUpData) => {
     const user = userCredential.user;
     console.log('User created successfully:', user.uid);
 
-    // Update user profile with first and last name
     await updateProfile(user, {
       displayName: `${firstName} ${lastName}`,
     });
 
-    // Store additional user data in Firestore
     try {
       await setDoc(doc(db, 'users', user.uid), {
         firstName,
@@ -54,8 +63,6 @@ export const signUp = async (signUpData: SignUpData) => {
       console.log('User data stored in Firestore successfully');
     } catch (firestoreError) {
       console.error('Firestore error:', firestoreError);
-      // Don't throw here - user is already created in Auth
-      // Just log the error for debugging
     }
 
     return {
@@ -67,33 +74,14 @@ export const signUp = async (signUpData: SignUpData) => {
       },
     };
   } catch (error: any) {
-    // Handle specific Firebase errors
-    let errorMessage = 'An error occurred during sign up';
-
-    switch (error.code) {
-      case 'auth/email-already-in-use':
-        errorMessage = 'This email is already registered';
-        break;
-      case 'auth/invalid-email':
-        errorMessage = 'Invalid email address';
-        break;
-      case 'auth/weak-password':
-        errorMessage = 'Password is too weak';
-        break;
-      default:
-        errorMessage = error.message || errorMessage;
-    }
-
-    throw new Error(errorMessage);
+    throw new Error(handleAuthError(error, 'An error occurred during sign up'));
   }
 };
 
-// Login function
 export const signIn = async (loginData: LoginData) => {
   const { email, password } = loginData;
 
   try {
-    // Sign in user with email and password
     const userCredential = await signInWithEmailAndPassword(
       auth,
       email,
@@ -110,34 +98,10 @@ export const signIn = async (loginData: LoginData) => {
       },
     };
   } catch (error: any) {
-    // Handle specific Firebase errors
-    let errorMessage = 'An error occurred during sign in';
-
-    switch (error.code) {
-      case 'auth/user-not-found':
-        errorMessage = 'No account found with this email address';
-        break;
-      case 'auth/wrong-password':
-        errorMessage = 'Incorrect password';
-        break;
-      case 'auth/invalid-email':
-        errorMessage = 'Invalid email address';
-        break;
-      case 'auth/user-disabled':
-        errorMessage = 'This account has been disabled';
-        break;
-      case 'auth/too-many-requests':
-        errorMessage = 'Too many failed attempts. Please try again later';
-        break;
-      default:
-        errorMessage = error.message || errorMessage;
-    }
-
-    throw new Error(errorMessage);
+    throw new Error(handleAuthError(error, 'An error occurred during sign in'));
   }
 };
 
-// Password reset function
 export const resetPassword = async (email: string) => {
   try {
     await sendPasswordResetEmail(auth, email);
@@ -147,28 +111,15 @@ export const resetPassword = async (email: string) => {
       message: 'Password reset email sent successfully!',
     };
   } catch (error: any) {
-    // Handle specific Firebase errors
-    let errorMessage = 'An error occurred while sending password reset email';
-
-    switch (error.code) {
-      case 'auth/user-not-found':
-        errorMessage = 'No account found with this email address';
-        break;
-      case 'auth/invalid-email':
-        errorMessage = 'Invalid email address';
-        break;
-      case 'auth/too-many-requests':
-        errorMessage = 'Too many requests. Please try again later';
-        break;
-      default:
-        errorMessage = error.message || errorMessage;
-    }
-
-    throw new Error(errorMessage);
+    throw new Error(
+      handleAuthError(
+        error,
+        'An error occurred while sending password reset email'
+      )
+    );
   }
 };
 
-// Re-authenticate user function
 export const reauthenticateUser = async (
   password: string
 ): Promise<{ success: boolean; message: string }> => {
@@ -190,27 +141,13 @@ export const reauthenticateUser = async (
       message: 'Re-authentication successful',
     };
   } catch (error: any) {
-    let errorMessage = 'Re-authentication failed';
-
-    switch (error.code) {
-      case 'auth/wrong-password':
-        errorMessage = 'Incorrect password';
-        break;
-      case 'auth/too-many-requests':
-        errorMessage = 'Too many failed attempts. Please try again later';
-        break;
-      default:
-        errorMessage = error.message || errorMessage;
-    }
-
     return {
       success: false,
-      message: errorMessage,
+      message: handleAuthError(error, 'Re-authentication failed'),
     };
   }
 };
 
-// Update email function
 export const updateUserEmail = async (
   email: string,
   password: string
@@ -222,7 +159,6 @@ export const updateUserEmail = async (
     };
   }
 
-  // Re-authenticate user first
   const reAuthResult = await reauthenticateUser(password);
   if (!reAuthResult.success) {
     return reAuthResult;
@@ -235,25 +171,9 @@ export const updateUserEmail = async (
       message: 'Email updated successfully!',
     };
   } catch (error: any) {
-    let errorMessage = 'Failed to update email';
-
-    switch (error.code) {
-      case 'auth/email-already-in-use':
-        errorMessage = 'This email is already in use';
-        break;
-      case 'auth/invalid-email':
-        errorMessage = 'Invalid email address';
-        break;
-      case 'auth/requires-recent-login':
-        errorMessage = 'Please log in again and try';
-        break;
-      default:
-        errorMessage = error.message || errorMessage;
-    }
-
     return {
       success: false,
-      message: errorMessage,
+      message: handleAuthError(error, 'Failed to update email'),
     };
   }
 };
