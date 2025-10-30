@@ -15,7 +15,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert } from '@/components/ui/alert';
-import { Badge, User, X, Lock, AlertCircle, CheckCircle2 } from 'lucide-react';
+import {
+  Badge,
+  User,
+  X,
+  Lock,
+  AlertCircle,
+  CheckCircle2,
+  UserCircle,
+} from 'lucide-react';
 import { updateUserEmail } from '@/lib/firebase/auth';
 
 interface SettingsCardProps {
@@ -110,6 +118,49 @@ const SettingsPage = () => {
     }
   };
 
+  const settingsCards = [
+    {
+      icon: <User className='h-5 w-5 text-muted-foreground' />,
+      title: 'Account Information',
+      description: 'Update your personal details',
+      badgeText: 'Active',
+      contentText: `Email: ${user.email}`,
+      buttonText: 'Change Email',
+      onButtonClick: () => setShowModal(true),
+    },
+    {
+      icon: <Lock className='h-5 w-5 text-muted-foreground' />,
+      title: 'Security',
+      description: 'Update your password',
+      badgeText: 'Protected',
+      contentText: 'Password: ••••••••',
+      buttonText: 'Change Password',
+      onButtonClick: () => {},
+    },
+    {
+      icon: <UserCircle className='h-5 w-5 text-muted-foreground' />,
+      title: 'First Name',
+      description: 'Update your first name',
+      badgeText: 'Personal',
+      contentText: `First Name: ${
+        user.displayName?.split(' ')[0] || 'Not set'
+      }`,
+      buttonText: 'Change First Name',
+      onButtonClick: () => {},
+    },
+    {
+      icon: <UserCircle className='h-5 w-5 text-muted-foreground' />,
+      title: 'Last Name',
+      description: 'Update your last name',
+      badgeText: 'Personal',
+      contentText: `Last Name: ${
+        user.displayName?.split(' ').slice(1).join(' ') || 'Not set'
+      }`,
+      buttonText: 'Change Last Name',
+      onButtonClick: () => {},
+    },
+  ];
+
   return (
     <div className='container mx-auto p-6 space-y-6'>
       <BackToDashboardButton />
@@ -122,25 +173,9 @@ const SettingsPage = () => {
       </div>
 
       <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-        <SettingsCard
-          icon={<User className='h-5 w-5 text-muted-foreground' />}
-          title='Account Information'
-          description='Update your personal details'
-          badgeText='Active'
-          contentText={`Email: ${user.email}`}
-          buttonText='Change Email'
-          onButtonClick={() => setShowModal(true)}
-        />
-
-        <SettingsCard
-          icon={<Lock className='h-5 w-5 text-muted-foreground' />}
-          title='Security'
-          description='Update your password'
-          badgeText='Protected'
-          contentText='Password: ••••••••'
-          buttonText='Change Password'
-          onButtonClick={() => {}}
-        />
+        {settingsCards.map((card, index) => (
+          <SettingsCard key={index} {...card} />
+        ))}
       </div>
 
       {showModal && (
