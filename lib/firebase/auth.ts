@@ -148,6 +148,7 @@ export const reauthenticateUser = async (
   }
 };
 
+//TODO: Add verification for new email address
 export const updateUserEmail = async (
   email: string,
   password: string
