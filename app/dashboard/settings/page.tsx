@@ -32,7 +32,7 @@ import {
   CheckCircle2,
   UserCircle,
 } from 'lucide-react';
-import { updateUserEmail } from '@/lib/firebase/auth';
+import { updateUserEmail, updateUserPassword } from '@/lib/firebase/auth';
 
 interface SettingsCardProps {
   icon: React.ReactNode;
@@ -121,15 +121,15 @@ const SettingsPage = () => {
       }
 
       const result = await updateUserEmail(newEmail, password);
-      if (result.success) {
-        setSuccessMessage('Email updated successfully!');
-        setError('');
-        setTimeout(() => {
-          handleCloseModal();
-        }, 1500);
-      } else {
+      if (!result.success) {
         setError(result.message);
+        return;
       }
+      setSuccessMessage('Email updated successfully!');
+      setError('');
+      setTimeout(() => {
+        handleCloseModal();
+      }, 1000);
     } else if (modalType === 'password') {
       // Validate inputs
       if (!currentPassword || !newPassword || !confirmPassword) {
@@ -142,8 +142,16 @@ const SettingsPage = () => {
         return;
       }
 
-      // TODO: Call updateUserPassword when implemented
-      setError('Password update not yet implemented');
+      const result = await updateUserPassword(currentPassword, newPassword);
+      if (!result.success) {
+        setError(result.message);
+        return;
+      }
+      setSuccessMessage('Password updated successfully!');
+      setError('');
+      setTimeout(() => {
+        handleCloseModal();
+      }, 1000);
     }
   };
 
