@@ -5,6 +5,7 @@ import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
   updateEmail,
+  updatePassword,
   EmailAuthProvider,
   reauthenticateWithCredential,
 } from 'firebase/auth';
@@ -179,14 +180,39 @@ export const updateUserEmail = async (
   }
 };
 
-//TODO: Implement password update functionality
 export const updateUserPassword = async (
   currentPassword: string,
   newPassword: string
 ): Promise<{ success: boolean; message: string }> => {
-  // TODO: Implement password update functionality
-  return {
-    success: false,
-    message: 'Not implemented yet',
-  };
+  if (!auth.currentUser) {
+    return {
+      success: false,
+      message: 'No user is currently signed in',
+    };
+  }
+
+  if (newPassword.length < 6) {
+    return {
+      success: false,
+      message: 'Password must be at least 6 characters long',
+    };
+  }
+
+  const reAuthResult = await reauthenticateUser(currentPassword);
+  if (!reAuthResult.success) {
+    return reAuthResult;
+  }
+
+  try {
+    await updatePassword(auth.currentUser, newPassword);
+    return {
+      success: true,
+      message: 'Password updated successfully!',
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: handleAuthError(error, 'Failed to update password'),
+    };
+  }
 };
