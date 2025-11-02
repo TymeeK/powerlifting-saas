@@ -32,7 +32,11 @@ import {
   CheckCircle2,
   UserCircle,
 } from 'lucide-react';
-import { updateUserEmail, updateUserPassword } from '@/lib/firebase/auth';
+import {
+  updateUserEmail,
+  updateUserPassword,
+  updateUserDisplayName,
+} from '@/lib/firebase/auth';
 
 interface SettingsCardProps {
   icon: React.ReactNode;
@@ -89,8 +93,10 @@ const SettingsPage = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [modalType, setModalType] = useState<
-    'email' | 'password' | 'firstName' | 'lastName' | null
+    'email' | 'password' | 'name' | null
   >(null);
   const [successMessage, setSuccessMessage] = useState('');
   const [error, setError] = useState('');
@@ -108,6 +114,8 @@ const SettingsPage = () => {
     setCurrentPassword('');
     setNewPassword('');
     setConfirmPassword('');
+    setFirstName('');
+    setLastName('');
     setError('');
     setSuccessMessage('');
   };
@@ -152,31 +160,35 @@ const SettingsPage = () => {
       setTimeout(() => {
         handleCloseModal();
       }, 1000);
+    } else if (modalType === 'name') {
+      const result = await updateUserDisplayName(firstName, lastName);
+      if (!result.success) {
+        setError(result.message);
+        return;
+      }
+      setSuccessMessage('Name updated successfully!');
+      setError('');
+      setTimeout(() => {
+        handleCloseModal();
+        // Reload the page to reflect the changes
+        window.location.reload();
+      }, 1000);
     }
   };
 
   const settingsCards = [
     {
       icon: <UserCircle className='h-5 w-5 text-muted-foreground' />,
-      title: 'First Name',
-      description: 'Update your first name',
+      title: 'Name',
+      description: 'Update your first and last name',
       badgeText: 'Personal',
-      contentText: `First Name: ${
-        user.displayName?.split(' ')[0] || 'Not set'
-      }`,
-      buttonText: 'Change First Name',
-      onButtonClick: () => {},
-    },
-    {
-      icon: <UserCircle className='h-5 w-5 text-muted-foreground' />,
-      title: 'Last Name',
-      description: 'Update your last name',
-      badgeText: 'Personal',
-      contentText: `Last Name: ${
-        user.displayName?.split(' ').slice(1).join(' ') || 'Not set'
-      }`,
-      buttonText: 'Change Last Name',
-      onButtonClick: () => {},
+      contentText: `Name: ${user.displayName || 'Not set'}`,
+      buttonText: 'Change Name',
+      onButtonClick: () => {
+        setFirstName(user.displayName?.split(' ')[0] || '');
+        setLastName(user.displayName?.split(' ').slice(1).join(' ') || '');
+        setModalType('name');
+      },
     },
     {
       icon: <User className='h-5 w-5 text-muted-foreground' />,
@@ -224,12 +236,14 @@ const SettingsPage = () => {
             <AlertDialogTitle>
               {modalType === 'email' && 'Update Email Address'}
               {modalType === 'password' && 'Update Password'}
+              {modalType === 'name' && 'Update Name'}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {modalType === 'email' &&
                 'Change your email address. You will need to verify your identity.'}
               {modalType === 'password' &&
                 'Update your password. Make sure it is at least 6 characters long.'}
+              {modalType === 'name' && 'Update your first and last name.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
 
@@ -312,6 +326,32 @@ const SettingsPage = () => {
                 </div>
               </>
             )}
+
+            {modalType === 'name' && (
+              <>
+                <div className='space-y-2'>
+                  <Label htmlFor='first-name'>First Name</Label>
+                  <Input
+                    id='first-name'
+                    type='text'
+                    value={firstName}
+                    onChange={e => setFirstName(e.target.value)}
+                    placeholder='Enter first name'
+                    autoFocus
+                  />
+                </div>
+                <div className='space-y-2'>
+                  <Label htmlFor='last-name'>Last Name</Label>
+                  <Input
+                    id='last-name'
+                    type='text'
+                    value={lastName}
+                    onChange={e => setLastName(e.target.value)}
+                    placeholder='Enter last name'
+                  />
+                </div>
+              </>
+            )}
           </div>
 
           <AlertDialogFooter>
@@ -321,6 +361,7 @@ const SettingsPage = () => {
             <Button onClick={handleSubmit} className='cursor-pointer'>
               {modalType === 'email' && 'Update Email'}
               {modalType === 'password' && 'Update Password'}
+              {modalType === 'name' && 'Update Name'}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
