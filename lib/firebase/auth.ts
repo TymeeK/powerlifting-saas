@@ -9,7 +9,7 @@ import {
   EmailAuthProvider,
   reauthenticateWithCredential,
 } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from './config';
 import { SignUpData, LoginData } from './types';
 
@@ -213,6 +213,52 @@ export const updateUserPassword = async (
     return {
       success: false,
       message: handleAuthError(error, 'Failed to update password'),
+    };
+  }
+};
+
+export const updateUserDisplayName = async (
+  firstName: string,
+  lastName: string
+): Promise<{ success: boolean; message: string }> => {
+  if (!auth.currentUser) {
+    return {
+      success: false,
+      message: 'No user is currently signed in',
+    };
+  }
+
+  if (!firstName || !lastName) {
+    return {
+      success: false,
+      message: 'Both first name and last name are required',
+    };
+  }
+
+  try {
+    const displayName = `${firstName} ${lastName}`;
+    await updateProfile(auth.currentUser, {
+      displayName,
+    });
+
+    try {
+      await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+        firstName,
+        lastName,
+        updatedAt: new Date(),
+      });
+    } catch (firestoreError) {
+      console.warn('Failed to update Firestore user document:', firestoreError);
+    }
+
+    return {
+      success: true,
+      message: 'Name updated successfully!',
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: handleAuthError(error, 'Failed to update name'),
     };
   }
 };
