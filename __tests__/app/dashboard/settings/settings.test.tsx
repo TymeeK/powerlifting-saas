@@ -25,32 +25,44 @@ describe('Settings Page - Email Update Functionality', () => {
   });
 
   it('renders the settings page with user email', () => {
-    expect(screen.getByText('Settings')).toBeInTheDocument();
-    expect(screen.getByText(/Email: test@example.com/i)).toBeInTheDocument();
+    const settingsHeading = screen.getByText('Settings');
+    const emailText = screen.getByText(/Email: test@example.com/i);
+
+    expect(settingsHeading).toBeInTheDocument();
+    expect(emailText).toBeInTheDocument();
   });
 
   it('opens modal when "Change Email" button is clicked and shows password field', async () => {
     await user.click(screen.getByText('Change Email'));
 
     // Check modal appears with both fields
-    expect(screen.getByText('Update Email Address')).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText('Enter new email address')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText('Enter your current password')
-    ).toBeInTheDocument();
-    expect(screen.getByText(/For security reasons/i)).toBeInTheDocument();
+    const modalTitle = screen.getByText('Update Email Address');
+    const emailInput = screen.getByPlaceholderText('Enter new email address');
+    const passwordInput = screen.getByPlaceholderText(
+      'Enter your current password'
+    );
+    const securityText = screen.getByText(/For security reasons/i);
+
+    expect(modalTitle).toBeInTheDocument();
+    expect(emailInput).toBeInTheDocument();
+    expect(passwordInput).toBeInTheDocument();
+    expect(securityText).toBeInTheDocument();
   });
 
   it('shows validation error when trying to update with empty fields', async () => {
-    await user.click(screen.getByText('Change Email'));
-    await user.click(screen.getByRole('button', { name: /Update Email/i }));
+    const changeEmailButton = screen.getByText('Change Email');
+    await user.click(changeEmailButton);
+
+    const updateEmailButton = screen.getByRole('button', {
+      name: /Update Email/i,
+    });
+    await user.click(updateEmailButton);
 
     await waitFor(() => {
-      expect(
-        screen.getByText('Please enter both email and password')
-      ).toBeInTheDocument();
+      const errorMessage = screen.getByText(
+        'Please enter both email and password'
+      );
+      expect(errorMessage).toBeInTheDocument();
     });
 
     // Verify updateUserEmail was NOT called
@@ -82,9 +94,8 @@ describe('Settings Page - Email Update Functionality', () => {
 
     // Check success message appears
     await waitFor(() => {
-      expect(
-        screen.getByText('Email updated successfully!')
-      ).toBeInTheDocument();
+      const successMessage = screen.getByText('Email updated successfully!');
+      expect(successMessage).toBeInTheDocument();
     });
   });
 
@@ -106,11 +117,13 @@ describe('Settings Page - Email Update Functionality', () => {
     await user.click(screen.getByRole('button', { name: /Update Email/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('Incorrect password')).toBeInTheDocument();
+      const errorMessage = screen.getByText('Incorrect password');
+      expect(errorMessage).toBeInTheDocument();
     });
 
     // Modal should still be open
-    expect(screen.getByText('Update Email Address')).toBeInTheDocument();
+    const modalTitle = screen.getByText('Update Email Address');
+    expect(modalTitle).toBeInTheDocument();
   });
 });
 
@@ -124,16 +137,19 @@ describe('Settings Page - Password Change Functionality', () => {
     await user.click(screen.getByText('Change Password'));
 
     // Check modal appears with password fields
-    expect(screen.getByText('Update Password')).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText('Enter current password')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText('Enter new password')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText('Confirm new password')
-    ).toBeInTheDocument();
+    const modalTitle = screen.getByRole('heading', { name: 'Update Password' });
+    const currentPasswordInput = screen.getByPlaceholderText(
+      'Enter current password'
+    );
+    const newPasswordInput = screen.getByPlaceholderText('Enter new password');
+    const confirmPasswordInput = screen.getByPlaceholderText(
+      'Confirm new password'
+    );
+
+    expect(modalTitle).toBeInTheDocument();
+    expect(currentPasswordInput).toBeInTheDocument();
+    expect(newPasswordInput).toBeInTheDocument();
+    expect(confirmPasswordInput).toBeInTheDocument();
   });
 
   it('shows validation error when trying to update with empty fields', async () => {
@@ -141,7 +157,8 @@ describe('Settings Page - Password Change Functionality', () => {
     await user.click(screen.getByRole('button', { name: /Update Password/i }));
 
     await waitFor(() => {
-      expect(screen.getByText('All fields are required')).toBeInTheDocument();
+      const errorMessage = screen.getByText('All fields are required');
+      expect(errorMessage).toBeInTheDocument();
     });
 
     // Verify updateUserPassword was NOT called
@@ -165,9 +182,8 @@ describe('Settings Page - Password Change Functionality', () => {
     await user.click(screen.getByRole('button', { name: /Update Password/i }));
 
     await waitFor(() => {
-      expect(
-        screen.getByText('New passwords do not match')
-      ).toBeInTheDocument();
+      const errorMessage = screen.getByText('New passwords do not match');
+      expect(errorMessage).toBeInTheDocument();
     });
 
     // Verify updateUserPassword was NOT called
@@ -201,11 +217,9 @@ describe('Settings Page - Password Change Functionality', () => {
       'newpassword123'
     );
 
-    // Check success message appears
     await waitFor(() => {
-      expect(
-        screen.getByText('Password updated successfully!')
-      ).toBeInTheDocument();
+      const successMessage = screen.getByText('Password updated successfully!');
+      expect(successMessage).toBeInTheDocument();
     });
   });
 
@@ -215,26 +229,30 @@ describe('Settings Page - Password Change Functionality', () => {
       message: 'Incorrect password',
     });
 
-    await user.click(screen.getByText('Change Password'));
-    await user.type(
-      screen.getByPlaceholderText('Enter current password'),
-      'wrongpassword'
+    const changePasswordButton = screen.getByText('Change Password');
+    await user.click(changePasswordButton);
+
+    const currentPasswordInput = screen.getByPlaceholderText(
+      'Enter current password'
     );
-    await user.type(
-      screen.getByPlaceholderText('Enter new password'),
-      'newpassword123'
+    const newPasswordInput = screen.getByPlaceholderText('Enter new password');
+    const confirmPasswordInput = screen.getByPlaceholderText(
+      'Confirm new password'
     );
-    await user.type(
-      screen.getByPlaceholderText('Confirm new password'),
-      'newpassword123'
-    );
-    await user.click(screen.getByRole('button', { name: /Update Password/i }));
+    const updatePasswordButton = screen.getByRole('button', {
+      name: /Update Password/i,
+    });
+    await user.type(currentPasswordInput, 'wrongpassword');
+    await user.type(newPasswordInput, 'newpassword123');
+    await user.type(confirmPasswordInput, 'newpassword123');
+    await user.click(updatePasswordButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Incorrect password')).toBeInTheDocument();
+      const errorMessage = screen.getByText('Incorrect password');
+      expect(errorMessage).toBeInTheDocument();
     });
 
-    // Modal should still be open
-    expect(screen.getByText('Update Password')).toBeInTheDocument();
+    const modalTitle = screen.getByRole('heading', { name: 'Update Password' });
+    expect(modalTitle).toBeInTheDocument();
   });
 });
