@@ -149,24 +149,6 @@ const SettingsPage = () => {
 
   const settingsCards = [
     {
-      icon: <User className='h-5 w-5 text-muted-foreground' />,
-      title: 'Account Information',
-      description: 'Update your personal details',
-      badgeText: 'Active',
-      contentText: `Email: ${user.email}`,
-      buttonText: 'Change Email',
-      onButtonClick: () => setModalType('email'),
-    },
-    {
-      icon: <Lock className='h-5 w-5 text-muted-foreground' />,
-      title: 'Security',
-      description: 'Update your password',
-      badgeText: 'Protected',
-      contentText: 'Password: ••••••••',
-      buttonText: 'Change Password',
-      onButtonClick: () => setModalType('password'),
-    },
-    {
       icon: <UserCircle className='h-5 w-5 text-muted-foreground' />,
       title: 'First Name',
       description: 'Update your first name',
@@ -187,6 +169,24 @@ const SettingsPage = () => {
       }`,
       buttonText: 'Change Last Name',
       onButtonClick: () => {},
+    },
+    {
+      icon: <User className='h-5 w-5 text-muted-foreground' />,
+      title: 'Account Information',
+      description: 'Update your personal details',
+      badgeText: 'Active',
+      contentText: `Email: ${user.email}`,
+      buttonText: 'Change Email',
+      onButtonClick: () => setModalType('email'),
+    },
+    {
+      icon: <Lock className='h-5 w-5 text-muted-foreground' />,
+      title: 'Security',
+      description: 'Update your password',
+      badgeText: 'Protected',
+      contentText: 'Password: ••••••••',
+      buttonText: 'Change Password',
+      onButtonClick: () => setModalType('password'),
     },
   ];
 
