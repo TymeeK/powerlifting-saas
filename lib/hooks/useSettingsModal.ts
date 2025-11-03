@@ -89,7 +89,6 @@ export const useSettingsModal = () => {
   };
 
   return {
-    // State
     newEmail,
     password,
     currentPassword,
@@ -100,7 +99,7 @@ export const useSettingsModal = () => {
     modalType,
     successMessage,
     error,
-    // Setters
+
     setNewEmail,
     setPassword,
     setCurrentPassword,
