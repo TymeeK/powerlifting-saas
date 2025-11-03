@@ -9,13 +9,13 @@ interface ComingSoonPageProps {
 }
 
 // Generate static params for all possible slug combinations
+// IMPORTANT: With static export (output: 'export'), ALL routes must be pre-generated
+// Routes not listed here won't exist in the static build, causing client-side navigation to fail
 export async function generateStaticParams() {
-  // Since this is a catch-all route for "coming soon" pages,
-  // we'll generate a few common paths and let the dynamic behavior
-  // handle any other paths at runtime
   // NOTE: Do NOT include routes that have actual implementations (like dashboard/*)
   // as those should be served from their actual page files, not this fallback
   return [
+    // Top-level routes
     { slug: ['features'] },
     { slug: ['pricing'] },
     { slug: ['about'] },
@@ -26,6 +26,12 @@ export async function generateStaticParams() {
     { slug: ['blog'] },
     { slug: ['support'] },
     { slug: ['faq'] },
+    { slug: ['community'] },
+    // Nested feature routes (from navbar - must be included for client-side nav to work)
+    { slug: ['features', 'pr-tracking'] },
+    { slug: ['features', 'workout-logging'] },
+    { slug: ['features', 'analytics'] },
+    { slug: ['features', 'programs'] },
   ];
 }
 
