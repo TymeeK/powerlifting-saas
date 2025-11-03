@@ -333,137 +333,133 @@ export default function WorkoutPage() {
   const firstName = user.displayName ? user.displayName.split(' ')[0] : 'User';
 
   return (
-    <main className='min-h-screen w-screen max-w-full overflow-x-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-4 sm:px-6 lg:px-8 py-8'>
-      <div className='w-full max-w-6xl mx-auto'>
-        <BackToDashboardButton />
-        {/* Header */}
-        <div className='mb-8 mt-6'>
-          <div className='mb-4'>
-            <div className='flex items-center gap-3'>
-              <div className='p-3 rounded-full bg-purple-500/20'>
-                <Dumbbell className='h-8 w-8 text-purple-400' />
-              </div>
-              <div>
-                <h1 className='text-3xl sm:text-4xl font-bold text-white'>
-                  Workout Session
-                </h1>
-                <p className='text-purple-200 text-lg'>
-                  Ready to crush your fitness goals, {firstName}?
-                </p>
-              </div>
-            </div>
+    <div className='container mx-auto p-6 space-y-6'>
+      <BackToDashboardButton />
+
+      {/* Header */}
+      <div className='space-y-2 mt-6'>
+        <div className='flex items-center gap-3'>
+          <div className='p-3 rounded-full bg-muted'>
+            <Dumbbell className='h-8 w-8 text-muted-foreground' />
           </div>
-          <Separator className='bg-purple-500/20' />
+          <div>
+            <h1 className='text-3xl font-bold tracking-tight'>
+              Workout Session
+            </h1>
+            <p className='text-muted-foreground'>
+              Ready to crush your fitness goals, {firstName}?
+            </p>
+          </div>
         </div>
-
-        {/* Success/Error Messages */}
-        {errorState.saveSuccess && (
-          <Alert className='bg-green-500/10 border-green-500/30 mb-6'>
-            <Check className='h-4 w-4' />
-            <AlertDescription className='text-green-200'>
-              Workout saved successfully! Your progress has been recorded.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {errorState.saveError && (
-          <Alert className='bg-red-500/10 border-red-500/30 mb-6'>
-            <AlertDescription className='text-red-200'>
-              {errorState.saveError}
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Exercise Management Header - Only show when no exercises */}
-        {workoutState.exercises.length === 0 && (
-          <EmptyStateCard
-            onAddFirstExercise={() =>
-              setModalState(prev => ({ ...prev, showAddExercise: true }))
-            }
-          />
-        )}
-
-        {/* Add/Edit Exercise Modal */}
-        <AddExerciseModal
-          isOpen={modalState.showAddExercise}
-          onClose={() =>
-            setModalState(prev => ({
-              ...prev,
-              showAddExercise: false,
-              editingExercise: null,
-            }))
-          }
-          onSave={name =>
-            modalState.editingExercise
-              ? handleEditExercise(name)
-              : handleAddExercise(name)
-          }
-          editingExercise={
-            modalState.editingExercise
-              ? workoutState.exercises.find(
-                  ex => ex.id === modalState.editingExercise
-                ) || null
-              : null
-          }
-        />
-
-        {/* Past Exercises Modal */}
-        <PastExercisesModal
-          isOpen={modalState.showPastExercises}
-          onClose={() =>
-            setModalState(prev => ({ ...prev, showPastExercises: false }))
-          }
-          exercises={pastExercises}
-          loading={loadingState.loadingPastExercises}
-          onAddExercise={addPastExerciseToWorkout}
-        />
-
-        {/* Individual Exercise Cards */}
-        {workoutState.exercises.length > 0 && (
-          <div className='space-y-6'>
-            {workoutState.exercises.map(exercise => {
-              const exerciseProgress = getExerciseProgress(
-                workoutState.sets,
-                exercise.id
-              );
-
-              return (
-                <ExerciseCard
-                  key={exercise.id}
-                  exercise={exercise}
-                  sets={getExerciseSets(exercise.id)}
-                  exerciseProgress={exerciseProgress}
-                  onAddSet={addSetForExercise}
-                  onUpdateSet={updateSetForExercise}
-                  onToggleSetComplete={toggleSetCompleteForExercise}
-                  onDeleteSet={deleteSetForExercise}
-                  onEditExercise={startEditExercise}
-                  onDeleteExercise={deleteExercise}
-                />
-              );
-            })}
-          </div>
-        )}
-
-        {/* Floating Action Menu */}
-        <FloatingActionMenu
-          isOpen={isFloatingMenuOpen}
-          onToggle={() => setIsFloatingMenuOpen(!isFloatingMenuOpen)}
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-          onSaveWorkout={handleSaveWorkout}
-          onAddExercise={() => {
-            setModalState(prev => ({ ...prev, showAddExercise: true }));
-            setIsFloatingMenuOpen(false);
-          }}
-          onShowPastExercises={() => {
-            loadPastExercises();
-            setIsFloatingMenuOpen(false);
-          }}
-          isSaving={loadingState.isSaving}
-          loadingPastExercises={loadingState.loadingPastExercises}
-        />
       </div>
+
+      {/* Success/Error Messages */}
+      {errorState.saveSuccess && (
+        <Alert>
+          <Check className='h-4 w-4' />
+          <AlertDescription>
+            Workout saved successfully! Your progress has been recorded.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {errorState.saveError && (
+        <Alert>
+          <AlertDescription className='text-destructive'>
+            {errorState.saveError}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Exercise Management Header - Only show when no exercises */}
+      {workoutState.exercises.length === 0 && (
+        <EmptyStateCard
+          onAddFirstExercise={() =>
+            setModalState(prev => ({ ...prev, showAddExercise: true }))
+          }
+        />
+      )}
+
+      {/* Add/Edit Exercise Modal */}
+      <AddExerciseModal
+        isOpen={modalState.showAddExercise}
+        onClose={() =>
+          setModalState(prev => ({
+            ...prev,
+            showAddExercise: false,
+            editingExercise: null,
+          }))
+        }
+        onSave={name =>
+          modalState.editingExercise
+            ? handleEditExercise(name)
+            : handleAddExercise(name)
+        }
+        editingExercise={
+          modalState.editingExercise
+            ? workoutState.exercises.find(
+                ex => ex.id === modalState.editingExercise
+              ) || null
+            : null
+        }
+      />
+
+      {/* Past Exercises Modal */}
+      <PastExercisesModal
+        isOpen={modalState.showPastExercises}
+        onClose={() =>
+          setModalState(prev => ({ ...prev, showPastExercises: false }))
+        }
+        exercises={pastExercises}
+        loading={loadingState.loadingPastExercises}
+        onAddExercise={addPastExerciseToWorkout}
+      />
+
+      {/* Individual Exercise Cards */}
+      {workoutState.exercises.length > 0 && (
+        <div className='space-y-6'>
+          {workoutState.exercises.map(exercise => {
+            const exerciseProgress = getExerciseProgress(
+              workoutState.sets,
+              exercise.id
+            );
+
+            return (
+              <ExerciseCard
+                key={exercise.id}
+                exercise={exercise}
+                sets={getExerciseSets(exercise.id)}
+                exerciseProgress={exerciseProgress}
+                onAddSet={addSetForExercise}
+                onUpdateSet={updateSetForExercise}
+                onToggleSetComplete={toggleSetCompleteForExercise}
+                onDeleteSet={deleteSetForExercise}
+                onEditExercise={startEditExercise}
+                onDeleteExercise={deleteExercise}
+              />
+            );
+          })}
+        </div>
+      )}
+
+      {/* Floating Action Menu */}
+      <FloatingActionMenu
+        isOpen={isFloatingMenuOpen}
+        onToggle={() => setIsFloatingMenuOpen(!isFloatingMenuOpen)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onSaveWorkout={handleSaveWorkout}
+        onAddExercise={() => {
+          setModalState(prev => ({ ...prev, showAddExercise: true }));
+          setIsFloatingMenuOpen(false);
+        }}
+        onShowPastExercises={() => {
+          loadPastExercises();
+          setIsFloatingMenuOpen(false);
+        }}
+        isSaving={loadingState.isSaving}
+        loadingPastExercises={loadingState.loadingPastExercises}
+      />
 
       {/* Workout Confirmation Screen */}
       <WorkoutConfirmationModal
@@ -478,6 +474,6 @@ export default function WorkoutPage() {
         }}
         onBackToDashboard={() => router.push('/dashboard')}
       />
-    </main>
+    </div>
   );
 }
