@@ -68,12 +68,17 @@ export const loadUserExerciseLibrary = async (userId: string) => {
     // Sort by creation date (newest first)
     exercises.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
+    logger.debug('Exercise library loaded', {
+      userId,
+      exerciseCount: exercises.length,
+    });
+
     return {
       success: true,
       exercises,
     };
   } catch (error: any) {
-    console.error('Error loading exercise library:', error);
+    logger.error('Error loading exercise library', error, { userId });
     throw new Error('Failed to load exercise library');
   }
 };
@@ -91,14 +96,21 @@ export const updateExerciseInLibrary = async (
       updatedAt: serverTimestamp(),
     });
 
-    console.log('Exercise updated in library:', exerciseId);
+    logger.info('Exercise updated in library', {
+      userId,
+      exerciseId,
+      updates,
+    });
 
     return {
       success: true,
       message: 'Exercise updated successfully!',
     };
   } catch (error: any) {
-    console.error('Error updating exercise in library:', error);
+    logger.error('Error updating exercise in library', error, {
+      userId,
+      exerciseId,
+    });
     throw new Error('Failed to update exercise');
   }
 };
@@ -112,14 +124,20 @@ export const deleteExerciseFromLibrary = async (
     const exerciseRef = doc(db, 'users', userId, 'exercises', exerciseId);
     await deleteDoc(exerciseRef);
 
-    console.log('Exercise deleted from library:', exerciseId);
+    logger.info('Exercise deleted from library', {
+      userId,
+      exerciseId,
+    });
 
     return {
       success: true,
       message: 'Exercise deleted successfully!',
     };
   } catch (error: any) {
-    console.error('Error deleting exercise from library:', error);
+    logger.error('Error deleting exercise from library', error, {
+      userId,
+      exerciseId,
+    });
     throw new Error('Failed to delete exercise');
   }
 };
@@ -162,12 +180,17 @@ export const getPastExercises = async (userId: string) => {
       (a, b) => b.lastUsed.getTime() - a.lastUsed.getTime()
     );
 
+    logger.debug('Past exercises fetched', {
+      userId,
+      exerciseCount: pastExercises.length,
+    });
+
     return {
       success: true,
       exercises: pastExercises as PastExercise[],
     };
   } catch (error: any) {
-    console.error('Error fetching past exercises:', error);
+    logger.error('Error fetching past exercises', error, { userId });
     throw new Error('Failed to fetch past exercises');
   }
 };
