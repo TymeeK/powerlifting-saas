@@ -27,32 +27,39 @@ const isFirebaseConfigValid = () => {
 };
 
 // Initialize Firebase only if config is valid and not already initialized
-let app: FirebaseApp;
-let auth: Auth;
-let db: Firestore;
-let storage: FirebaseStorage;
+let app: FirebaseApp | undefined;
+let auth: Auth | undefined;
+let db: Firestore | undefined;
+let storage: FirebaseStorage | undefined;
+
+// Check if we're in a build/prerender environment
+const isBuildTime = typeof window === 'undefined';
 
 if (isFirebaseConfigValid()) {
-  // Use existing app if already initialized (prevents multiple initializations)
-  app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
-  auth = getAuth(app);
-  db = getFirestore(app);
-  storage = getStorage(app);
+  try {
+    // Use existing app if already initialized (prevents multiple initializations)
+    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+  } catch (error) {
+    // If initialization fails, log but don't throw during build
+    if (!isBuildTime) {
+      console.error('Firebase initialization failed:', error);
+    }
+  }
 } else {
-  // During build time, if env vars are missing, we need to handle gracefully
-  // Check if we're in a build environment
-  const isBuildTime =
-    process.env.NODE_ENV === 'production' && typeof window === 'undefined';
-
+  // During build time, allow build to complete even if env vars are missing
+  // Firebase will be undefined and components should handle this gracefully
   if (isBuildTime) {
-    // During build/prerender, skip initialization if config is missing
-    // This allows the build to complete, but Firebase won't work until env vars are set
-    throw new Error(
-      'Firebase configuration is missing. Please set all NEXT_PUBLIC_FIREBASE_* environment variables in your build environment (e.g., GitHub Actions secrets).'
+    // Silently skip initialization during build - this allows the build to complete
+    // Components using Firebase should check if auth/db/storage exist before using them
+    console.warn(
+      'Firebase configuration is missing during build. The build will complete, but Firebase features will not work until environment variables are set.'
     );
   } else {
-    // At runtime, we should have the config
-    throw new Error(
+    // At runtime, log error but don't throw to prevent app crashes
+    console.error(
       'Firebase configuration is incomplete. Make sure all NEXT_PUBLIC_FIREBASE_* environment variables are set.'
     );
   }
