@@ -90,11 +90,6 @@ export function Navbar() {
   }, []);
 
   React.useEffect(() => {
-    if (!auth) {
-      setLoading(false);
-      return;
-    }
-
     const unsubscribe = onAuthStateChanged(auth, user => {
       setUser(user);
       setLoading(false);
@@ -108,10 +103,6 @@ export function Navbar() {
   };
 
   const handleSignOut = async () => {
-    if (!auth) {
-      console.error('Firebase auth is not initialized');
-      return;
-    }
     try {
       await signOut(auth);
       router.push('/login');

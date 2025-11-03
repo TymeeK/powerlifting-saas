@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase-config';
+import { auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import LoadingScreen from '@/components/workout/LoadingScreen';
 import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
