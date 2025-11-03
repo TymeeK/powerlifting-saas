@@ -2,15 +2,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Check, Trash } from 'lucide-react';
-
-interface Set {
-  weight: number;
-  reps: number;
-  completed: boolean;
-}
+import { WorkoutSet } from '@/lib/types/workout';
 
 interface SetCardProps {
-  set: Set;
+  set: WorkoutSet;
   setIndex: number;
   exerciseId: string;
   onUpdateSet: (
