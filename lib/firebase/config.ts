@@ -19,60 +19,73 @@ const app =
   getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
 // Initialize Firebase services
-// Auth requires browser environment, so we initialize it lazily
-let authInstance: Auth | null = null;
+// Auth requires browser environment - use lazy initialization
+let _authInstance: Auth | null = null;
 
-// Create a getter function that initializes auth only in browser
+// Get auth instance - lazy initialization only in browser
 function getAuthInstance(): Auth {
   if (typeof window === 'undefined') {
-    // During SSR/prerendering, throw an error that will be caught
-    // This prevents the module from initializing auth during static generation
-    // Components using auth should be client components and will handle this properly
-    throw new Error('Firebase Auth can only be initialized in the browser');
+    // This should never be called during SSR since client components
+    // don't execute during SSR. But we handle it just in case.
+    throw new Error(
+      'Firebase Auth can only be accessed in the browser. Make sure your component is a client component.'
+    );
   }
-  if (!authInstance) {
-    authInstance = getAuth(app);
+  if (!_authInstance) {
+    _authInstance = getAuth(app);
   }
-  return authInstance;
+  return _authInstance;
 }
 
-// Export auth using a Proxy that lazily initializes only in browser
-// This allows auth to be imported without errors during SSR/prerendering
+// Export auth as a getter property that initializes on first access
+// This ensures getAuth() is never called during SSR/build
 export const auth = new Proxy({} as Auth, {
   get(_target, prop) {
-    try {
-      const instance = getAuthInstance();
-      const value = instance[prop as keyof Auth];
-      // If it's a function, bind it to the instance
-      if (typeof value === 'function') {
-        return value.bind(instance);
-      }
-      return value;
-    } catch (error) {
-      // During SSR, return undefined for properties
-      // This prevents crashes during prerendering
-      if (typeof window === 'undefined') {
-        return undefined;
-      }
-      throw error;
+    const instance = getAuthInstance();
+    const value = instance[prop as keyof Auth];
+    if (typeof value === 'function') {
+      return value.bind(instance);
     }
+    return value;
   },
-  // Handle property descriptor requests
-  getOwnPropertyDescriptor(_target, prop) {
+  set(_target, prop, value) {
+    // Allow Firebase to set internal properties on the actual instance
     try {
       const instance = getAuthInstance();
-      return Object.getOwnPropertyDescriptor(instance, prop as string);
+      (instance as any)[prop] = value;
+      return true;
     } catch {
-      return undefined;
+      return false;
     }
   },
-  // Handle 'in' operator
+  getOwnPropertyDescriptor(_target, prop) {
+    const instance = getAuthInstance();
+    return Object.getOwnPropertyDescriptor(instance, prop as string);
+  },
+  defineProperty(_target, prop, descriptor) {
+    // Allow Firebase to define properties on the actual instance
+    try {
+      const instance = getAuthInstance();
+      Object.defineProperty(instance, prop as string, descriptor);
+      return true;
+    } catch {
+      return false;
+    }
+  },
   has(_target, prop) {
     try {
       const instance = getAuthInstance();
       return prop in instance;
     } catch {
       return false;
+    }
+  },
+  ownKeys(_target) {
+    try {
+      const instance = getAuthInstance();
+      return Object.keys(instance);
+    } catch {
+      return [];
     }
   },
 });
