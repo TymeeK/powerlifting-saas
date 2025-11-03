@@ -107,9 +107,9 @@ export const SettingsCards = ({
 
   return (
     <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-      <SettingsCard {...settingsCards[0]} />
-      <SettingsCard {...settingsCards[1]} />
-      <SettingsCard {...settingsCards[2]} />
+      {settingsCards.map((card, index) => (
+        <SettingsCard key={index} {...card} />
+      ))}
     </div>
   );
 };
