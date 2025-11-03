@@ -2,11 +2,16 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SettingsPage from '@/app/dashboard/settings/page';
-import { updateUserEmail, updateUserPassword } from '@/lib/firebase';
+import {
+  updateUserEmail,
+  updateUserPassword,
+  updateUserDisplayName,
+} from '@/lib/firebase';
 
 vi.mock('@/lib/firebase', () => ({
   updateUserEmail: vi.fn(),
   updateUserPassword: vi.fn(),
+  updateUserDisplayName: vi.fn(),
 }));
 
 vi.mock('@/lib/hooks/userRequireAuth', () => ({
@@ -284,6 +289,180 @@ describe('Settings Page - Password Change Functionality', () => {
     });
 
     const modalTitle = screen.getByRole('heading', { name: 'Update Password' });
+    expect(modalTitle).toBeInTheDocument();
+  });
+});
+
+describe('Settings Page - Name Change Functionality', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    render(<SettingsPage />);
+  });
+
+  it('opens modal when "Change Name" button is clicked', async () => {
+    await user.click(screen.getByText('Change Name'));
+
+    // Check modal appears with name fields
+    const modalTitle = screen.getByRole('heading', { name: 'Update Name' });
+    const firstNameInput = screen.getByPlaceholderText('Enter first name');
+    const lastNameInput = screen.getByPlaceholderText('Enter last name');
+    const descriptionText = screen.getByText(
+      'Update your first and last name.'
+    );
+
+    expect(modalTitle).toBeInTheDocument();
+    expect(firstNameInput).toBeInTheDocument();
+    expect(lastNameInput).toBeInTheDocument();
+    expect(descriptionText).toBeInTheDocument();
+  });
+
+  it('shows validation error when trying to update with empty fields', async () => {
+    (updateUserDisplayName as any).mockResolvedValueOnce({
+      success: false,
+      message: 'Both first name and last name are required',
+    });
+
+    const changeNameButton = screen.getByText('Change Name');
+
+    await user.click(changeNameButton);
+
+    const updateNameButton = screen.getByRole('button', {
+      name: /Update Name/i,
+    });
+    await user.click(updateNameButton);
+
+    await waitFor(() => {
+      const errorMessage = screen.getByText(
+        'Both first name and last name are required'
+      );
+      expect(errorMessage).toBeInTheDocument();
+    });
+
+    // Verify updateUserDisplayName was called with empty strings
+    expect(updateUserDisplayName).toHaveBeenCalledWith('', '');
+  });
+
+  it('shows validation error when first name is empty', async () => {
+    (updateUserDisplayName as any).mockResolvedValueOnce({
+      success: false,
+      message: 'Both first name and last name are required',
+    });
+
+    const changeNameButton = screen.getByText('Change Name');
+    const lastName = 'Doe';
+
+    await user.click(changeNameButton);
+
+    const lastNameInput = screen.getByPlaceholderText('Enter last name');
+    const updateNameButton = screen.getByRole('button', {
+      name: /Update Name/i,
+    });
+
+    await user.type(lastNameInput, lastName);
+    await user.click(updateNameButton);
+
+    await waitFor(() => {
+      const errorMessage = screen.getByText(
+        'Both first name and last name are required'
+      );
+      expect(errorMessage).toBeInTheDocument();
+    });
+
+    // Verify updateUserDisplayName was called with empty first name
+    expect(updateUserDisplayName).toHaveBeenCalledWith('', lastName);
+  });
+
+  it('shows validation error when last name is empty', async () => {
+    (updateUserDisplayName as any).mockResolvedValueOnce({
+      success: false,
+      message: 'Both first name and last name are required',
+    });
+
+    const changeNameButton = screen.getByText('Change Name');
+    const firstName = 'John';
+
+    await user.click(changeNameButton);
+
+    const firstNameInput = screen.getByPlaceholderText('Enter first name');
+    const updateNameButton = screen.getByRole('button', {
+      name: /Update Name/i,
+    });
+
+    await user.type(firstNameInput, firstName);
+    await user.click(updateNameButton);
+
+    await waitFor(() => {
+      const errorMessage = screen.getByText(
+        'Both first name and last name are required'
+      );
+      expect(errorMessage).toBeInTheDocument();
+    });
+
+    // Verify updateUserDisplayName was called with empty last name
+    expect(updateUserDisplayName).toHaveBeenCalledWith(firstName, '');
+  });
+
+  it('successfully updates name when valid first and last names are provided', async () => {
+    (updateUserDisplayName as any).mockResolvedValueOnce({
+      success: true,
+      message: 'Name updated successfully!',
+    });
+
+    const changeNameButton = screen.getByText('Change Name');
+    const firstName = 'John';
+    const lastName = 'Doe';
+
+    await user.click(changeNameButton);
+
+    const firstNameInput = screen.getByPlaceholderText('Enter first name');
+    const lastNameInput = screen.getByPlaceholderText('Enter last name');
+    const updateNameButton = screen.getByRole('button', {
+      name: /Update Name/i,
+    });
+
+    await user.type(firstNameInput, firstName);
+    await user.type(lastNameInput, lastName);
+    await user.click(updateNameButton);
+
+    // Verify function was called with correct parameters
+    expect(updateUserDisplayName).toHaveBeenCalledWith(firstName, lastName);
+
+    // Check success message appears
+    await waitFor(() => {
+      const successMessage = screen.getByText('Name updated successfully!');
+      expect(successMessage).toBeInTheDocument();
+    });
+  });
+
+  it('displays error message when name update fails', async () => {
+    (updateUserDisplayName as any).mockResolvedValueOnce({
+      success: false,
+      message: 'Failed to update name',
+    });
+
+    const changeNameButton = screen.getByText('Change Name');
+    const firstName = 'John';
+    const lastName = 'Doe';
+
+    await user.click(changeNameButton);
+
+    const firstNameInput = screen.getByPlaceholderText('Enter first name');
+    const lastNameInput = screen.getByPlaceholderText('Enter last name');
+    const updateNameButton = screen.getByRole('button', {
+      name: /Update Name/i,
+    });
+
+    await user.type(firstNameInput, firstName);
+    await user.type(lastNameInput, lastName);
+    await user.click(updateNameButton);
+
+    await waitFor(() => {
+      const errorMessage = screen.getByText('Failed to update name');
+      expect(errorMessage).toBeInTheDocument();
+    });
+
+    // Modal should still be open
+    const modalTitle = screen.getByRole('heading', { name: 'Update Name' });
     expect(modalTitle).toBeInTheDocument();
   });
 });
