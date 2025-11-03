@@ -47,8 +47,6 @@ export { PageBreadcrumb } from './page-breadcrumb';
 export { Progress } from './progress';
 export {
   Sheet,
-  SheetPortal,
-  SheetOverlay,
   SheetTrigger,
   SheetClose,
   SheetContent,
