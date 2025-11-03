@@ -10,6 +10,7 @@ import {
 import { doc } from 'firebase/firestore';
 import { db } from './config';
 import { UserExercise, WorkoutExercise, PastExercise } from '@/lib/types';
+import { logger } from '@/lib/logger';
 
 // Save exercise to user's library
 export const saveExerciseToLibrary = async (
@@ -27,7 +28,11 @@ export const saveExerciseToLibrary = async (
     const userExercisesRef = collection(db, 'users', userId, 'exercises');
     const docRef = await addDoc(userExercisesRef, exerciseData);
 
-    console.log('Exercise saved to library with ID:', docRef.id);
+    logger.info('Exercise saved to library', {
+      userId,
+      exerciseId: docRef.id,
+      exerciseName: exercise.name,
+    });
 
     return {
       success: true,
@@ -35,7 +40,10 @@ export const saveExerciseToLibrary = async (
       message: 'Exercise saved to your library!',
     };
   } catch (error: any) {
-    console.error('Error saving exercise to library:', error);
+    logger.error('Error saving exercise to library', error, {
+      userId,
+      exerciseName: exercise.name,
+    });
     throw new Error('Failed to save exercise to library');
   }
 };

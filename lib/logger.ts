@@ -37,21 +37,26 @@ export const logger = {
   /**
    * Log informational messages
    */
-  info: (message: string, ...args: any[]) => {
-    baseLogger.info({ ...args }, message);
+  info: (message: string, data?: Record<string, any>, ...args: any[]) => {
+    baseLogger.info({ ...data, ...args }, message);
   },
 
   /**
    * Log warning messages
    */
-  warn: (message: string, ...args: any[]) => {
-    baseLogger.warn({ ...args }, message);
+  warn: (message: string, data?: Record<string, any>, ...args: any[]) => {
+    baseLogger.warn({ ...data, ...args }, message);
   },
 
   /**
    * Log error messages
    */
-  error: (message: string, error?: Error | unknown, ...args: any[]) => {
+  error: (
+    message: string,
+    error?: Error | unknown,
+    data?: Record<string, any>,
+    ...args: any[]
+  ) => {
     const errorObj =
       error instanceof Error
         ? {
@@ -60,14 +65,14 @@ export const logger = {
             name: error.name,
           }
         : error;
-    baseLogger.error({ error: errorObj, ...args }, message);
+    baseLogger.error({ error: errorObj, ...data, ...args }, message);
   },
 
   /**
    * Log debug messages (only in development)
    */
-  debug: (message: string, ...args: any[]) => {
-    baseLogger.debug({ ...args }, message);
+  debug: (message: string, data?: Record<string, any>, ...args: any[]) => {
+    baseLogger.debug({ ...data, ...args }, message);
   },
 
   /**
