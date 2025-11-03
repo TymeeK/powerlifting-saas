@@ -9,7 +9,7 @@ import {
 } from 'firebase/firestore';
 import { doc } from 'firebase/firestore';
 import { db } from './config';
-import { UserExercise, WorkoutExercise, PastExercise } from './types';
+import { UserExercise, WorkoutExercise, PastExercise } from '@/lib/types';
 
 // Save exercise to user's library
 export const saveExerciseToLibrary = async (

@@ -7,24 +7,10 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-
-interface WeeklySummaryData {
-  thisWeekWorkouts: number;
-  lastWeekWorkouts: number;
-  thisMonthWorkouts: number;
-  totalWorkouts: number;
-  personalRecords: number;
-  currentStreak: number;
-  totalTime: number;
-  caloriesBurned: number;
-  goalProgress: number;
-  activeDays: number;
-  totalVolume: number;
-  lastWorkoutDate: Date | null;
-}
+import { WorkoutSummary } from '@/lib/types';
 
 interface WeeklySummaryCardProps {
-  data?: WeeklySummaryData | null;
+  data?: WorkoutSummary | null;
   loading?: boolean;
 }
 

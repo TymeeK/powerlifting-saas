@@ -11,7 +11,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from './config';
-import { SignUpData, LoginData } from './types';
+import { SignUpData, LoginData } from '@/lib/types';
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   'auth/email-already-in-use': 'This email is already registered',

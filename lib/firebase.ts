@@ -4,8 +4,8 @@
 // Export Firebase configuration and core services
 export { auth, db, storage, default as app } from './firebase/config';
 
-// Export all types
-export * from './firebase/types';
+// Export all types (from centralized location)
+export * from '@/lib/types';
 
 // Export authentication functions
 export {

@@ -11,7 +11,7 @@ import {
   WorkoutSet,
   PastWorkout,
   WorkoutSummary,
-} from './types';
+} from '@/lib/types';
 
 // Save workout function
 export const saveWorkout = async (

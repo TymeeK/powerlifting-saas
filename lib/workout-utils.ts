@@ -1,38 +1,12 @@
 // Utility functions for workout page
-import { UserExercise } from './firebase';
-
-// State management utilities
-export interface WorkoutState {
-  exercises: UserExercise[];
-  sets: {
-    [exerciseId: string]: Array<{
-      reps: number;
-      weight: number;
-      completed: boolean;
-    }>;
-  };
-}
-
-export interface ModalState {
-  showAddExercise: boolean;
-  showPastExercises: boolean;
-  showConfirmation: boolean;
-  editingExercise: string | null;
-}
-
-export interface FormState {
-  newExerciseName: string;
-}
-
-export interface LoadingState {
-  isSaving: boolean;
-  loadingPastExercises: boolean;
-}
-
-export interface ErrorState {
-  saveError: string | null;
-  saveSuccess: boolean;
-}
+import {
+  UserExercise,
+  WorkoutState,
+  ModalState,
+  FormState,
+  LoadingState,
+  ErrorState,
+} from '@/lib/types';
 
 // Local storage utilities
 export const saveSetsToStorage = (setsData: WorkoutState['sets']) => {

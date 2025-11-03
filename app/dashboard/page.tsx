@@ -12,21 +12,7 @@ import WeeklySummaryCard from '@/components/dashboard/WeeklySummaryCard';
 import QuickActionsCard from '@/components/dashboard/QuickActionsCard';
 import LoadingScreen from '@/components/workout/LoadingScreen';
 import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
-
-interface WeeklySummaryData {
-  thisWeekWorkouts: number;
-  lastWeekWorkouts: number;
-  thisMonthWorkouts: number;
-  totalWorkouts: number;
-  personalRecords: number;
-  currentStreak: number;
-  totalTime: number;
-  caloriesBurned: number;
-  goalProgress: number;
-  activeDays: number;
-  totalVolume: number;
-  lastWorkoutDate: Date | null;
-}
+import { WorkoutSummary } from '@/lib/types';
 
 type WorkoutCallToActionCard = {
   title: string;
@@ -86,9 +72,7 @@ const WorkoutCallToActionCard = ({
 export default function DashboardPage() {
   const { user, loading } = useRequireAuth('/login');
   const router = useRouter();
-  const [summaryData, setSummaryData] = useState<WeeklySummaryData | null>(
-    null
-  );
+  const [summaryData, setSummaryData] = useState<WorkoutSummary | null>(null);
   const [summaryLoading, setSummaryLoading] = useState(false);
   const [summaryError, setSummaryError] = useState<string | null>(null);
 

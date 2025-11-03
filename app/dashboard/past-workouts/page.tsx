@@ -18,26 +18,11 @@ import { Calendar, Clock, Dumbbell, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import BackToDashboardButton from '@/components/back-button';
 import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
-
-// Workout data interface
-interface Workout {
-  id: string;
-  date: string;
-  duration: string;
-  exercises: {
-    name: string;
-    sets: number;
-    reps: number[];
-    weight: number[];
-  }[];
-  totalVolume: number;
-  personalRecords: number;
-  createdAt: Date;
-}
+import { PastWorkout } from '@/lib/types';
 
 export default function PastWorkoutsPage() {
   const { user, loading } = useRequireAuth('/login');
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const [workouts, setWorkouts] = useState<PastWorkout[]>([]);
   const [workoutsLoading, setWorkoutsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
