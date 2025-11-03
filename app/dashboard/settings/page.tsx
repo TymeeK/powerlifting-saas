@@ -3,82 +3,9 @@
 import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
 import LoadingScreen from '@/components/workout/LoadingScreen';
 import BackToDashboardButton from '@/components/back-button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Alert } from '@/components/ui/alert';
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogCancel,
-} from '@/components/ui/alert-dialog';
-import {
-  Badge,
-  User,
-  Lock,
-  AlertCircle,
-  CheckCircle2,
-  UserCircle,
-} from 'lucide-react';
 import { useSettingsModal } from '@/lib/hooks/useSettingsModal';
-
-interface SettingsCardProps {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  badgeText: string;
-  contentText: string;
-  buttonText: string;
-  onButtonClick: () => void;
-}
-
-const SettingsCard = ({
-  icon,
-  title,
-  description,
-  badgeText,
-  contentText,
-  buttonText,
-  onButtonClick,
-}: SettingsCardProps) => {
-  return (
-    <Card>
-      <CardHeader>
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-3'>
-            <div className='p-2 rounded-lg bg-muted'>{icon}</div>
-            <div>
-              <CardTitle className='text-muted-foreground'>{title}</CardTitle>
-              <CardDescription className='text-muted-foreground'>
-                {description}
-              </CardDescription>
-            </div>
-          </div>
-          <Badge className='bg-muted text-muted-foreground border-muted/30'>
-            {badgeText}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <p>{contentText}</p>
-        <Button className='mt-4 cursor-pointer' onClick={onButtonClick}>
-          {buttonText}
-        </Button>
-      </CardContent>
-    </Card>
-  );
-};
+import { SettingsCards } from '@/components/dashboard/settings/SettingsCard';
+import { SettingsModal } from '@/components/dashboard/settings/SettingsModal';
 
 const SettingsPage = () => {
   const { user, loading } = useRequireAuth('/login');
@@ -112,40 +39,6 @@ const SettingsPage = () => {
     return <LoadingScreen />;
   }
 
-  const settingsCards = [
-    {
-      icon: <UserCircle className='h-5 w-5 text-muted-foreground' />,
-      title: 'Name',
-      description: 'Update your first and last name',
-      badgeText: 'Personal',
-      contentText: `Name: ${user.displayName || 'Not set'}`,
-      buttonText: 'Change Name',
-      onButtonClick: () => {
-        setFirstName(user.displayName?.split(' ')[0] || '');
-        setLastName(user.displayName?.split(' ').slice(1).join(' ') || '');
-        setModalType('name');
-      },
-    },
-    {
-      icon: <User className='h-5 w-5 text-muted-foreground' />,
-      title: 'Account Information',
-      description: 'Update your personal details',
-      badgeText: 'Active',
-      contentText: `Email: ${user.email}`,
-      buttonText: 'Change Email',
-      onButtonClick: () => setModalType('email'),
-    },
-    {
-      icon: <Lock className='h-5 w-5 text-muted-foreground' />,
-      title: 'Security',
-      description: 'Update your password',
-      badgeText: 'Protected',
-      contentText: 'Password: ••••••••',
-      buttonText: 'Change Password',
-      onButtonClick: () => setModalType('password'),
-    },
-  ];
-
   return (
     <div className='container mx-auto p-6 space-y-6'>
       <BackToDashboardButton />
@@ -157,151 +50,34 @@ const SettingsPage = () => {
         </p>
       </div>
 
-      <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-        {settingsCards.map((card, index) => (
-          <SettingsCard key={index} {...card} />
-        ))}
-      </div>
+      <SettingsCards
+        user={user}
+        setFirstName={setFirstName}
+        setLastName={setLastName}
+        setModalType={setModalType}
+      />
 
-      <AlertDialog
-        open={!!modalType}
-        onOpenChange={open => !open && handleCloseModal()}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {modalType === 'email' && 'Update Email Address'}
-              {modalType === 'password' && 'Update Password'}
-              {modalType === 'name' && 'Update Name'}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {modalType === 'email' &&
-                'Change your email address. You will need to verify your identity.'}
-              {modalType === 'password' &&
-                'Update your password. Make sure it is at least 6 characters long.'}
-              {modalType === 'name' && 'Update your first and last name.'}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          <div className='space-y-4 py-4'>
-            {error && (
-              <Alert variant='destructive' className='flex items-center gap-2'>
-                <AlertCircle className='h-4 w-4' />
-                <span>{error}</span>
-              </Alert>
-            )}
-            {successMessage && (
-              <Alert className='flex items-center gap-2 border-green-500 text-green-600 dark:border-green-800 dark:text-green-400'>
-                <CheckCircle2 className='h-4 w-4' />
-                <span>{successMessage}</span>
-              </Alert>
-            )}
-
-            {modalType === 'email' && (
-              <>
-                <div className='space-y-2'>
-                  <Label htmlFor='new-email'>New Email Address</Label>
-                  <Input
-                    id='new-email'
-                    type='email'
-                    value={newEmail}
-                    onChange={e => setNewEmail(e.target.value)}
-                    placeholder='Enter new email address'
-                    autoFocus
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='current-password'>Current Password</Label>
-                  <Input
-                    id='current-password'
-                    type='password'
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    placeholder='Enter your current password'
-                  />
-                </div>
-                <p className='text-xs text-muted-foreground'>
-                  For security reasons, you must verify your identity with your
-                  current password to change your email address.
-                </p>
-              </>
-            )}
-
-            {modalType === 'password' && (
-              <>
-                <div className='space-y-2'>
-                  <Label htmlFor='current-password'>Current Password</Label>
-                  <Input
-                    id='current-password'
-                    type='password'
-                    value={currentPassword}
-                    onChange={e => setCurrentPassword(e.target.value)}
-                    placeholder='Enter current password'
-                    autoFocus
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='new-password'>New Password</Label>
-                  <Input
-                    id='new-password'
-                    type='password'
-                    value={newPassword}
-                    onChange={e => setNewPassword(e.target.value)}
-                    placeholder='Enter new password'
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='confirm-password'>Confirm New Password</Label>
-                  <Input
-                    id='confirm-password'
-                    type='password'
-                    value={confirmPassword}
-                    onChange={e => setConfirmPassword(e.target.value)}
-                    placeholder='Confirm new password'
-                  />
-                </div>
-              </>
-            )}
-
-            {modalType === 'name' && (
-              <>
-                <div className='space-y-2'>
-                  <Label htmlFor='first-name'>First Name</Label>
-                  <Input
-                    id='first-name'
-                    type='text'
-                    value={firstName}
-                    onChange={e => setFirstName(e.target.value)}
-                    placeholder='Enter first name'
-                    autoFocus
-                  />
-                </div>
-                <div className='space-y-2'>
-                  <Label htmlFor='last-name'>Last Name</Label>
-                  <Input
-                    id='last-name'
-                    type='text'
-                    value={lastName}
-                    onChange={e => setLastName(e.target.value)}
-                    placeholder='Enter last name'
-                  />
-                </div>
-              </>
-            )}
-          </div>
-
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCloseModal}>
-              Cancel
-            </AlertDialogCancel>
-            <Button onClick={handleSubmit} className='cursor-pointer'>
-              {modalType === 'email' && 'Update Email'}
-              {modalType === 'password' && 'Update Password'}
-              {modalType === 'name' && 'Update Name'}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <SettingsModal
+        modalType={modalType}
+        error={error}
+        successMessage={successMessage}
+        newEmail={newEmail}
+        password={password}
+        onNewEmailChange={setNewEmail}
+        onPasswordChange={setPassword}
+        currentPassword={currentPassword}
+        newPassword={newPassword}
+        confirmPassword={confirmPassword}
+        onCurrentPasswordChange={setCurrentPassword}
+        onNewPasswordChange={setNewPassword}
+        onConfirmPasswordChange={setConfirmPassword}
+        firstName={firstName}
+        lastName={lastName}
+        onFirstNameChange={setFirstName}
+        onLastNameChange={setLastName}
+        onClose={handleCloseModal}
+        onSubmit={handleSubmit}
+      />
     </div>
   );
 };
