@@ -3,7 +3,7 @@ import {
   updateUserEmail,
   updateUserPassword,
   updateUserDisplayName,
-} from '@/lib/firebase/auth';
+} from '@/lib/firebase';
 
 type ModalType = 'email' | 'password' | 'name' | null;
 

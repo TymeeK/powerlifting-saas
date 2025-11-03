@@ -4,8 +4,7 @@ import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
 import LoadingScreen from '@/components/workout/LoadingScreen';
 import BackToDashboardButton from '@/components/back-button';
 import { useSettingsModal } from '@/lib/hooks/useSettingsModal';
-import { SettingsCards } from '@/components/dashboard/settings/SettingsCard';
-import { SettingsModal } from '@/components/dashboard/settings/SettingsModal';
+import { SettingsCards, SettingsModal } from '@/components/dashboard/settings';
 
 const SettingsPage = () => {
   const { user, loading } = useRequireAuth('/login');

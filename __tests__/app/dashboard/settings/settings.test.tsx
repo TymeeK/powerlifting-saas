@@ -2,9 +2,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SettingsPage from '@/app/dashboard/settings/page';
-import { updateUserEmail, updateUserPassword } from '@/lib/firebase/auth';
+import { updateUserEmail, updateUserPassword } from '@/lib/firebase';
 
-vi.mock('@/lib/firebase/auth', () => ({
+vi.mock('@/lib/firebase', () => ({
   updateUserEmail: vi.fn(),
   updateUserPassword: vi.fn(),
 }));

@@ -10,9 +10,7 @@ import {
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
-import { UpdateEmailForm } from './UpdateEmailForm';
-import { UpdatePasswordForm } from './UpdatePasswordForm';
-import { UpdateNameForm } from './UpdateNameForm';
+import { UpdateEmailForm, UpdatePasswordForm, UpdateNameForm } from './index';
 
 interface SettingsModalProps {
   modalType: 'email' | 'password' | 'name' | null;
