@@ -9,12 +9,7 @@ import { Button } from '@/components/ui/button';
 import { X, Dumbbell, List } from 'lucide-react';
 import { buttonVariants, cardVariants } from '@/lib/button-variants';
 import { formatLastUsed } from '@/lib/workout-utils';
-
-interface PastExercise {
-  name: string;
-  lastUsed: Date;
-  totalWorkouts: number;
-}
+import { PastExercise } from '@/lib/types/exercise';
 
 interface PastExercisesModalProps {
   isOpen: boolean;
