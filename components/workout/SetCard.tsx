@@ -33,8 +33,8 @@ export default function SetCard({
           <span className='font-bold text-base'>{setIndex + 1}</span>
         </div>
 
-        <div className='flex-1 grid grid-cols-2 gap-4'>
-          <div className='space-y-1'>
+        <div className='flex-1 grid grid-cols-2 gap-2 sm:gap-4 min-w-0'>
+          <div className='flex flex-col space-y-1 min-w-0'>
             <Label className='text-xs font-medium'>Weight (lbs)</Label>
             <Input
               type='number'
@@ -47,11 +47,11 @@ export default function SetCard({
                   parseInt(e.target.value) || 0
                 )
               }
-              className='text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
+              className='w-full min-w-0 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
             />
           </div>
 
-          <div className='space-y-1'>
+          <div className='flex flex-col space-y-1 min-w-0'>
             <Label className='text-xs font-medium'>Reps</Label>
             <Input
               type='number'
@@ -64,7 +64,7 @@ export default function SetCard({
                   parseInt(e.target.value) || 0
                 )
               }
-              className='text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
+              className='w-full min-w-0 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
             />
           </div>
         </div>
