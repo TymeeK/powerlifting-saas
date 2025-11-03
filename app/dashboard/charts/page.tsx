@@ -24,6 +24,7 @@ import { auth } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import LoadingScreen from '@/components/workout/LoadingScreen';
 import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
+import BackToDashboardButton from '@/components/back-button';
 
 // Prefilled data for the three main lifts
 const exerciseData = {
@@ -114,8 +115,10 @@ export default function ChartsPage() {
 
   return (
     <div className='container mx-auto p-6 space-y-6'>
+      <BackToDashboardButton />
+
       {/* Header */}
-      <div className='space-y-2'>
+      <div className='space-y-2 mt-6'>
         <h1 className='text-3xl font-bold tracking-tight'>Progress Charts</h1>
         <p className='text-muted-foreground'>
           Track your strength progress across the big three lifts
