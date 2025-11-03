@@ -27,6 +27,7 @@ import {
   type FormState,
   type LoadingState,
   type ErrorState,
+  type PastExercise,
 } from '@/lib/types';
 import {
   saveWorkoutStateToStorage,
@@ -76,13 +77,7 @@ export default function WorkoutPage() {
   const [isHoveringFloatingButton, setIsHoveringFloatingButton] =
     useState(false);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
-  const [pastExercises, setPastExercises] = useState<
-    Array<{
-      name: string;
-      lastUsed: Date;
-      totalWorkouts: number;
-    }>
-  >([]);
+  const [pastExercises, setPastExercises] = useState<PastExercise[]>([]);
 
   // Hover management functions
   const handleMouseEnter = () => {
