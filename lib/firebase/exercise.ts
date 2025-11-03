@@ -122,14 +122,7 @@ export const getPastExercises = async (userId: string) => {
     const userWorkoutsRef = collection(db, 'users', userId, 'workouts');
     const querySnapshot = await getDocs(userWorkoutsRef);
 
-    const exerciseMap = new Map<
-      string,
-      {
-        name: string;
-        lastUsed: Date;
-        totalWorkouts: number;
-      }
-    >();
+    const exerciseMap = new Map<string, PastExercise>();
 
     querySnapshot.forEach(doc => {
       const workoutData = doc.data();
