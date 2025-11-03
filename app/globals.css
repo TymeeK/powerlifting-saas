@@ -118,12 +118,25 @@
   body {
     @apply bg-background text-foreground;
   }
-  html,
-  body {
+  html {
     margin: 0;
     padding: 0;
     width: 100%;
     height: 100%;
+    /* Use dynamic viewport height for mobile browsers to avoid browser chrome */
+    height: 100dvh;
     overflow-x: hidden;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    min-height: 100%;
+    /* Use dynamic viewport height for mobile browsers */
+    min-height: 100dvh;
+    overflow-x: hidden;
+    /* Allow content to extend into safe areas, individual components can use safe-area-inset for padding */
+    position: relative;
   }
 }
