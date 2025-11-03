@@ -66,20 +66,16 @@ const WorkoutCallToActionCard = ({
   buttonLink: string;
 }) => {
   return (
-    <Card className='bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-400/40 mb-8'>
-      <CardContent className='text-center p-8'>
-        <div className='text-6xl mb-4'>🏋️‍♂️</div>
-        <h2 className='text-2xl sm:text-3xl font-bold text-white mb-3'>
-          {title}
-        </h2>
-        <p className='text-purple-200 text-lg mb-6 max-w-2xl mx-auto'>
-          {description}
-        </p>
-        <Button
-          onClick={() => router.push(buttonLink)}
-          size='lg'
-          className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold px-8 py-4 text-lg rounded-full shadow-xl hover:shadow-purple-500/30 transition-all duration-300 transform hover:scale-105 hover:cursor-pointer'
-        >
+    <Card className='flex flex-col h-full'>
+      <CardContent className='text-center p-8 flex flex-col flex-1 justify-between'>
+        <div>
+          <div className='text-6xl mb-4'>🏋️‍♂️</div>
+          <h2 className='text-2xl sm:text-3xl font-bold mb-3 min-h-[4.5rem] flex items-center justify-center'>
+            {title}
+          </h2>
+          <p className='text-muted-foreground text-lg mb-6'>{description}</p>
+        </div>
+        <Button onClick={() => router.push(buttonLink)} size='lg'>
           {buttonText}
         </Button>
       </CardContent>
@@ -123,6 +119,12 @@ export default function DashboardPage() {
     }
   };
 
+  useEffect(() => {
+    if (user) {
+      fetchSummaryData(user.uid);
+    }
+  }, [user]);
+
   if (loading) {
     return <LoadingScreen />;
   }
@@ -132,53 +134,51 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className='min-h-screen w-screen max-w-full overflow-x-hidden flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white px-4 sm:px-6 lg:px-8 py-8'>
-      <div className='w-full max-w-4xl text-center'>
-        <UserProfileCard user={user} />
+    <div className='container mx-auto p-6 space-y-6'>
+      <UserProfileCard user={user} />
 
-        <div className='flex flex-col sm:flex-row gap-4'>
-          {workoutCallToActionCards.map(card => (
-            <WorkoutCallToActionCard
-              key={card.title}
-              router={router}
-              title={card.title}
-              description={card.description}
-              buttonText={card.buttonText}
-              buttonLink={card.buttonLink}
-            />
-          ))}
-        </div>
-
-        {/* Quick Actions */}
-        {/* <QuickActionsCard /> */}
-
-        {/* Motivational Alert */}
-        {/* <Alert className='bg-green-500/10 border-green-500/30 mb-8'>
-          <AlertDescription className='text-green-200 text-center'>
-            🎉 Great job! You're on a 7-day streak. Keep up the momentum!
-          </AlertDescription>
-        </Alert> */}
-
-        {/* Hero Summary Panel */}
-        {summaryError ? (
-          <Alert className='bg-red-500/10 border-red-500/30 mb-8'>
-            <AlertDescription className='text-red-200 text-center'>
-              ⚠️ {summaryError}
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <WeeklySummaryCard data={summaryData} loading={summaryLoading} />
-        )}
-
-        {/* <Button
-          onClick={handleSignOut}
-          variant='destructive'
-          size='lg'
-          className='bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 shadow-lg hover:shadow-red-500/25'
-        >
-          Sign Out
-        </Button> */}
+      <div className='flex flex-col sm:flex-row gap-4 items-stretch'>
+        {workoutCallToActionCards.map(card => (
+          <WorkoutCallToActionCard
+            key={card.title}
+            router={router}
+            title={card.title}
+            description={card.description}
+            buttonText={card.buttonText}
+            buttonLink={card.buttonLink}
+          />
+        ))}
       </div>
-    </main>
+
+      {/* Quick Actions */}
+      {/* <QuickActionsCard /> */}
+
+      {/* Motivational Alert */}
+      {/* <Alert className='bg-green-500/10 border-green-500/30 mb-8'>
+        <AlertDescription className='text-green-200 text-center'>
+          🎉 Great job! You're on a 7-day streak. Keep up the momentum!
+        </AlertDescription>
+      </Alert> */}
+
+      {/* Hero Summary Panel */}
+      {summaryError ? (
+        <Alert>
+          <AlertDescription className='text-destructive text-center'>
+            ⚠️ {summaryError}
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <WeeklySummaryCard data={summaryData} loading={summaryLoading} />
+      )}
+
+      {/* <Button
+        onClick={handleSignOut}
+        variant='destructive'
+        size='lg'
+        className='bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 shadow-lg hover:shadow-red-500/25'
+      >
+        Sign Out
+      </Button> */}
+    </div>
   );
 }
