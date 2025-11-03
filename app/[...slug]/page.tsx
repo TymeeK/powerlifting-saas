@@ -13,6 +13,8 @@ export async function generateStaticParams() {
   // Since this is a catch-all route for "coming soon" pages,
   // we'll generate a few common paths and let the dynamic behavior
   // handle any other paths at runtime
+  // NOTE: Do NOT include routes that have actual implementations (like dashboard/*)
+  // as those should be served from their actual page files, not this fallback
   return [
     { slug: ['features'] },
     { slug: ['pricing'] },
@@ -24,9 +26,6 @@ export async function generateStaticParams() {
     { slug: ['blog'] },
     { slug: ['support'] },
     { slug: ['faq'] },
-    { slug: ['dashboard', 'charts'] },
-    { slug: ['dashboard', 'settings'] },
-    { slug: ['dashboard', 'past-workouts'] },
   ];
 }
 
