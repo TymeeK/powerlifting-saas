@@ -10,17 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Dumbbell, Edit, Trash2, Plus, Check } from 'lucide-react';
 import SetCard from '@/components/workout/SetCard';
+import { WorkoutSet } from '@/lib/types/workout';
+import { UserExercise } from '@/lib/types/exercise';
 
-interface Set {
-  weight: number;
-  reps: number;
-  completed: boolean;
-}
-
-interface Exercise {
-  id: string;
-  name: string;
-}
+type Exercise = Pick<UserExercise, 'id' | 'name'>;
 
 interface ExerciseProgress {
   completed: number;
@@ -30,7 +23,7 @@ interface ExerciseProgress {
 
 interface ExerciseCardProps {
   exercise: Exercise;
-  sets: Set[];
+  sets: WorkoutSet[];
   exerciseProgress: ExerciseProgress;
   onAddSet: (exerciseId: string) => void;
   onUpdateSet: (
