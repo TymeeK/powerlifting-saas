@@ -28,6 +28,20 @@ const handleAuthError = (error: any, defaultMessage: string): string => {
   return AUTH_ERROR_MESSAGES[error.code] || error.message || defaultMessage;
 };
 
+const updateFirestoreUserDocument = async (
+  userId: string,
+  updates: Record<string, any>
+): Promise<void> => {
+  try {
+    await updateDoc(doc(db, 'users', userId), {
+      ...updates,
+      updatedAt: new Date(),
+    });
+  } catch (firestoreError) {
+    console.warn('Failed to update Firestore user document:', firestoreError);
+  }
+};
+
 export const signUp = async (signUpData: SignUpData) => {
   const { firstName, lastName, email, password, confirmPassword } = signUpData;
 
@@ -168,6 +182,8 @@ export const updateUserEmail = async (
 
   try {
     await updateEmail(auth.currentUser, email);
+    await updateFirestoreUserDocument(auth.currentUser.uid, { email });
+
     return {
       success: true,
       message: 'Email updated successfully!',
@@ -240,16 +256,10 @@ export const updateUserDisplayName = async (
     await updateProfile(auth.currentUser, {
       displayName,
     });
-
-    try {
-      await updateDoc(doc(db, 'users', auth.currentUser.uid), {
-        firstName,
-        lastName,
-        updatedAt: new Date(),
-      });
-    } catch (firestoreError) {
-      console.warn('Failed to update Firestore user document:', firestoreError);
-    }
+    await updateFirestoreUserDocument(auth.currentUser.uid, {
+      firstName,
+      lastName,
+    });
 
     return {
       success: true,
