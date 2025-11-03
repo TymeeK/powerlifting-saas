@@ -8,7 +8,15 @@ export { auth, db, storage, default as app } from './firebase/config';
 export * from './firebase/types';
 
 // Export authentication functions
-export { signUp, signIn, resetPassword } from './firebase/auth';
+export {
+  signUp,
+  signIn,
+  resetPassword,
+  reauthenticateUser,
+  updateUserEmail,
+  updateUserPassword,
+  updateUserDisplayName,
+} from './firebase/auth';
 
 // Export workout functions
 export {
