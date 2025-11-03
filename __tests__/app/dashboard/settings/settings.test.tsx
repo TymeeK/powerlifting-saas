@@ -65,7 +65,6 @@ describe('Settings Page - Email Update Functionality', () => {
       expect(errorMessage).toBeInTheDocument();
     });
 
-    // Verify updateUserEmail was NOT called
     expect(updateUserEmail).not.toHaveBeenCalled();
   });
 
@@ -75,22 +74,26 @@ describe('Settings Page - Email Update Functionality', () => {
       message: 'Email updated successfully!',
     });
 
-    await user.click(screen.getByText('Change Email'));
-    await user.type(
-      screen.getByPlaceholderText('Enter new email address'),
-      'newemail@example.com'
+    const changeEmailButton = screen.getByText('Change Email');
+    const newEmail = 'newemail@example.com';
+    const currentPassword = 'mypassword123';
+
+    await user.click(changeEmailButton);
+
+    const emailInput = screen.getByPlaceholderText('Enter new email address');
+    const passwordInput = screen.getByPlaceholderText(
+      'Enter your current password'
     );
-    await user.type(
-      screen.getByPlaceholderText('Enter your current password'),
-      'mypassword123'
-    );
-    await user.click(screen.getByRole('button', { name: /Update Email/i }));
+    const updateEmailButton = screen.getByRole('button', {
+      name: /Update Email/i,
+    });
+
+    await user.type(emailInput, newEmail);
+    await user.type(passwordInput, currentPassword);
+    await user.click(updateEmailButton);
 
     // Verify function was called with both email and password
-    expect(updateUserEmail).toHaveBeenCalledWith(
-      'newemail@example.com',
-      'mypassword123'
-    );
+    expect(updateUserEmail).toHaveBeenCalledWith(newEmail, currentPassword);
 
     // Check success message appears
     await waitFor(() => {
@@ -105,16 +108,23 @@ describe('Settings Page - Email Update Functionality', () => {
       message: 'Incorrect password',
     });
 
-    await user.click(screen.getByText('Change Email'));
-    await user.type(
-      screen.getByPlaceholderText('Enter new email address'),
-      'newemail@example.com'
+    const changeEmailButton = screen.getByText('Change Email');
+    const newEmail = 'newemail@example.com';
+    const wrongPassword = 'wrongpassword';
+
+    await user.click(changeEmailButton);
+
+    const emailInput = screen.getByPlaceholderText('Enter new email address');
+    const passwordInput = screen.getByPlaceholderText(
+      'Enter your current password'
     );
-    await user.type(
-      screen.getByPlaceholderText('Enter your current password'),
-      'wrongpassword'
-    );
-    await user.click(screen.getByRole('button', { name: /Update Email/i }));
+    const updateEmailButton = screen.getByRole('button', {
+      name: /Update Email/i,
+    });
+
+    await user.type(emailInput, newEmail);
+    await user.type(passwordInput, wrongPassword);
+    await user.click(updateEmailButton);
 
     await waitFor(() => {
       const errorMessage = screen.getByText('Incorrect password');
@@ -153,8 +163,14 @@ describe('Settings Page - Password Change Functionality', () => {
   });
 
   it('shows validation error when trying to update with empty fields', async () => {
-    await user.click(screen.getByText('Change Password'));
-    await user.click(screen.getByRole('button', { name: /Update Password/i }));
+    const changePasswordButton = screen.getByText('Change Password');
+
+    await user.click(changePasswordButton);
+
+    const updatePasswordButton = screen.getByRole('button', {
+      name: /Update Password/i,
+    });
+    await user.click(updatePasswordButton);
 
     await waitFor(() => {
       const errorMessage = screen.getByText('All fields are required');
@@ -166,20 +182,28 @@ describe('Settings Page - Password Change Functionality', () => {
   });
 
   it('shows validation error when new passwords do not match', async () => {
-    await user.click(screen.getByText('Change Password'));
-    await user.type(
-      screen.getByPlaceholderText('Enter current password'),
-      'currentpassword123'
+    const changePasswordButton = screen.getByText('Change Password');
+    const currentPassword = 'currentpassword123';
+    const newPassword = 'newpassword123';
+    const differentPassword = 'differentpassword123';
+
+    await user.click(changePasswordButton);
+
+    const currentPasswordInput = screen.getByPlaceholderText(
+      'Enter current password'
     );
-    await user.type(
-      screen.getByPlaceholderText('Enter new password'),
-      'newpassword123'
+    const newPasswordInput = screen.getByPlaceholderText('Enter new password');
+    const confirmPasswordInput = screen.getByPlaceholderText(
+      'Confirm new password'
     );
-    await user.type(
-      screen.getByPlaceholderText('Confirm new password'),
-      'differentpassword123'
-    );
-    await user.click(screen.getByRole('button', { name: /Update Password/i }));
+    const updatePasswordButton = screen.getByRole('button', {
+      name: /Update Password/i,
+    });
+
+    await user.type(currentPasswordInput, currentPassword);
+    await user.type(newPasswordInput, newPassword);
+    await user.type(confirmPasswordInput, differentPassword);
+    await user.click(updatePasswordButton);
 
     await waitFor(() => {
       const errorMessage = screen.getByText('New passwords do not match');
@@ -196,25 +220,32 @@ describe('Settings Page - Password Change Functionality', () => {
       message: 'Password updated successfully!',
     });
 
-    await user.click(screen.getByText('Change Password'));
-    await user.type(
-      screen.getByPlaceholderText('Enter current password'),
-      'currentpassword123'
+    const changePasswordButton = screen.getByText('Change Password');
+    const currentPassword = 'currentpassword123';
+    const newPassword = 'newpassword123';
+
+    await user.click(changePasswordButton);
+
+    const currentPasswordInput = screen.getByPlaceholderText(
+      'Enter current password'
     );
-    await user.type(
-      screen.getByPlaceholderText('Enter new password'),
-      'newpassword123'
+    const newPasswordInput = screen.getByPlaceholderText('Enter new password');
+    const confirmPasswordInput = screen.getByPlaceholderText(
+      'Confirm new password'
     );
-    await user.type(
-      screen.getByPlaceholderText('Confirm new password'),
-      'newpassword123'
-    );
-    await user.click(screen.getByRole('button', { name: /Update Password/i }));
+    const updatePasswordButton = screen.getByRole('button', {
+      name: /Update Password/i,
+    });
+
+    await user.type(currentPasswordInput, currentPassword);
+    await user.type(newPasswordInput, newPassword);
+    await user.type(confirmPasswordInput, newPassword);
+    await user.click(updatePasswordButton);
 
     // Verify function was called with correct parameters
     expect(updateUserPassword).toHaveBeenCalledWith(
-      'currentpassword123',
-      'newpassword123'
+      currentPassword,
+      newPassword
     );
 
     await waitFor(() => {
