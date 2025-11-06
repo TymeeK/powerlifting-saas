@@ -12,6 +12,9 @@ import { db } from './config';
 import { UserExercise, WorkoutExercise, PastExercise } from '@/lib/types';
 import { logger } from '@/lib/logger';
 
+// Create a child logger for exercise operations
+const exerciseLogger = logger.child({ component: 'firebase-exercise' });
+
 // Save exercise to user's library
 export const saveExerciseToLibrary = async (
   userId: string,
@@ -28,9 +31,7 @@ export const saveExerciseToLibrary = async (
     const userExercisesRef = collection(db, 'users', userId, 'exercises');
     const docRef = await addDoc(userExercisesRef, exerciseData);
 
-    logger.info('Exercise saved to library', {
-      userId,
-      exerciseId: docRef.id,
+    exerciseLogger.info('Exercise saved to library', {
       exerciseName: exercise.name,
     });
 
@@ -40,8 +41,7 @@ export const saveExerciseToLibrary = async (
       message: 'Exercise saved to your library!',
     };
   } catch (error: any) {
-    logger.error('Error saving exercise to library', error, {
-      userId,
+    exerciseLogger.error('Error saving exercise to library', error, {
       exerciseName: exercise.name,
     });
     throw new Error('Failed to save exercise to library');
@@ -68,8 +68,7 @@ export const loadUserExerciseLibrary = async (userId: string) => {
     // Sort by creation date (newest first)
     exercises.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
-    logger.debug('Exercise library loaded', {
-      userId,
+    exerciseLogger.debug('Exercise library loaded', {
       exerciseCount: exercises.length,
     });
 
@@ -78,7 +77,7 @@ export const loadUserExerciseLibrary = async (userId: string) => {
       exercises,
     };
   } catch (error: any) {
-    logger.error('Error loading exercise library', error, { userId });
+    exerciseLogger.error('Error loading exercise library', error);
     throw new Error('Failed to load exercise library');
   }
 };
@@ -96,9 +95,7 @@ export const updateExerciseInLibrary = async (
       updatedAt: serverTimestamp(),
     });
 
-    logger.info('Exercise updated in library', {
-      userId,
-      exerciseId,
+    exerciseLogger.info('Exercise updated in library', {
       updates,
     });
 
@@ -107,10 +104,7 @@ export const updateExerciseInLibrary = async (
       message: 'Exercise updated successfully!',
     };
   } catch (error: any) {
-    logger.error('Error updating exercise in library', error, {
-      userId,
-      exerciseId,
-    });
+    exerciseLogger.error('Error updating exercise in library', error);
     throw new Error('Failed to update exercise');
   }
 };
@@ -124,20 +118,14 @@ export const deleteExerciseFromLibrary = async (
     const exerciseRef = doc(db, 'users', userId, 'exercises', exerciseId);
     await deleteDoc(exerciseRef);
 
-    logger.info('Exercise deleted from library', {
-      userId,
-      exerciseId,
-    });
+    exerciseLogger.info('Exercise deleted from library');
 
     return {
       success: true,
       message: 'Exercise deleted successfully!',
     };
   } catch (error: any) {
-    logger.error('Error deleting exercise from library', error, {
-      userId,
-      exerciseId,
-    });
+    exerciseLogger.error('Error deleting exercise from library', error);
     throw new Error('Failed to delete exercise');
   }
 };
@@ -180,8 +168,7 @@ export const getPastExercises = async (userId: string) => {
       (a, b) => b.lastUsed.getTime() - a.lastUsed.getTime()
     );
 
-    logger.debug('Past exercises fetched', {
-      userId,
+    exerciseLogger.debug('Past exercises fetched', {
       exerciseCount: pastExercises.length,
     });
 
@@ -190,7 +177,7 @@ export const getPastExercises = async (userId: string) => {
       exercises: pastExercises as PastExercise[],
     };
   } catch (error: any) {
-    logger.error('Error fetching past exercises', error, { userId });
+    exerciseLogger.error('Error fetching past exercises', error);
     throw new Error('Failed to fetch past exercises');
   }
 };
