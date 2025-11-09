@@ -7,13 +7,20 @@ import {
   LoadingState,
   ErrorState,
 } from '@/lib/types';
+import { logger } from '@/lib/logger';
+
+// Create a child logger for workout utilities
+const workoutUtilsLogger = logger.child({ component: 'workout-utils' });
 
 // Local storage utilities
 export const saveSetsToStorage = (setsData: WorkoutState['sets']) => {
   try {
     localStorage.setItem('workoutSets', JSON.stringify(setsData));
+    workoutUtilsLogger.debug('Sets saved to localStorage', {
+      setsCount: Object.keys(setsData).length,
+    });
   } catch (error) {
-    console.error('Error saving sets to localStorage:', error);
+    workoutUtilsLogger.error('Error saving sets to localStorage', error);
   }
 };
 
@@ -21,10 +28,14 @@ export const loadSetsFromStorage = (): WorkoutState['sets'] => {
   try {
     const savedSets = localStorage.getItem('workoutSets');
     if (savedSets) {
-      return JSON.parse(savedSets);
+      const parsed = JSON.parse(savedSets);
+      workoutUtilsLogger.debug('Sets loaded from localStorage', {
+        setsCount: Object.keys(parsed).length,
+      });
+      return parsed;
     }
   } catch (error) {
-    console.error('Error loading sets from localStorage:', error);
+    workoutUtilsLogger.error('Error loading sets from localStorage', error);
   }
   return {};
 };
@@ -33,40 +44,54 @@ export const loadSetsFromStorage = (): WorkoutState['sets'] => {
 export const saveWorkoutStateToStorage = (workoutState: WorkoutState) => {
   // Only run on client side
   if (typeof window === 'undefined') {
-    console.log('Not running on server side');
+    workoutUtilsLogger.debug('Not running on server side');
     return;
   }
 
   try {
-    console.log('Saving to localStorage:', workoutState);
-    console.log('localStorage available:', typeof localStorage !== 'undefined');
+    workoutUtilsLogger.debug('Saving workout state to localStorage', {
+      exerciseCount: workoutState.exercises.length,
+      setsCount: Object.keys(workoutState.sets).length,
+    });
+
     localStorage.setItem('currentWorkout', JSON.stringify(workoutState));
-    console.log('Successfully saved to localStorage');
+    workoutUtilsLogger.debug(
+      'Workout state saved to localStorage successfully'
+    );
 
     // Verify the save worked
     const verification = localStorage.getItem('currentWorkout');
-    console.log(
-      'Verification - data in localStorage:',
-      verification ? 'YES' : 'NO'
-    );
+    workoutUtilsLogger.debug('Storage verification', {
+      saved: !!verification,
+    });
   } catch (error) {
-    console.error('Error saving workout state to localStorage:', error);
+    workoutUtilsLogger.error(
+      'Error saving workout state to localStorage',
+      error
+    );
   }
 };
 
 export const loadWorkoutStateFromStorage = (): WorkoutState | null => {
   // Only run on client side
   if (typeof window === 'undefined') {
-    console.log('Not running on server side');
+    workoutUtilsLogger.debug('Not running on server side');
     return null;
   }
 
   try {
     const savedWorkout = localStorage.getItem('currentWorkout');
-    console.log('Raw localStorage data:', savedWorkout);
+    workoutUtilsLogger.debug('Loading workout state from localStorage', {
+      hasData: !!savedWorkout,
+    });
+
     if (savedWorkout) {
       const parsed = JSON.parse(savedWorkout);
-      console.log('Parsed workout state:', parsed);
+      workoutUtilsLogger.debug('Workout state loaded from localStorage', {
+        exerciseCount: parsed.exercises?.length || 0,
+        setsCount: Object.keys(parsed.sets || {}).length,
+      });
+
       // Convert date strings back to Date objects
       if (parsed.exercises) {
         parsed.exercises = parsed.exercises.map((exercise: any) => ({
@@ -78,7 +103,10 @@ export const loadWorkoutStateFromStorage = (): WorkoutState | null => {
       return parsed;
     }
   } catch (error) {
-    console.error('Error loading workout state from localStorage:', error);
+    workoutUtilsLogger.error(
+      'Error loading workout state from localStorage',
+      error
+    );
   }
   return null;
 };
@@ -87,8 +115,12 @@ export const clearWorkoutStateFromStorage = () => {
   try {
     localStorage.removeItem('currentWorkout');
     localStorage.removeItem('workoutSets');
+    workoutUtilsLogger.debug('Workout state cleared from localStorage');
   } catch (error) {
-    console.error('Error clearing workout state from localStorage:', error);
+    workoutUtilsLogger.error(
+      'Error clearing workout state from localStorage',
+      error
+    );
   }
 };
 

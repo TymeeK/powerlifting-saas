@@ -12,6 +12,10 @@ import {
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from './config';
 import { SignUpData, LoginData } from '@/lib/types';
+import { logger } from '@/lib/logger';
+
+// Create a child logger for auth operations
+const authLogger = logger.child({ component: 'firebase-auth' });
 
 const AUTH_ERROR_MESSAGES: Record<string, string> = {
   'auth/email-already-in-use': 'This email is already registered',
@@ -38,7 +42,7 @@ const updateFirestoreUserDocument = async (
       updatedAt: new Date(),
     });
   } catch (firestoreError) {
-    console.warn('Failed to update Firestore user document:', firestoreError);
+    authLogger.warn('Failed to update Firestore user document', firestoreError);
   }
 };
 
@@ -54,14 +58,14 @@ export const signUp = async (signUpData: SignUpData) => {
   }
 
   try {
-    console.log('Creating user with email:', email);
+    authLogger.debug('Creating user account');
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       email,
       password
     );
     const user = userCredential.user;
-    console.log('User created successfully:', user.uid);
+    authLogger.info('User account created successfully');
 
     await updateProfile(user, {
       displayName: `${firstName} ${lastName}`,
@@ -75,9 +79,9 @@ export const signUp = async (signUpData: SignUpData) => {
         createdAt: new Date(),
         updatedAt: new Date(),
       });
-      console.log('User data stored in Firestore successfully');
+      authLogger.debug('User data stored in Firestore successfully');
     } catch (firestoreError) {
-      console.error('Firestore error:', firestoreError);
+      authLogger.error('Error storing user data in Firestore', firestoreError);
     }
 
     return {
@@ -89,6 +93,9 @@ export const signUp = async (signUpData: SignUpData) => {
       },
     };
   } catch (error: any) {
+    authLogger.error('Error during sign up', error, {
+      errorCode: error.code,
+    });
     throw new Error(handleAuthError(error, 'An error occurred during sign up'));
   }
 };
@@ -113,6 +120,9 @@ export const signIn = async (loginData: LoginData) => {
       },
     };
   } catch (error: any) {
+    authLogger.error('Error during sign in', error, {
+      errorCode: error.code,
+    });
     throw new Error(handleAuthError(error, 'An error occurred during sign in'));
   }
 };
@@ -126,6 +136,9 @@ export const resetPassword = async (email: string) => {
       message: 'Password reset email sent successfully!',
     };
   } catch (error: any) {
+    authLogger.error('Error sending password reset email', error, {
+      errorCode: error.code,
+    });
     throw new Error(
       handleAuthError(
         error,
@@ -156,6 +169,9 @@ export const reauthenticateUser = async (
       message: 'Re-authentication successful',
     };
   } catch (error: any) {
+    authLogger.error('Re-authentication failed', error, {
+      errorCode: error.code,
+    });
     return {
       success: false,
       message: handleAuthError(error, 'Re-authentication failed'),
@@ -189,6 +205,9 @@ export const updateUserEmail = async (
       message: 'Email updated successfully!',
     };
   } catch (error: any) {
+    authLogger.error('Error updating user email', error, {
+      errorCode: error.code,
+    });
     return {
       success: false,
       message: handleAuthError(error, 'Failed to update email'),
@@ -226,6 +245,9 @@ export const updateUserPassword = async (
       message: 'Password updated successfully!',
     };
   } catch (error: any) {
+    authLogger.error('Error updating user password', error, {
+      errorCode: error.code,
+    });
     return {
       success: false,
       message: handleAuthError(error, 'Failed to update password'),
@@ -266,6 +288,9 @@ export const updateUserDisplayName = async (
       message: 'Name updated successfully!',
     };
   } catch (error: any) {
+    authLogger.error('Error updating user display name', error, {
+      errorCode: error.code,
+    });
     return {
       success: false,
       message: handleAuthError(error, 'Failed to update name'),
