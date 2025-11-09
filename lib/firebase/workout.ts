@@ -12,6 +12,10 @@ import {
   PastWorkout,
   WorkoutSummary,
 } from '@/lib/types';
+import { logger } from '@/lib/logger';
+
+// Create a child logger for workout operations
+const workoutLogger = logger.child({ component: 'firebase-workout' });
 
 // Save workout function
 export const saveWorkout = async (
@@ -36,7 +40,11 @@ export const saveWorkout = async (
     const querySnapshot = await getDocs(userWorkoutsRef);
     const totalWorkouts = querySnapshot.size;
 
-    console.log('Workout saved successfully with ID:', docRef.id);
+    workoutLogger.info('Workout saved successfully', {
+      totalWorkouts,
+      exerciseCount: exercises.length,
+      state,
+    });
 
     return {
       success: true,
@@ -45,7 +53,10 @@ export const saveWorkout = async (
       message: 'Workout saved successfully!',
     };
   } catch (error: any) {
-    console.error('Error saving workout:', error);
+    workoutLogger.error('Error saving workout', error, {
+      errorCode: error.code,
+      exerciseCount: exercises.length,
+    });
 
     let errorMessage = 'An error occurred while saving the workout';
 
@@ -126,12 +137,16 @@ export const getPastWorkouts = async (userId: string) => {
     // Sort by creation date (newest first)
     workouts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
+    workoutLogger.debug('Past workouts fetched successfully', {
+      workoutCount: workouts.length,
+    });
+
     return {
       success: true,
       workouts,
     };
   } catch (error: any) {
-    console.error('Error fetching past workouts:', error);
+    workoutLogger.error('Error fetching past workouts', error);
     throw new Error('Failed to fetch past workouts');
   }
 };
@@ -281,7 +296,7 @@ export const getWeeklySummary = async (userId: string) => {
       } as WorkoutSummary,
     };
   } catch (error: any) {
-    console.error('Error fetching weekly summary:', error);
+    workoutLogger.error('Error fetching weekly summary', error);
     throw new Error('Failed to fetch weekly summary');
   }
 };
