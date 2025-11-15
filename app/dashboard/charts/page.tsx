@@ -19,12 +19,14 @@ import {
   Zap,
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
 import LoadingScreen from '@/components/workout/LoadingScreen';
 import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
 import BackToDashboardButton from '@/components/back-button';
+import { getPastWorkouts } from '@/lib/firebase';
+import { PastWorkout } from '@/lib/types';
+import { logger } from '@/lib/logger';
+
+const chartsLogger = logger.child({ component: 'charts-page' });
 
 // Prefilled data for the three main lifts
 const exerciseData = {
@@ -81,25 +83,81 @@ const exerciseData = {
   },
 };
 
-const overallStats = {
-  totalPRs: 3,
-  totalImprovement: 21.8,
-  averageImprovement: 7.3,
-  totalVolume: 36200,
-  activeWeeks: 5,
-};
-
 export default function ChartsPage() {
-  const router = useRouter();
   const { user, loading } = useRequireAuth('/login');
+  const [workouts, setWorkouts] = useState<PastWorkout[]>([]);
+  const [workoutsLoading, setWorkoutsLoading] = useState(true);
+  const [totalVolume, setTotalVolume] = useState(0);
 
-  if (loading) {
+  useEffect(() => {
+    const calculateMonthlyVolume = () => {
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const monthlyWorkouts = workouts.filter(workout => {
+        // Use createdAt which is a Date object, more reliable than parsing date string
+        const workoutDate = new Date(workout.createdAt);
+        workoutDate.setHours(0, 0, 0, 0);
+        return workoutDate >= startOfMonth;
+      });
+
+      const volume = monthlyWorkouts.reduce((total, workout) => {
+        return total + (workout.totalVolume || 0);
+      }, 0);
+
+      chartsLogger.debug('Monthly volume calculation', {
+        totalWorkouts: workouts.length,
+        monthlyWorkouts: monthlyWorkouts.length,
+        volume,
+        startOfMonth: startOfMonth.toISOString(),
+      });
+
+      setTotalVolume(volume);
+    };
+
+    calculateMonthlyVolume();
+  }, [workouts]);
+
+  useEffect(() => {
+    const loadWorkouts = async (userId: string) => {
+      try {
+        setWorkoutsLoading(true);
+        const result = await getPastWorkouts(userId);
+        if (result.success) {
+          chartsLogger.debug('Workouts loaded', {
+            workoutCount: result.workouts.length,
+          });
+          setWorkouts(result.workouts);
+        }
+      } catch (error) {
+        chartsLogger.error('Error loading workouts', error);
+      } finally {
+        setWorkoutsLoading(false);
+      }
+    };
+
+    if (user) {
+      loadWorkouts(user.uid);
+    }
+  }, [user]);
+
+  if (loading || workoutsLoading) {
     return <LoadingScreen />;
   }
 
   if (!user) {
     return null;
   }
+
+  // Calculate overall stats (keeping prefilled data for other stats for now)
+  const overallStats = {
+    totalPRs: 3,
+    totalImprovement: 21.8,
+    averageImprovement: 7.3,
+    totalVolume: totalVolume,
+    activeWeeks: 5,
+  };
 
   const getProgressPercentage = (current: number, target: number) => {
     return Math.min((current / target) * 100, 100);
@@ -162,7 +220,7 @@ export default function ChartsPage() {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>
-              {overallStats.totalVolume.toLocaleString()}
+              {(overallStats.totalVolume || 0).toLocaleString()}
             </div>
             <p className='text-xs text-muted-foreground'>
               Pounds lifted this month
