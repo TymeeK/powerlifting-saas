@@ -13,6 +13,10 @@ import QuickActionsCard from '@/components/dashboard/QuickActionsCard';
 import LoadingScreen from '@/components/workout/LoadingScreen';
 import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
 import { WorkoutSummary } from '@/lib/types';
+import { logger } from '@/lib/logger';
+
+// Create a child logger for dashboard page
+const dashboardLogger = logger.child({ component: 'dashboard-page' });
 
 type WorkoutCallToActionCard = {
   title: string;
@@ -87,7 +91,7 @@ export default function DashboardPage() {
         setSummaryError('Failed to load summary data');
       }
     } catch (error: any) {
-      console.error('Error fetching summary data:', error);
+      dashboardLogger.error('Error fetching summary data', error);
       setSummaryError(error.message || 'Failed to load summary data');
     } finally {
       setSummaryLoading(false);
@@ -99,7 +103,7 @@ export default function DashboardPage() {
       await signOut(auth);
       router.push('/login');
     } catch (error) {
-      console.error('Error signing out:', error);
+      dashboardLogger.error('Error signing out', error);
     }
   };
 

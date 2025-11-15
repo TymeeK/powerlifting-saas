@@ -19,6 +19,10 @@ import Link from 'next/link';
 import BackToDashboardButton from '@/components/back-button';
 import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
 import { PastWorkout } from '@/lib/types';
+import { logger } from '@/lib/logger';
+
+// Create a child logger for past workouts page
+const pastWorkoutsLogger = logger.child({ component: 'past-workouts-page' });
 
 export default function PastWorkoutsPage() {
   const { user, loading } = useRequireAuth('/login');
@@ -37,7 +41,7 @@ export default function PastWorkoutsPage() {
         setError('Failed to load workouts');
       }
     } catch (err) {
-      console.error('Error loading workouts:', err);
+      pastWorkoutsLogger.error('Error loading workouts', err);
       setError('Failed to load workouts');
     } finally {
       setWorkoutsLoading(false);

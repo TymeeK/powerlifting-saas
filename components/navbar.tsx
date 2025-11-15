@@ -26,6 +26,10 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
+import { logger } from '@/lib/logger';
+
+// Create a child logger for navbar component
+const navbarLogger = logger.child({ component: 'navbar' });
 
 const features = [
   {
@@ -107,7 +111,7 @@ export function Navbar() {
       await signOut(auth);
       router.push('/login');
     } catch (error) {
-      console.error('Error signing out:', error);
+      navbarLogger.error('Error signing out', error);
     }
   };
 

@@ -41,6 +41,10 @@ import {
 } from '@/lib/workout-utils';
 import BackToDashboardButton from '@/components/back-button';
 import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
+import { logger } from '@/lib/logger';
+
+// Create a child logger for workout page
+const workoutPageLogger = logger.child({ component: 'workout-page' });
 
 export default function WorkoutPage() {
   const { user, loading } = useRequireAuth('/login');
@@ -114,14 +118,19 @@ export default function WorkoutPage() {
   useEffect(() => {
     if (!user || typeof window === 'undefined') return;
 
-    console.log('User authenticated, loading saved workout state...');
+    workoutPageLogger.debug('User authenticated, loading saved workout state');
     const savedWorkoutState = loadWorkoutStateFromStorage();
-    console.log('Loading from storage:', savedWorkoutState);
+    workoutPageLogger.debug('Loading from storage', {
+      hasSavedState: !!savedWorkoutState,
+    });
     if (savedWorkoutState) {
-      console.log('Restoring workout state from storage');
+      workoutPageLogger.debug('Restoring workout state from storage', {
+        exerciseCount: savedWorkoutState.exercises?.length || 0,
+        setsCount: Object.keys(savedWorkoutState.sets || {}).length,
+      });
       setWorkoutState(savedWorkoutState);
     } else {
-      console.log('No saved workout state found, starting fresh');
+      workoutPageLogger.debug('No saved workout state found, starting fresh');
       // Start with empty state if no saved workout
       setWorkoutState({ exercises: [], sets: {} });
     }
@@ -132,14 +141,17 @@ export default function WorkoutPage() {
     // Only run on client side and when user is authenticated
     if (typeof window === 'undefined' || !user) return;
 
-    console.log('Workout state changed:', workoutState);
+    workoutPageLogger.debug('Workout state changed', {
+      exerciseCount: workoutState.exercises.length,
+      setsCount: Object.keys(workoutState.sets).length,
+    });
     if (
       workoutState.exercises.length > 0 ||
       Object.keys(workoutState.sets).length > 0
     ) {
-      console.log('Saving workout state to storage...');
+      workoutPageLogger.debug('Saving workout state to storage');
       saveWorkoutStateToStorage(workoutState);
-      console.log('Workout state saved to localStorage');
+      workoutPageLogger.debug('Workout state saved to localStorage');
     }
   }, [workoutState, user]);
 
@@ -261,7 +273,7 @@ export default function WorkoutPage() {
         setModalState(prev => ({ ...prev, showPastExercises: true }));
       }
     } catch (error: any) {
-      console.error('Error loading past exercises:', error);
+      workoutPageLogger.error('Error loading past exercises', error);
       setErrorState(prev => ({
         ...prev,
         saveError: 'Failed to load past exercises',
@@ -317,7 +329,9 @@ export default function WorkoutPage() {
         setModalState(prev => ({ ...prev, showConfirmation: true }));
       }
     } catch (error: any) {
-      console.error('Error saving workout:', error);
+      workoutPageLogger.error('Error saving workout', error, {
+        exerciseCount: workoutState.exercises.length,
+      });
       setErrorState(prev => ({
         ...prev,
         saveError: error.message || 'Failed to save workout',
