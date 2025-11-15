@@ -13,7 +13,22 @@ const baseLogger = pino({
         // In browser, pino logs to console with structured output
         asObject: false, // Log as console messages, not structured objects
         write: {
-          // Write logs to console
+          // Map log levels to console methods
+          // Use console.log for debug since console.debug may be filtered
+          debug: (o: any) => {
+            if (isDevelopment) {
+              console.log(o);
+            }
+          },
+          info: (o: any) => console.info(o),
+          warn: (o: any) => console.warn(o),
+          error: (o: any) => console.error(o),
+          fatal: (o: any) => console.error(o),
+          trace: (o: any) => {
+            if (isDevelopment) {
+              console.trace(o);
+            }
+          },
         },
       }
     : undefined,
@@ -103,26 +118,20 @@ export const logger = {
   child: (bindings: Record<string, any>) => {
     const childLogger = baseLogger.child(bindings);
     return {
-      info: (message: string, ...args: any[]) =>
-        childLogger.info({ ...args }, message),
-      warn: (message: string, ...args: any[]) =>
-        childLogger.warn({ ...args }, message),
-      error: (message: string, error?: Error | unknown, ...args: any[]) => {
-        const errorObj =
-          error instanceof Error
-            ? {
-                message: error.message,
-                stack: error.stack,
-                name: error.name,
-              }
-            : error;
-        childLogger.error({ error: errorObj, ...args }, message);
+      info: (message: string, data?: Record<string, any>, ...args: any[]) => {
+        const mergedData = data ? { ...data, ...args } : { ...args };
+        childLogger.info(mergedData, message);
       },
-      debug: (message: string, ...args: any[]) =>
-        childLogger.debug({ ...args }, message),
-      trace: (message: string, ...args: any[]) =>
-        childLogger.trace({ ...args }, message),
-      fatal: (message: string, error?: Error | unknown, ...args: any[]) => {
+      warn: (message: string, data?: Record<string, any>, ...args: any[]) => {
+        const mergedData = data ? { ...data, ...args } : { ...args };
+        childLogger.warn(mergedData, message);
+      },
+      error: (
+        message: string,
+        error?: Error | unknown,
+        data?: Record<string, any>,
+        ...args: any[]
+      ) => {
         const errorObj =
           error instanceof Error
             ? {
@@ -131,7 +140,33 @@ export const logger = {
                 name: error.name,
               }
             : error;
-        childLogger.fatal({ error: errorObj, ...args }, message);
+        const mergedData = { error: errorObj, ...(data || {}), ...args };
+        childLogger.error(mergedData, message);
+      },
+      debug: (message: string, data?: Record<string, any>, ...args: any[]) => {
+        const mergedData = data ? { ...data, ...args } : { ...args };
+        childLogger.debug(mergedData, message);
+      },
+      trace: (message: string, data?: Record<string, any>, ...args: any[]) => {
+        const mergedData = data ? { ...data, ...args } : { ...args };
+        childLogger.trace(mergedData, message);
+      },
+      fatal: (
+        message: string,
+        error?: Error | unknown,
+        data?: Record<string, any>,
+        ...args: any[]
+      ) => {
+        const errorObj =
+          error instanceof Error
+            ? {
+                message: error.message,
+                stack: error.stack,
+                name: error.name,
+              }
+            : error;
+        const mergedData = { error: errorObj, ...(data || {}), ...args };
+        childLogger.fatal(mergedData, message);
       },
     };
   },
