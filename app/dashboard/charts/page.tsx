@@ -34,6 +34,8 @@ import BackToDashboardButton from '@/components/back-button';
 import { getPastWorkouts } from '@/lib/firebase';
 import { PastWorkout } from '@/lib/types';
 import { logger } from '@/lib/logger';
+import { StrengthProgressionOverview } from '@/components/dashboard/charts';
+import { ExerciseStats } from '@/lib/types';
 
 const chartsLogger = logger.child({ component: 'charts-page' });
 
@@ -48,19 +50,6 @@ const exerciseColors = [
   'bg-red-500',
   'bg-yellow-500',
 ];
-
-// Interface for exercise statistics
-interface ExerciseStats {
-  name: string;
-  currentPR: number;
-  previousPR: number;
-  target: number;
-  weeklyProgress: Array<{ week: string; weight: number; reps: number }>;
-  monthlyVolume: number;
-  lastWorkout: string;
-  improvement: number;
-  color: string;
-}
 
 // Process workouts to calculate exercise statistics
 const calculateExerciseStats = (
@@ -602,40 +591,7 @@ export default function ChartsPage() {
       )}
 
       {/* Summary Chart */}
-      {Object.keys(exerciseData).length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Strength Progression Overview</CardTitle>
-            <CardDescription>
-              Visual representation of your strength gains across all exercises
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className='space-y-4'>
-              {Object.entries(exerciseData)
-                .filter(([_, exercise]) => exercise.currentPR > 0)
-                .map(([key, exercise]) => (
-                  <div key={key} className='space-y-2'>
-                    <div className='flex items-center justify-between'>
-                      <span className='font-medium'>{exercise.name}</span>
-                      <span className='text-sm text-muted-foreground'>
-                        {exercise.previousPR} → {exercise.currentPR} lbs
-                      </span>
-                    </div>
-                    <div className='relative h-3 bg-muted rounded-full overflow-hidden'>
-                      <div
-                        className={`absolute top-0 left-0 h-full ${exercise.color} rounded-full transition-all duration-1000`}
-                        style={{
-                          width: '100%',
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <StrengthProgressionOverview exerciseData={exerciseData} />
     </div>
   );
 }

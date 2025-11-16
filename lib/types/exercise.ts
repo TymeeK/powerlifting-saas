@@ -17,3 +17,15 @@ export interface PastExercise {
   lastUsed: Date;
   totalWorkouts: number;
 }
+
+export interface ExerciseStats {
+  name: string;
+  currentPR: number;
+  previousPR: number;
+  target: number;
+  weeklyProgress: Array<{ week: string; weight: number; reps: number }>;
+  monthlyVolume: number;
+  lastWorkout: string;
+  improvement: number;
+  color: string;
+}
