@@ -42,7 +42,16 @@ const updateFirestoreUserDocument = async (
       updatedAt: new Date(),
     });
   } catch (firestoreError) {
-    authLogger.warn('Failed to update Firestore user document', firestoreError);
+    authLogger.warn('Failed to update Firestore user document', {
+      error:
+        firestoreError instanceof Error
+          ? {
+              message: firestoreError.message,
+              stack: firestoreError.stack,
+              name: firestoreError.name,
+            }
+          : firestoreError,
+    });
   }
 };
 
