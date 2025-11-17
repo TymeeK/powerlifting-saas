@@ -12,9 +12,6 @@ import {
   CheckCircle2,
   Sparkles,
 } from 'lucide-react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import BackToDashboardButton from '@/components/back-button';
 
 const features = [
   {
@@ -116,8 +113,6 @@ const technicalFeatures = [
 export default function ReleaseNotesPage() {
   return (
     <div className='container mx-auto p-6 space-y-6 max-w-5xl'>
-      <BackToDashboardButton />
-
       {/* Header */}
       <div className='space-y-4 mt-6'>
         <div className='flex items-center gap-3'>
@@ -212,28 +207,6 @@ export default function ReleaseNotesPage() {
           ))}
         </div>
       </div>
-
-      {/* Call to Action */}
-      <Card className='bg-gradient-to-r from-purple-500/10 to-pink-500/10 border-purple-500/20'>
-        <CardContent className='p-8 text-center'>
-          <h3 className='text-2xl font-bold mb-3'>Ready to Get Started?</h3>
-          <p className='text-muted-foreground mb-6'>
-            Start tracking your workouts and see your progress grow!
-          </p>
-          <div className='flex flex-col sm:flex-row gap-4 justify-center'>
-            <Button
-              size='lg'
-              className='bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600'
-              asChild
-            >
-              <Link href='/dashboard/workout'>Start Your First Workout</Link>
-            </Button>
-            <Button size='lg' variant='outline' asChild>
-              <Link href='/dashboard'>Go to Dashboard</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Footer */}
       <div className='text-center text-sm text-muted-foreground py-6'>
