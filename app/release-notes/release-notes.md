@@ -1,0 +1,88 @@
+## Welcome to PR Tracker MVP!
+
+We're excited to launch the MVP version of PR Tracker! This release includes all the core features you need to start tracking your personal records and workout progress. Built with Next.js and Firebase, PR Tracker provides a clean, mobile-friendly experience for powerlifters and fitness enthusiasts.
+
+---
+
+## Core Features
+
+### Workout Logging
+
+Quick and intuitive workout logging with mobile-friendly interface. Add exercises, track sets, reps, and weights effortlessly.
+
+- Add custom exercises to your library
+- Track multiple sets with weight and rep tracking
+- Auto-save workout progress
+- Quick access to past exercises
+- Workout confirmation and progress tracking
+
+### Past Workouts
+
+View your complete workout history with detailed statistics. Track your progress over time and celebrate your achievements.
+
+- Complete workout history
+- Personal record tracking
+- Total volume and duration tracking
+- Exercise-by-exercise breakdown
+- Workout statistics overview
+
+### Progress Charts
+
+Visualize your strength gains with comprehensive charts and insights. Track your progress across all exercises.
+
+- Individual exercise progression charts
+- PR tracking and improvement percentages
+- Weekly progress visualization
+- Monthly volume tracking
+- Strength progression overview
+- Pagination for multiple exercises
+
+### Weekly Summary
+
+Get insights into your weekly progress, workout counts, and achievements. Stay motivated with your fitness journey.
+
+- Weekly workout count
+- Progress tracking
+- Achievement highlights
+
+### User Settings
+
+Manage your account settings with ease. Update your profile information and preferences.
+
+- Update display name
+- Change email address
+- Update password
+- Secure account management
+
+### Dashboard
+
+Your central hub for all fitness activities. Quick access to workouts, charts, and settings.
+
+- User profile overview
+- Quick action cards
+- Weekly summary at a glance
+- Easy navigation to all features
+
+---
+
+## Technical Highlights
+
+### Mobile-First Design
+
+Optimized for all devices and screen sizes
+
+### Real-time Sync
+
+Instant synchronization with Firebase
+
+### Secure Authentication
+
+Firebase Auth with email/password
+
+### Data Persistence
+
+Automatic workout state saving
+
+---
+
+Thank you for being part of PR Tracker! I'm constantly working on improving and adding new features.

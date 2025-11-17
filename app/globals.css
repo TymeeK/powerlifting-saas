@@ -1,4 +1,8 @@
 @import 'tailwindcss';
+@import 'tw-animate-css';
+/* 
+---break--- */
+@custom-variant dark (&:is(.dark *));
 /* 
 ---break--- */
 @theme inline {
@@ -139,4 +143,22 @@
     /* Allow content to extend into safe areas, individual components can use safe-area-inset for padding */
     position: relative;
   }
+}
+
+/* Fix sidebar positioning to account for navbar */
+.release-notes-wrapper [data-slot='sidebar-container'] {
+  top: 4rem !important;
+  height: calc(100vh - 4rem) !important;
+  z-index: 10 !important;
+}
+
+.release-notes-wrapper [data-slot='sidebar-gap'] {
+  margin-top: 4rem;
+}
+
+/* Ensure navbar stays on top when scrolling */
+header[class*='sticky'] {
+  z-index: 50 !important;
+  position: sticky !important;
+  top: 0 !important;
 }
