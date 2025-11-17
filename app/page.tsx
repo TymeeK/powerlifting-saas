@@ -1,9 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { auth } from '@/lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
+import { useRequireAuth } from '@/lib/hooks';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -15,23 +13,8 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 export default function LandingPage() {
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const router = useRouter();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      if (user) {
-        // User is logged in, redirect to dashboard
-        router.push('/dashboard');
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, [router]);
+  const { loading } = useRequireAuth('/dashboard', true);
 
   if (loading) {
     return (
@@ -44,14 +27,10 @@ export default function LandingPage() {
     );
   }
 
-  // If user is logged in, they will be redirected, so this won't render
   return (
     <main className='min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white'>
-      {/* Main Content */}
       <div className='flex flex-col lg:flex-row min-h-screen'>
-        {/* Left Side - Content */}
         <div className='flex-1 flex flex-col justify-center px-6 sm:px-8 lg:px-16 pt-20 lg:pt-0'>
-          {/* Header - Moved inside content area */}
           <header className='mb-8'>
             <div className='flex items-center space-x-3'>
               <div className='w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mt-4'>
@@ -79,7 +58,6 @@ export default function LandingPage() {
               </p>
             </div>
 
-            {/* Action Buttons */}
             <div className='flex flex-col sm:flex-row gap-4 mb-12'>
               <Button
                 size='lg'
@@ -90,7 +68,6 @@ export default function LandingPage() {
               </Button>
             </div>
 
-            {/* Features Grid */}
             <div className='grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12'>
               <Card className='bg-purple-500/10 border-purple-400/30 text-center sm:text-left'>
                 <CardHeader className='pb-3'>
@@ -135,7 +112,6 @@ export default function LandingPage() {
               </Card>
             </div>
 
-            {/* Social Proof */}
             <div className='flex items-center space-x-4'>
               <div className='flex -space-x-2'>
                 <div className='w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full border-2 border-white'></div>
@@ -157,10 +133,8 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Right Side - Visual */}
         <div className='flex-1 flex items-center justify-center p-6 sm:p-8 lg:p-16'>
           <div className='relative w-full max-w-lg'>
-            {/* Main Dashboard Preview */}
             <Card className='bg-gradient-to-br from-purple-800/40 to-pink-800/40 backdrop-blur-sm border-purple-400/30 shadow-2xl'>
               <CardHeader className='text-center'>
                 <div className='text-6xl mb-4'>💪</div>
@@ -217,14 +191,12 @@ export default function LandingPage() {
               </CardContent>
             </Card>
 
-            {/* Floating Elements */}
             <div className='absolute -top-4 -right-4 w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full opacity-20 animate-pulse'></div>
             <div className='absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full opacity-20 animate-pulse delay-1000'></div>
           </div>
         </div>
       </div>
 
-      {/* Footer */}
       <footer className='absolute bottom-0 left-0 right-0 p-6 sm:p-8 text-center'>
         <p className='text-purple-300 text-sm'>
           Made by lifters, for lifters • Launching soon
