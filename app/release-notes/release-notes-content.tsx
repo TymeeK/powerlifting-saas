@@ -8,11 +8,15 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarProvider,
   SidebarInset,
+  SidebarTrigger,
+  SidebarRail,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { Sparkles } from 'lucide-react';
 
@@ -20,11 +24,24 @@ interface ReleaseNotesContentProps {
   markdown: string;
 }
 
+function HeaderSidebarTrigger() {
+  const { open } = useSidebar();
+
+  if (open) {
+    return null;
+  }
+
+  return <SidebarTrigger className='cursor-pointer' />;
+}
+
 export function ReleaseNotesContent({ markdown }: ReleaseNotesContentProps) {
   return (
     <div className='release-notes-wrapper'>
       <SidebarProvider>
-        <Sidebar variant='inset'>
+        <Sidebar variant='inset' collapsible='offcanvas'>
+          <SidebarHeader>
+            <SidebarTrigger className='cursor-pointer' />
+          </SidebarHeader>
           <SidebarContent>
             <SidebarGroup>
               <SidebarGroupLabel>Releases</SidebarGroupLabel>
@@ -40,11 +57,17 @@ export function ReleaseNotesContent({ markdown }: ReleaseNotesContentProps) {
               </SidebarMenu>
             </SidebarGroup>
           </SidebarContent>
+          <SidebarRail />
         </Sidebar>
         <SidebarInset>
           <div className='container mx-auto p-6 space-y-6 max-w-5xl'>
+            {/* Sidebar Trigger - Above Header */}
+            <div className='mt-6'>
+              <HeaderSidebarTrigger />
+            </div>
+
             {/* Header */}
-            <div className='space-y-4 mt-6'>
+            <div className='space-y-4'>
               <div className='flex items-center gap-3'>
                 <div className='p-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500'>
                   <Sparkles className='h-8 w-8 text-white' />
