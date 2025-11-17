@@ -116,22 +116,6 @@ export default function LandingPage() {
                 </CardContent>
               </Card>
             </div>
-
-            <div className='flex items-center space-x-4'>
-              <div className='flex -space-x-2'>
-                <div className='w-10 h-10 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full border-2 border-background'></div>
-                <div className='w-10 h-10 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full border-2 border-background'></div>
-                <div className='w-10 h-10 bg-gradient-to-r from-pink-400 to-red-400 rounded-full border-2 border-background'></div>
-              </div>
-              <div>
-                <Badge variant='outline' className='mb-2'>
-                  500+ lifters tracking PRs
-                </Badge>
-                <p className='text-muted-foreground text-sm'>
-                  "Finally, a PR tracker that works!" — Sarah M.
-                </p>
-              </div>
-            </div>
           </div>
         </div>
 
