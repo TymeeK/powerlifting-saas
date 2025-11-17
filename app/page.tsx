@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Footer } from '@/components/footer';
 
 export default function LandingPage() {
   const router = useRouter();
@@ -28,8 +29,8 @@ export default function LandingPage() {
   }
 
   return (
-    <main className='min-h-screen bg-background'>
-      <div className='flex flex-col lg:flex-row min-h-screen'>
+    <main className='min-h-screen bg-background flex flex-col'>
+      <div className='flex flex-col lg:flex-row flex-1'>
         <div className='flex-1 flex flex-col justify-center px-6 sm:px-8 lg:px-16 pt-20 lg:pt-0'>
           <header className='mb-8'>
             <div className='flex items-center space-x-3'>
@@ -187,11 +188,7 @@ export default function LandingPage() {
         </div>
       </div>
 
-      <footer className='absolute bottom-0 left-0 right-0 p-6 sm:p-8 text-center'>
-        <p className='text-muted-foreground text-sm'>
-          Made by lifters, for lifters • Launching soon
-        </p>
-      </footer>
+      <Footer />
     </main>
   );
 }
