@@ -2,158 +2,118 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import ExerciseChartCard from '@/components/dashboard/charts/ExerciseChartCard';
 import { ExerciseStats } from '@/lib/types';
+import { createMockExerciseStats } from '@/__tests__/utils/charts-test-helpers';
 
-const createMockExerciseStats = (
-  name: string,
-  overrides?: Partial<ExerciseStats>
-): ExerciseStats => ({
-  name,
-  currentPR: 225,
-  previousPR: 205,
-  target: 250,
-  weeklyProgress: [
-    { week: 'Week 1', weight: 205, reps: 5 },
-    { week: 'Week 2', weight: 215, reps: 5 },
-    { week: 'Week 3', weight: 225, reps: 3 },
-  ],
-  monthlyVolume: 5000,
-  lastWorkout: '2024-01-15',
-  improvement: 9.8,
-  color: 'bg-blue-500',
-  ...overrides,
-});
+// Helper to render component and return container
+const renderCard = (overrides?: Partial<ExerciseStats>) => {
+  const exercise = createMockExerciseStats('Test Exercise', overrides);
+  const result = render(<ExerciseChartCard exercise={exercise} />);
+  return { ...result, exercise };
+};
+
+// Helper to get section by label text
+const getSectionByLabel = (label: string) => {
+  return screen.getByText(label).closest('div');
+};
 
 describe('ExerciseChartCard', () => {
-  it('renders exercise name and current PR', () => {
-    const exercise = createMockExerciseStats('Bench Press', {
-      currentPR: 225,
+  describe('Exercise Name and PR Display', () => {
+    it('renders exercise name and current PR', () => {
+      renderCard({ name: 'Bench Press', currentPR: 225 });
+
+      expect(screen.getByText('Bench Press')).toBeInTheDocument();
+      expect(screen.getByText(/Current PR: 225 lbs/)).toBeInTheDocument();
     });
 
-    render(<ExerciseChartCard exercise={exercise} />);
+    it('displays "No PR set yet" when currentPR is 0', () => {
+      renderCard({ name: 'New Exercise', currentPR: 0 });
 
-    expect(screen.getByText('Bench Press')).toBeInTheDocument();
-    expect(screen.getByText(/Current PR: 225 lbs/)).toBeInTheDocument();
+      expect(screen.getByText('No PR set yet')).toBeInTheDocument();
+    });
   });
 
-  it('displays "No PR set yet" when currentPR is 0', () => {
-    const exercise = createMockExerciseStats('New Exercise', {
-      currentPR: 0,
+  describe('Weekly Progress', () => {
+    it('renders weekly progress when available', () => {
+      renderCard({
+        name: 'Squat',
+        weeklyProgress: [
+          { week: 'Week 1', weight: 275, reps: 5 },
+          { week: 'Week 2', weight: 285, reps: 5 },
+          { week: 'Week 3', weight: 295, reps: 3 },
+        ],
+      });
+
+      expect(screen.getByText('Weekly Progress')).toBeInTheDocument();
+      expect(screen.getByText('Week 1')).toBeInTheDocument();
+      expect(screen.getByText('275 lbs')).toBeInTheDocument();
+      expect(screen.getAllByText('5 reps').length).toBeGreaterThan(0);
     });
 
-    render(<ExerciseChartCard exercise={exercise} />);
+    it('displays empty state message when no weekly progress', () => {
+      renderCard({ name: 'Deadlift', weeklyProgress: [] });
 
-    expect(screen.getByText('No PR set yet')).toBeInTheDocument();
+      expect(screen.getByText('Weekly Progress')).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          'Complete workouts over multiple weeks to see progress'
+        )
+      ).toBeInTheDocument();
+    });
   });
 
-  it('renders weekly progress when available', () => {
-    const exercise = createMockExerciseStats('Squat', {
-      weeklyProgress: [
-        { week: 'Week 1', weight: 275, reps: 5 },
-        { week: 'Week 2', weight: 285, reps: 5 },
-        { week: 'Week 3', weight: 295, reps: 3 },
-      ],
+  describe('Stats Display', () => {
+    it('displays previous PR correctly', () => {
+      renderCard({ name: 'Bench Press', previousPR: 205, currentPR: 225 });
+
+      const previousPRSection = getSectionByLabel('Previous PR');
+      expect(previousPRSection).toBeInTheDocument();
+      expect(previousPRSection).toHaveTextContent('205 lbs');
     });
 
-    render(<ExerciseChartCard exercise={exercise} />);
+    it('displays monthly volume with proper formatting', () => {
+      renderCard({ name: 'Squat', monthlyVolume: 12500 });
 
-    expect(screen.getByText('Weekly Progress')).toBeInTheDocument();
-    expect(screen.getByText('Week 1')).toBeInTheDocument();
-    expect(screen.getByText('275 lbs')).toBeInTheDocument();
-    // Use getAllByText since there are multiple "5 reps" badges
-    expect(screen.getAllByText('5 reps').length).toBeGreaterThan(0);
+      expect(screen.getByText('Monthly Volume')).toBeInTheDocument();
+      expect(screen.getByText('12,500')).toBeInTheDocument();
+    });
+
+    it('displays last workout date', () => {
+      renderCard({ name: 'Deadlift', lastWorkout: '2024-01-15' });
+
+      const lastWorkoutSection = getSectionByLabel('Last Workout');
+      const parentElement = lastWorkoutSection?.parentElement;
+
+      expect(parentElement).toBeInTheDocument();
+      expect(parentElement).toHaveTextContent(/2024/);
+      expect(parentElement).toHaveTextContent(
+        /\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/
+      );
+    });
   });
 
-  it('displays empty state message when no weekly progress', () => {
-    const exercise = createMockExerciseStats('Deadlift', {
-      weeklyProgress: [],
+  describe('Weight Progression Bar', () => {
+    it('renders weight progression bar when currentPR > 0', () => {
+      renderCard({ name: 'Bench Press', currentPR: 225, previousPR: 205 });
+
+      expect(screen.getByText('Weight Progression')).toBeInTheDocument();
+      expect(screen.getByText(/205 → 225 lbs/)).toBeInTheDocument();
     });
 
-    render(<ExerciseChartCard exercise={exercise} />);
+    it('does not render weight progression bar when currentPR is 0', () => {
+      renderCard({ name: 'New Exercise', currentPR: 0, previousPR: 0 });
 
-    expect(screen.getByText('Weekly Progress')).toBeInTheDocument();
-    expect(
-      screen.getByText('Complete workouts over multiple weeks to see progress')
-    ).toBeInTheDocument();
-  });
-
-  it('displays previous PR correctly', () => {
-    const exercise = createMockExerciseStats('Bench Press', {
-      previousPR: 205,
-      currentPR: 225, // Different from previousPR to avoid duplicates
+      expect(screen.queryByText('Weight Progression')).not.toBeInTheDocument();
     });
 
-    render(<ExerciseChartCard exercise={exercise} />);
+    it('applies correct color class to progress bar', () => {
+      const { container } = renderCard({
+        name: 'Bench Press',
+        currentPR: 225,
+        color: 'bg-green-500',
+      });
 
-    expect(screen.getByText('Previous PR')).toBeInTheDocument();
-    // Check that "205 lbs" appears in the context of "Previous PR"
-    const previousPRSection = screen.getByText('Previous PR').closest('div');
-    expect(previousPRSection).toBeInTheDocument();
-    expect(previousPRSection).toHaveTextContent('205 lbs');
-  });
-
-  it('displays monthly volume with proper formatting', () => {
-    const exercise = createMockExerciseStats('Squat', {
-      monthlyVolume: 12500,
+      const progressBar = container.querySelector('.bg-green-500');
+      expect(progressBar).toBeInTheDocument();
     });
-
-    render(<ExerciseChartCard exercise={exercise} />);
-
-    expect(screen.getByText('Monthly Volume')).toBeInTheDocument();
-    expect(screen.getByText('12,500')).toBeInTheDocument();
-  });
-
-  it('displays last workout date', () => {
-    const exercise = createMockExerciseStats('Deadlift', {
-      lastWorkout: '2024-01-15',
-    });
-
-    render(<ExerciseChartCard exercise={exercise} />);
-
-    expect(screen.getByText('Last Workout')).toBeInTheDocument();
-    // Check that the date is formatted and displayed
-    // The date should be formatted by toLocaleDateString()
-    const lastWorkoutSection = screen.getByText('Last Workout').closest('div');
-    expect(lastWorkoutSection).toBeInTheDocument();
-    // Verify the section contains formatted date (format may vary by locale and timezone)
-    // Date might show as 1/14 or 1/15 depending on timezone, so we check for 2024
-    const parentElement = lastWorkoutSection?.parentElement;
-    expect(parentElement).toBeInTheDocument();
-    expect(parentElement).toHaveTextContent(/2024/);
-    // Also verify it contains a date-like pattern
-    expect(parentElement).toHaveTextContent(/\d{1,2}[\/\-]\d{1,2}[\/\-]\d{4}/);
-  });
-
-  it('renders weight progression bar when currentPR > 0', () => {
-    const exercise = createMockExerciseStats('Bench Press', {
-      currentPR: 225,
-      previousPR: 205,
-    });
-
-    render(<ExerciseChartCard exercise={exercise} />);
-
-    expect(screen.getByText('Weight Progression')).toBeInTheDocument();
-    expect(screen.getByText(/205 → 225 lbs/)).toBeInTheDocument();
-  });
-
-  it('does not render weight progression bar when currentPR is 0', () => {
-    const exercise = createMockExerciseStats('New Exercise', {
-      currentPR: 0,
-      previousPR: 0,
-    });
-
-    render(<ExerciseChartCard exercise={exercise} />);
-
-    expect(screen.queryByText('Weight Progression')).not.toBeInTheDocument();
-  });
-
-  it('applies correct color class to progress bar', () => {
-    const exercise = createMockExerciseStats('Bench Press', {
-      currentPR: 225,
-      color: 'bg-green-500',
-    });
-
-    const { container } = render(<ExerciseChartCard exercise={exercise} />);
-    const progressBar = container.querySelector('.bg-green-500');
-    expect(progressBar).toBeInTheDocument();
   });
 });
