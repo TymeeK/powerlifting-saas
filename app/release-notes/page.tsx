@@ -211,8 +211,8 @@ export default function ReleaseNotesPage() {
       {/* Footer */}
       <div className='text-center text-sm text-muted-foreground py-6'>
         <p>
-          Thank you for being part of PR Tracker! We're constantly working on
-          improvements and new features.
+          Thank you for being part of PR Tracker! I'm constantly working on
+          improving and adding new features. improvements and new features.
         </p>
       </div>
     </div>
