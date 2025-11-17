@@ -18,6 +18,7 @@ import { logger } from '@/lib/logger';
 import {
   StrengthProgressionOverview,
   ExerciseChartsList,
+  ExercisePagination,
 } from '@/components/dashboard/charts';
 import { ExerciseStats } from '@/lib/types';
 
@@ -343,10 +344,21 @@ export default function ChartsPage() {
         exerciseData={exerciseData}
         currentPage={currentPage}
         exercisesPerPage={exercisesPerPage}
-        onPageChange={handlePageChange}
       />
 
-      <StrengthProgressionOverview exerciseData={exerciseData} />
+      <StrengthProgressionOverview
+        exerciseData={exerciseData}
+        currentPage={currentPage}
+        exercisesPerPage={exercisesPerPage}
+      />
+
+      <ExercisePagination
+        currentPage={currentPage}
+        totalPages={Math.ceil(
+          Object.keys(exerciseData).length / exercisesPerPage
+        )}
+        onPageChange={handlePageChange}
+      />
     </div>
   );
 }
