@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { signIn, LoginData } from '@/lib/firebase';
 import { Footer } from '@/components/footer';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -12,6 +13,7 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,7 +31,7 @@ export default function LoginPage() {
 
       if (result.success) {
         // Redirect to dashboard
-        window.location.href = '/dashboard';
+        router.push('/dashboard');
       }
     } catch (error: any) {
       // Display generic error message for authentication failures
