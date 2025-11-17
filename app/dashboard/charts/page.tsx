@@ -7,26 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { Separator } from '@/components/ui/separator';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
-} from '@/components/ui/pagination';
-import {
-  TrendingUp,
-  TrendingDown,
-  Calendar,
-  Trophy,
-  Zap,
-  Dumbbell,
-} from 'lucide-react';
+import { Calendar, Zap, Dumbbell } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import LoadingScreen from '@/components/workout/LoadingScreen';
 import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
@@ -34,7 +15,10 @@ import BackToDashboardButton from '@/components/back-button';
 import { getPastWorkouts } from '@/lib/firebase';
 import { PastWorkout } from '@/lib/types';
 import { logger } from '@/lib/logger';
-import { StrengthProgressionOverview } from '@/components/dashboard/charts';
+import {
+  StrengthProgressionOverview,
+  ExerciseChartsList,
+} from '@/components/dashboard/charts';
 import { ExerciseStats } from '@/lib/types';
 
 const chartsLogger = logger.child({ component: 'charts-page' });
@@ -292,67 +276,8 @@ export default function ChartsPage() {
     activeWeeks: 5,
   };
 
-  // Calculate pagination
-  const exerciseEntries = Object.entries(exerciseData);
-  const totalPages = Math.ceil(exerciseEntries.length / exercisesPerPage);
-  const indexOfLastExercise = currentPage * exercisesPerPage;
-  const indexOfFirstExercise = indexOfLastExercise - exercisesPerPage;
-  const currentExercises = exerciseEntries.slice(
-    indexOfFirstExercise,
-    indexOfLastExercise
-  );
-
-  // Generate page numbers to display
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    const maxVisiblePages = 5;
-
-    if (totalPages <= maxVisiblePages) {
-      // Show all pages if total pages is less than max visible
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      // Show first page, ellipsis, current page range, ellipsis, last page
-      if (currentPage <= 3) {
-        // Near the start
-        for (let i = 1; i <= 4; i++) {
-          pages.push(i);
-        }
-        pages.push('ellipsis');
-        pages.push(totalPages);
-      } else if (currentPage >= totalPages - 2) {
-        // Near the end
-        pages.push(1);
-        pages.push('ellipsis');
-        for (let i = totalPages - 3; i <= totalPages; i++) {
-          pages.push(i);
-        }
-      } else {
-        // In the middle
-        pages.push(1);
-        pages.push('ellipsis');
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i);
-        }
-        pages.push('ellipsis');
-        pages.push(totalPages);
-      }
-    }
-
-    return pages;
-  };
-
-  const getProgressPercentage = (current: number, target: number) => {
-    return Math.min((current / target) * 100, 100);
-  };
-
-  const getTrendIcon = (improvement: number) => {
-    return improvement > 0 ? (
-      <TrendingUp className='h-4 w-4 text-green-500' />
-    ) : (
-      <TrendingDown className='h-4 w-4 text-red-500' />
-    );
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   return (
@@ -414,183 +339,13 @@ export default function ChartsPage() {
       </div>
 
       {/* Individual Exercise Charts */}
-      {Object.keys(exerciseData).length === 0 ? (
-        <Card>
-          <CardContent className='p-12 text-center'>
-            <Dumbbell className='h-16 w-16 text-muted-foreground mx-auto mb-4' />
-            <h3 className='text-xl font-semibold mb-2'>No Exercise Data Yet</h3>
-            <p className='text-muted-foreground mb-6'>
-              Complete some workouts to see your exercise progress and
-              statistics here!
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <>
-          <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-            {currentExercises.map(([key, exercise]) => (
-              <Card key={key} className='relative overflow-hidden'>
-                <CardHeader>
-                  <CardTitle className='text-lg sm:text-xl'>
-                    {exercise.name}
-                  </CardTitle>
-                  <CardDescription>
-                    {exercise.currentPR > 0 ? (
-                      <>Current PR: {exercise.currentPR} lbs</>
-                    ) : (
-                      'No PR set yet'
-                    )}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className='space-y-6'>
-                  {/* Weekly Progress Chart */}
-                  {exercise.weeklyProgress.length > 0 ? (
-                    <div className='space-y-3'>
-                      <h4 className='font-medium text-sm'>Weekly Progress</h4>
-                      <div className='space-y-2'>
-                        {exercise.weeklyProgress.map((week, index) => (
-                          <div
-                            key={index}
-                            className='flex items-center justify-between text-sm'
-                          >
-                            <span className='text-muted-foreground'>
-                              {week.week}
-                            </span>
-                            <div className='flex items-center gap-2'>
-                              <span className='font-medium'>
-                                {week.weight} lbs
-                              </span>
-                              <Badge variant='outline' className='text-xs'>
-                                {week.reps} reps
-                              </Badge>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className='space-y-3'>
-                      <h4 className='font-medium text-sm'>Weekly Progress</h4>
-                      <p className='text-xs text-muted-foreground'>
-                        Complete workouts over multiple weeks to see progress
-                      </p>
-                    </div>
-                  )}
+      <ExerciseChartsList
+        exerciseData={exerciseData}
+        currentPage={currentPage}
+        exercisesPerPage={exercisesPerPage}
+        onPageChange={handlePageChange}
+      />
 
-                  <Separator />
-
-                  {/* Stats */}
-                  <div className='grid grid-cols-2 gap-4 text-sm'>
-                    <div>
-                      <p className='text-muted-foreground'>Previous PR</p>
-                      <p className='font-medium'>{exercise.previousPR} lbs</p>
-                    </div>
-                    <div>
-                      <p className='text-muted-foreground'>Monthly Volume</p>
-                      <p className='font-medium'>
-                        {exercise.monthlyVolume.toLocaleString()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className='text-muted-foreground'>Last Workout</p>
-                      <p className='font-medium'>
-                        {new Date(exercise.lastWorkout).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Visual Progress Bar */}
-                  {exercise.currentPR > 0 && (
-                    <div className='space-y-2'>
-                      <div className='flex justify-between text-xs text-muted-foreground'>
-                        <span>Weight Progression</span>
-                        <span>
-                          {exercise.previousPR} → {exercise.currentPR} lbs
-                        </span>
-                      </div>
-                      <div className='relative h-2 bg-muted rounded-full overflow-hidden'>
-                        <div
-                          className={`absolute top-0 left-0 h-full ${exercise.color} rounded-full transition-all duration-1000`}
-                          style={{
-                            width: '100%',
-                          }}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href='#'
-                    onClick={e => {
-                      e.preventDefault();
-                      setCurrentPage(prev => Math.max(prev - 1, 1));
-                    }}
-                    className={
-                      currentPage === 1
-                        ? 'pointer-events-none opacity-50'
-                        : 'cursor-pointer'
-                    }
-                  />
-                </PaginationItem>
-
-                {getPageNumbers().map((page, index) => {
-                  if (page === 'ellipsis') {
-                    return (
-                      <PaginationItem key={`ellipsis-${index}`}>
-                        <PaginationEllipsis />
-                      </PaginationItem>
-                    );
-                  }
-
-                  const pageNumber = page as number;
-                  return (
-                    <PaginationItem key={pageNumber}>
-                      <PaginationLink
-                        href='#'
-                        onClick={e => {
-                          e.preventDefault();
-                          setCurrentPage(pageNumber);
-                        }}
-                        isActive={currentPage === pageNumber}
-                        size='icon'
-                        className='cursor-pointer'
-                      >
-                        {pageNumber}
-                      </PaginationLink>
-                    </PaginationItem>
-                  );
-                })}
-
-                <PaginationItem>
-                  <PaginationNext
-                    href='#'
-                    onClick={e => {
-                      e.preventDefault();
-                      setCurrentPage(prev => Math.min(prev + 1, totalPages));
-                    }}
-                    className={
-                      currentPage === totalPages
-                        ? 'pointer-events-none opacity-50'
-                        : 'cursor-pointer'
-                    }
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          )}
-        </>
-      )}
-
-      {/* Summary Chart */}
       <StrengthProgressionOverview exerciseData={exerciseData} />
     </div>
   );
