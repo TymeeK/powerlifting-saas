@@ -60,6 +60,11 @@ const features = [
 
 const resources = [
   {
+    title: 'Release Notes',
+    href: '/release-notes',
+    description: "See what's new in PR Tracker and latest updates.",
+  },
+  {
     title: 'Documentation',
     href: '/docs',
     description: 'Learn how to get the most out of PR Tracker.',
@@ -170,6 +175,16 @@ export function Navbar() {
                         className={navigationMenuTriggerStyle()}
                       >
                         Settings
+                      </Link>
+                    </NavigationMenuLink>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink asChild>
+                      <Link
+                        href='/release-notes'
+                        className={navigationMenuTriggerStyle()}
+                      >
+                        Release Notes
                       </Link>
                     </NavigationMenuLink>
                   </NavigationMenuItem>
@@ -337,6 +352,15 @@ export function Navbar() {
                             onClick={handleLinkClick}
                           >
                             Settings
+                          </Link>
+                        </Button>
+                        <Button
+                          variant='outline'
+                          className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
+                          asChild
+                        >
+                          <Link href='/release-notes' onClick={handleLinkClick}>
+                            Release Notes
                           </Link>
                         </Button>
                       </div>
