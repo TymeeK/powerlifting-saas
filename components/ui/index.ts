@@ -30,7 +30,7 @@ export {
   CardDescription,
   CardContent,
 } from './card';
-export { Input, type InputProps } from './input';
+export { Input } from './input';
 export { Label } from './label';
 export {
   NavigationMenu,
