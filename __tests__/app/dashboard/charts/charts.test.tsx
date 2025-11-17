@@ -1,3 +1,18 @@
+/**
+ * Charts Page Integration Tests
+ *
+ * This file contains integration tests for the ChartsPage component, focusing on:
+ * - Data fetching and state management
+ * - Page-level business logic (calculateExerciseStats function)
+ * - Overall page rendering and integration between components
+ *
+ * Component-specific unit tests are located in:
+ * - __tests__/components/dashboard/charts/ExerciseChartsList.test.tsx
+ * - __tests__/components/dashboard/charts/ExerciseChartCard.test.tsx
+ * - __tests__/components/dashboard/charts/StrengthProgressionOverview.test.tsx
+ * - __tests__/components/dashboard/charts/ExercisePagination.test.tsx
+ */
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import ChartsPage from '@/app/dashboard/charts/page';
