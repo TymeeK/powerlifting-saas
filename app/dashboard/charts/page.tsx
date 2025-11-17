@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Calendar, Zap, Dumbbell } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import LoadingScreen from '@/components/workout/LoadingScreen';
 import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
 import BackToDashboardButton from '@/components/back-button';
@@ -185,58 +185,70 @@ export default function ChartsPage() {
   const { user, loading } = useRequireAuth('/login');
   const [workouts, setWorkouts] = useState<PastWorkout[]>([]);
   const [workoutsLoading, setWorkoutsLoading] = useState(true);
-  const [totalVolume, setTotalVolume] = useState(0);
-  const [exerciseData, setExerciseData] = useState<
-    Record<string, ExerciseStats>
-  >({});
   const [currentPage, setCurrentPage] = useState(1);
   const exercisesPerPage = 6;
 
-  useEffect(() => {
-    const calculateMonthlyVolume = () => {
-      const now = new Date();
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      startOfMonth.setHours(0, 0, 0, 0);
+  // Memoize monthly volume calculation - only recalculates when workouts change
+  const totalVolume = useMemo(() => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    startOfMonth.setHours(0, 0, 0, 0);
 
-      const monthlyWorkouts = workouts.filter(workout => {
-        // Use createdAt which is a Date object, more reliable than parsing date string
-        const workoutDate = new Date(workout.createdAt);
-        workoutDate.setHours(0, 0, 0, 0);
-        return workoutDate >= startOfMonth;
-      });
+    const monthlyWorkouts = workouts.filter(workout => {
+      // Use createdAt which is a Date object, more reliable than parsing date string
+      const workoutDate = new Date(workout.createdAt);
+      workoutDate.setHours(0, 0, 0, 0);
+      return workoutDate >= startOfMonth;
+    });
 
-      const volume = monthlyWorkouts.reduce((total, workout) => {
-        return total + (workout.totalVolume || 0);
-      }, 0);
+    const volume = monthlyWorkouts.reduce((total, workout) => {
+      return total + (workout.totalVolume || 0);
+    }, 0);
 
-      chartsLogger.debug('Monthly volume calculation', {
-        totalWorkouts: workouts.length,
-        monthlyWorkouts: monthlyWorkouts.length,
-        volume,
-        startOfMonth: startOfMonth.toISOString(),
-      });
+    chartsLogger.debug('Monthly volume calculation', {
+      totalWorkouts: workouts.length,
+      monthlyWorkouts: monthlyWorkouts.length,
+      volume,
+      startOfMonth: startOfMonth.toISOString(),
+    });
 
-      setTotalVolume(volume);
-    };
-
-    calculateMonthlyVolume();
+    return volume;
   }, [workouts]);
 
-  // Calculate exercise statistics when workouts change
-  useEffect(() => {
-    if (workouts.length > 0) {
-      const stats = calculateExerciseStats(workouts);
-      chartsLogger.debug('Exercise statistics calculated', {
-        exerciseCount: Object.keys(stats).length,
-        exercises: Object.keys(stats),
-      });
-      setExerciseData(stats);
-      // Reset to first page when exercise data changes
-      setCurrentPage(1);
-    } else {
-      setExerciseData({});
-      setCurrentPage(1);
+  // Memoize exercise statistics calculation - only recalculates when workouts change
+  const exerciseData = useMemo(() => {
+    if (workouts.length === 0) {
+      return {};
     }
+
+    const stats = calculateExerciseStats(workouts);
+    chartsLogger.debug('Exercise statistics calculated', {
+      exerciseCount: Object.keys(stats).length,
+      exercises: Object.keys(stats),
+    });
+
+    return stats;
+  }, [workouts]);
+
+  // Memoize overall stats - only recalculates when workouts or totalVolume change
+  const overallStats = useMemo(
+    () => ({
+      workoutsLogged: workouts.length,
+      totalVolume: totalVolume,
+      activeWeeks: 5,
+    }),
+    [workouts.length, totalVolume]
+  );
+
+  // Memoize total pages calculation - only recalculates when exerciseData changes
+  const totalPages = useMemo(
+    () => Math.ceil(Object.keys(exerciseData).length / exercisesPerPage),
+    [exerciseData, exercisesPerPage]
+  );
+
+  // Reset to first page when exercise data changes (when workouts change)
+  useEffect(() => {
+    setCurrentPage(1);
   }, [workouts]);
 
   useEffect(() => {
@@ -269,13 +281,6 @@ export default function ChartsPage() {
   if (!user) {
     return null;
   }
-
-  // Calculate overall stats (keeping prefilled data for other stats for now)
-  const overallStats = {
-    workoutsLogged: workouts.length,
-    totalVolume: totalVolume,
-    activeWeeks: 5,
-  };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -355,9 +360,7 @@ export default function ChartsPage() {
 
       <ExercisePagination
         currentPage={currentPage}
-        totalPages={Math.ceil(
-          Object.keys(exerciseData).length / exercisesPerPage
-        )}
+        totalPages={totalPages}
         onPageChange={handlePageChange}
       />
     </div>
