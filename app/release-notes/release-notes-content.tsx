@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Badge } from '@/components/ui/badge';
@@ -21,8 +22,19 @@ import {
 import { Sparkles } from 'lucide-react';
 
 interface ReleaseNotesContentProps {
-  markdown: string;
+  releaseNotes: Record<string, string>;
 }
+
+const VERSION_INFO: Record<string, { label: string; subtitle: string }> = {
+  '1.0.1': {
+    label: 'Latest',
+    subtitle: 'UI Improvements & Bug Fixes',
+  },
+  '1.0.0': {
+    label: 'MVP',
+    subtitle: 'Welcome to PR Tracker MVP!',
+  },
+};
 
 function HeaderSidebarTrigger() {
   const { open } = useSidebar();
@@ -34,7 +46,15 @@ function HeaderSidebarTrigger() {
   return <SidebarTrigger className='cursor-pointer' />;
 }
 
-export function ReleaseNotesContent({ markdown }: ReleaseNotesContentProps) {
+export function ReleaseNotesContent({
+  releaseNotes,
+}: ReleaseNotesContentProps) {
+  const [selectedVersion, setSelectedVersion] = useState<string>('1.0.1');
+  const versions = Object.keys(releaseNotes).sort().reverse(); // Latest first
+
+  const currentContent = releaseNotes[selectedVersion] || '';
+  const currentVersionInfo = VERSION_INFO[selectedVersion];
+
   return (
     <div className='release-notes-wrapper'>
       <SidebarProvider>
@@ -46,14 +66,30 @@ export function ReleaseNotesContent({ markdown }: ReleaseNotesContentProps) {
             <SidebarGroup>
               <SidebarGroupLabel>Releases</SidebarGroupLabel>
               <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton isActive>
-                    <Badge className='bg-gradient-to-r from-purple-500 to-pink-500 text-white'>
-                      1.0.0
-                    </Badge>
-                    <span className='ml-2'>MVP</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {versions.map(version => {
+                  const versionInfo = VERSION_INFO[version];
+                  const isActive = selectedVersion === version;
+                  return (
+                    <SidebarMenuItem key={version}>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        onClick={() => setSelectedVersion(version)}
+                        className='cursor-pointer'
+                      >
+                        <Badge
+                          className={
+                            isActive
+                              ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+                              : 'bg-muted text-muted-foreground'
+                          }
+                        >
+                          {version}
+                        </Badge>
+                        <span className='ml-2'>{versionInfo.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroup>
           </SidebarContent>
@@ -77,13 +113,12 @@ export function ReleaseNotesContent({ markdown }: ReleaseNotesContentProps) {
                     Release Notes
                   </h1>
                   <p className='text-muted-foreground text-lg mt-2'>
-                    MVP Launch - Everything you need to track your fitness
-                    journey
+                    Stay updated with the latest improvements and features
                   </p>
                 </div>
               </div>
               <Badge className='bg-gradient-to-r from-purple-500 to-pink-500 text-white'>
-                Version 1.0.0 - MVP
+                Version {selectedVersion} - {currentVersionInfo.subtitle}
               </Badge>
             </div>
 
@@ -128,7 +163,7 @@ export function ReleaseNotesContent({ markdown }: ReleaseNotesContentProps) {
                   hr: () => <hr className='my-8 border-t border-muted' />,
                 }}
               >
-                {markdown}
+                {currentContent}
               </ReactMarkdown>
             </div>
           </div>

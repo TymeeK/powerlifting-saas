@@ -3,18 +3,25 @@ import { join } from 'path';
 import { ReleaseNotesContent } from './release-notes-content';
 
 async function getReleaseNotes() {
-  const filePath = join(
-    process.cwd(),
-    'app',
-    'release-notes',
-    'release-notes.md'
-  );
-  const fileContents = await readFile(filePath, 'utf8');
-  return fileContents;
+  const versions = ['1.0.1', '1.0.0'];
+  const notes: Record<string, string> = {};
+
+  for (const version of versions) {
+    const filePath = join(
+      process.cwd(),
+      'app',
+      'release-notes',
+      `v${version}.md`
+    );
+    const fileContents = await readFile(filePath, 'utf8');
+    notes[version] = fileContents;
+  }
+
+  return notes;
 }
 
 export default async function ReleaseNotesPage() {
-  const markdown = await getReleaseNotes();
+  const releaseNotes = await getReleaseNotes();
 
-  return <ReleaseNotesContent markdown={markdown} />;
+  return <ReleaseNotesContent releaseNotes={releaseNotes} />;
 }
