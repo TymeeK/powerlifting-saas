@@ -212,7 +212,7 @@ export default function ReleaseNotesPage() {
       <div className='text-center text-sm text-muted-foreground py-6'>
         <p>
           Thank you for being part of PR Tracker! I'm constantly working on
-          improving and adding new features. improvements and new features.
+          improving and adding new features.
         </p>
       </div>
     </div>
