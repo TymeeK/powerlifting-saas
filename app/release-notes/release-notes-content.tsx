@@ -26,8 +26,12 @@ interface ReleaseNotesContentProps {
 }
 
 const VERSION_INFO: Record<string, { label: string; subtitle: string }> = {
-  '1.0.1': {
+  '1.0.2': {
     label: 'Latest',
+    subtitle: 'Hotfixes',
+  },
+  '1.0.1': {
+    label: 'UI Improvements',
     subtitle: 'UI Improvements & Bug Fixes',
   },
   '1.0.0': {
@@ -37,9 +41,13 @@ const VERSION_INFO: Record<string, { label: string; subtitle: string }> = {
 };
 
 function HeaderSidebarTrigger() {
-  const { open } = useSidebar();
+  const { open, openMobile, isMobile } = useSidebar();
 
-  if (open) {
+  // Show trigger when sidebar is closed
+  // On mobile, check openMobile; on desktop, check open
+  const sidebarOpen = isMobile ? openMobile : open;
+
+  if (sidebarOpen) {
     return null;
   }
 
@@ -49,7 +57,7 @@ function HeaderSidebarTrigger() {
 export function ReleaseNotesContent({
   releaseNotes,
 }: ReleaseNotesContentProps) {
-  const [selectedVersion, setSelectedVersion] = useState<string>('1.0.1');
+  const [selectedVersion, setSelectedVersion] = useState<string>('1.0.2');
   const versions = Object.keys(releaseNotes).sort().reverse(); // Latest first
 
   const currentContent = releaseNotes[selectedVersion] || '';
@@ -160,7 +168,7 @@ export function ReleaseNotesContent({
                       {children}
                     </strong>
                   ),
-                  hr: () => <hr className='my-8 border-t border-muted' />,
+                  hr: () => <hr className='my-8 border-t border-black' />,
                 }}
               >
                 {currentContent}

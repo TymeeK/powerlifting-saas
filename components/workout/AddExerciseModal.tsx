@@ -101,7 +101,7 @@ export default function AddExerciseModal({
             <Button
               onClick={handleClose}
               variant='outline'
-              className='flex-1 border-white/20 text-white hover:bg-white/10 cursor-pointer'
+              className='flex-1 border-white/20 text-black hover:text-white hover:bg-white/10 cursor-pointer font-medium text-sm'
             >
               Cancel
             </Button>
