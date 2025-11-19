@@ -4,12 +4,9 @@ import Link from 'next/link';
 import { FaInstagram, FaLinkedin, FaGithub } from 'react-icons/fa';
 
 const footerLinks = {
-  resources: [
+  navigation: [
+    { label: 'Features', href: '/features' },
     { label: 'Release Notes', href: '/release-notes' },
-    { label: 'Documentation', href: '/docs' },
-    { label: 'Blog', href: '/blog' },
-    { label: 'Community', href: '/community' },
-    { label: 'Support', href: '/support' },
   ],
   account: [
     { label: 'Sign Up', href: '/signup' },
@@ -40,11 +37,11 @@ export function Footer() {
     <footer className='border-t bg-background'>
       <div className='container mx-auto px-6 py-12'>
         <div className='grid grid-cols-2 md:grid-cols-3 gap-8'>
-          {/* Resources Links */}
+          {/* Navigation Links */}
           <div>
-            <h3 className='font-semibold mb-4 text-foreground'>Resources</h3>
+            <h3 className='font-semibold mb-4 text-foreground'>Navigation</h3>
             <ul className='space-y-2'>
-              {footerLinks.resources.map(link => (
+              {footerLinks.navigation.map(link => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
