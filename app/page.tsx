@@ -3,19 +3,35 @@
 import { useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/lib/hooks';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Footer } from '@/components/footer';
+import {
+  FeaturesGrid,
+  PRTrackingDemo,
+  FeaturesCTA,
+} from '@/components/features';
+import { BarChart3, Smartphone, Zap, Target } from 'lucide-react';
 
 export default function LandingPage() {
   const router = useRouter();
   const { loading } = useRequireAuth('/dashboard', true);
+
+  const landingFeatures = [
+    {
+      icon: BarChart3,
+      title: 'Track Progress',
+      description: 'Monitor your lifts and see improvement over time',
+    },
+    {
+      icon: Smartphone,
+      title: 'Mobile First',
+      description: 'Designed for your phone, works everywhere',
+    },
+    {
+      icon: Zap,
+      title: 'Quick Logging',
+      description: 'Log your sets in seconds, not minutes',
+    },
+  ];
 
   if (loading) {
     return (
@@ -73,104 +89,25 @@ export default function LandingPage() {
               </Button>
             </div>
 
-            <div className='grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12'>
-              <Card className='text-center sm:text-left'>
-                <CardHeader className='pb-3'>
-                  <div className='w-12 h-12 bg-purple-500/10 rounded-xl flex items-center justify-center mb-3 mx-auto sm:mx-0'>
-                    <span className='text-2xl'>📊</span>
-                  </div>
-                  <CardTitle>Track Progress</CardTitle>
-                </CardHeader>
-                <CardContent className='pt-0'>
-                  <CardDescription>
-                    Monitor your lifts and see improvement over time
-                  </CardDescription>
-                </CardContent>
-              </Card>
-
-              <Card className='text-center sm:text-left'>
-                <CardHeader className='pb-3'>
-                  <div className='w-12 h-12 bg-pink-500/10 rounded-xl flex items-center justify-center mb-3 mx-auto sm:mx-0'>
-                    <span className='text-2xl'>📱</span>
-                  </div>
-                  <CardTitle>Mobile First</CardTitle>
-                </CardHeader>
-                <CardContent className='pt-0'>
-                  <CardDescription>
-                    Designed for your phone, works everywhere
-                  </CardDescription>
-                </CardContent>
-              </Card>
-
-              <Card className='text-center sm:text-left'>
-                <CardHeader className='pb-3'>
-                  <div className='w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center mb-3 mx-auto sm:mx-0'>
-                    <span className='text-2xl'>⚡</span>
-                  </div>
-                  <CardTitle>Quick Logging</CardTitle>
-                </CardHeader>
-                <CardContent className='pt-0'>
-                  <CardDescription>
-                    Log your sets in seconds, not minutes
-                  </CardDescription>
-                </CardContent>
-              </Card>
+            <div className='mb-12'>
+              <FeaturesGrid features={landingFeatures} />
             </div>
           </div>
         </div>
 
         <div className='flex-1 flex items-center justify-center p-6 sm:p-8 lg:p-16'>
-          <div className='relative w-full max-w-lg'>
-            <Card className='shadow-2xl'>
-              <CardHeader className='text-center'>
-                <div className='text-6xl mb-4'>💪</div>
-                <CardTitle className='text-2xl'>Your PR Dashboard</CardTitle>
-                <CardDescription className='text-base'>
-                  Track, analyze, and celebrate your gains
-                </CardDescription>
-              </CardHeader>
-
-              <CardContent className='space-y-4'>
-                <Card>
-                  <CardContent className='p-4'>
-                    <div className='flex justify-between items-center'>
-                      <span>Squat PR</span>
-                      <Badge variant='secondary' className='font-bold text-lg'>
-                        315 lbs
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className='p-4'>
-                    <div className='flex justify-between items-center'>
-                      <span>Bench PR</span>
-                      <Badge variant='secondary' className='font-bold text-lg'>
-                        225 lbs
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className='p-4'>
-                    <div className='flex justify-between items-center'>
-                      <span>Deadlift PR</span>
-                      <Badge variant='secondary' className='font-bold text-lg'>
-                        405 lbs
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
-              </CardContent>
-            </Card>
-
-            <div className='absolute -top-4 -right-4 w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full opacity-10 animate-pulse'></div>
-            <div className='absolute -bottom-4 -left-4 w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full opacity-10 animate-pulse delay-1000'></div>
-          </div>
+          <PRTrackingDemo />
         </div>
       </div>
+
+      <FeaturesCTA
+        title='Ready to Start Your Fitness Journey?'
+        description='Join thousands of lifters who are already tracking their progress with PR Tracker.'
+        primaryButtonText='Get Started Free'
+        primaryButtonHref='/signup'
+        secondaryButtonText='Sign In'
+        secondaryButtonHref='/login'
+      />
 
       <Footer />
     </main>

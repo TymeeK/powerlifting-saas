@@ -31,61 +31,6 @@ import { logger } from '@/lib/logger';
 // Create a child logger for navbar component
 const navbarLogger = logger.child({ component: 'navbar' });
 
-const features = [
-  {
-    title: 'PR Tracking',
-    href: '/features/pr-tracking',
-    description:
-      'Track your personal records across all major lifts with detailed progress analytics.',
-  },
-  {
-    title: 'Workout Logging',
-    href: '/features/workout-logging',
-    description:
-      'Quick and easy workout logging with mobile-friendly interface.',
-  },
-  {
-    title: 'Progress Analytics',
-    href: '/features/analytics',
-    description:
-      'Visualize your strength gains with comprehensive charts and insights.',
-  },
-  {
-    title: 'Program Templates',
-    href: '/features/programs',
-    description:
-      'Access proven training programs and create your own custom routines.',
-  },
-];
-
-const resources = [
-  {
-    title: 'Release Notes',
-    href: '/release-notes',
-    description: "See what's new in PR Tracker and latest updates.",
-  },
-  {
-    title: 'Documentation',
-    href: '/docs',
-    description: 'Learn how to get the most out of PR Tracker.',
-  },
-  {
-    title: 'Blog',
-    href: '/blog',
-    description: 'Training tips, nutrition advice, and lifting insights.',
-  },
-  {
-    title: 'Community',
-    href: '/community',
-    description: 'Connect with other lifters and share your progress.',
-  },
-  {
-    title: 'Support',
-    href: '/support',
-    description: 'Get help when you need it with our support team.',
-  },
-];
-
 export function Navbar() {
   const [isOpen, setIsOpen] = React.useState(false);
   const [user, setUser] = React.useState<any>(null);
@@ -193,44 +138,22 @@ export function Navbar() {
                 // Guest user navigation
                 <>
                   <NavigationMenuItem>
-                    <NavigationMenuTrigger>Features</NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <ul className='grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]'>
-                        {features.map(feature => (
-                          <ListItem
-                            key={feature.title}
-                            title={feature.title}
-                            href={feature.href}
-                          >
-                            {feature.description}
-                          </ListItem>
-                        ))}
-                      </ul>
-                    </NavigationMenuContent>
-                  </NavigationMenuItem>
-                  <NavigationMenuItem>
-                    <NavigationMenuTrigger>Resources</NavigationMenuTrigger>
-                    <NavigationMenuContent>
-                      <ul className='grid w-[400px] gap-3 p-4 md:w-[500px] md:grid-cols-2 lg:w-[600px]'>
-                        {resources.map(resource => (
-                          <ListItem
-                            key={resource.title}
-                            title={resource.title}
-                            href={resource.href}
-                          >
-                            {resource.description}
-                          </ListItem>
-                        ))}
-                      </ul>
-                    </NavigationMenuContent>
+                    <NavigationMenuLink asChild>
+                      <Link
+                        href='/features'
+                        className={navigationMenuTriggerStyle()}
+                      >
+                        Features
+                      </Link>
+                    </NavigationMenuLink>
                   </NavigationMenuItem>
                   <NavigationMenuItem>
                     <NavigationMenuLink asChild>
                       <Link
-                        href='/pricing'
+                        href='/release-notes'
                         className={navigationMenuTriggerStyle()}
                       >
-                        Pricing
+                        Release Notes
                       </Link>
                     </NavigationMenuLink>
                   </NavigationMenuItem>
@@ -375,56 +298,26 @@ export function Navbar() {
                         Features
                       </h3>
                       <Separator className='mb-3' />
-                      <div className='space-y-2'>
-                        {features.map(feature => (
-                          <Button
-                            key={feature.title}
-                            variant='outline'
-                            className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
-                            asChild
-                          >
-                            <Link href={feature.href} onClick={handleLinkClick}>
-                              {feature.title}
-                            </Link>
-                          </Button>
-                        ))}
-                      </div>
+                      <Button
+                        variant='outline'
+                        className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
+                        asChild
+                      >
+                        <Link href='/features' onClick={handleLinkClick}>
+                          Features
+                        </Link>
+                      </Button>
                     </div>
 
-                    {/* Mobile Resources Section */}
-                    <div className='px-4'>
-                      <h3 className='font-semibold text-sm text-muted-foreground uppercase tracking-wider mb-3'>
-                        Resources
-                      </h3>
-                      <Separator className='mb-3' />
-                      <div className='space-y-2'>
-                        {resources.map(resource => (
-                          <Button
-                            key={resource.title}
-                            variant='outline'
-                            className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
-                            asChild
-                          >
-                            <Link
-                              href={resource.href}
-                              onClick={handleLinkClick}
-                            >
-                              {resource.title}
-                            </Link>
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Mobile Pricing Link */}
+                    {/* Mobile Release Notes Link */}
                     <div className='px-4'>
                       <Button
                         variant='outline'
                         className='w-full justify-start border-2 border-purple-300 hover:border-purple-500 hover:bg-purple-500/10 text-gray-900 hover:text-gray-900 transition-all duration-200'
                         asChild
                       >
-                        <Link href='/pricing' onClick={handleLinkClick}>
-                          Pricing
+                        <Link href='/release-notes' onClick={handleLinkClick}>
+                          Release Notes
                         </Link>
                       </Button>
                     </div>
