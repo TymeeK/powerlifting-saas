@@ -3,7 +3,7 @@ import { join } from 'path';
 import { ReleaseNotesContent } from './release-notes-content';
 
 async function getReleaseNotes() {
-  const versions = ['1.0.2', '1.0.1', '1.0.0'];
+  const versions = ['1.0.3', '1.0.2', '1.0.1', '1.0.0'];
   const notes: Record<string, string> = {};
 
   for (const version of versions) {
