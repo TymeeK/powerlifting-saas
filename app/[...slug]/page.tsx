@@ -12,11 +12,10 @@ interface ComingSoonPageProps {
 // IMPORTANT: With static export (output: 'export'), ALL routes must be pre-generated
 // Routes not listed here won't exist in the static build, causing client-side navigation to fail
 export async function generateStaticParams() {
-  // NOTE: Do NOT include routes that have actual implementations (like dashboard/*)
+  // NOTE: Do NOT include routes that have actual implementations (like dashboard/*, features)
   // as those should be served from their actual page files, not this fallback
   return [
     // Top-level routes
-    { slug: ['features'] },
     { slug: ['pricing'] },
     { slug: ['about'] },
     { slug: ['contact'] },
@@ -28,8 +27,7 @@ export async function generateStaticParams() {
     { slug: ['faq'] },
     { slug: ['community'] },
     // Nested feature routes (from navbar - must be included for client-side nav to work)
-    { slug: ['features', 'pr-tracking'] },
-    { slug: ['features', 'workout-logging'] },
+    // Note: These are for future feature sub-pages that don't exist yet
     { slug: ['features', 'analytics'] },
     { slug: ['features', 'programs'] },
   ];
