@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Plus, Save, List, X } from 'lucide-react';
 import { buttonVariants } from '@/lib/button-variants';
+import LabeledFloatingButton from './LabeledFloatingButton';
 
 interface FloatingActionMenuProps {
   isOpen: boolean;
@@ -39,37 +40,34 @@ export default function FloatingActionMenu({
             : 'opacity-0 translate-y-4 pointer-events-none'
         }`}
       >
-        {/* Save Workout Button */}
-        <Button
+        <LabeledFloatingButton
+          label='Save Workout'
+          isOpen={isOpen}
           onClick={onSaveWorkout}
           disabled={isSaving}
-          size='lg'
           className={buttonVariants.floating.save}
           title='Save Workout'
-        >
-          <Save className='h-5 w-5' />
-        </Button>
+          icon={<Save className='h-5 w-5' />}
+        />
 
-        {/* Add Exercise Button */}
-        <Button
+        <LabeledFloatingButton
+          label='Add Exercise'
+          isOpen={isOpen}
           onClick={onAddExercise}
-          size='lg'
           className={buttonVariants.floating.add}
           title='Add Exercise'
-        >
-          <Plus className='h-5 w-5' />
-        </Button>
+          icon={<Plus className='h-5 w-5' />}
+        />
 
-        {/* Past Exercises Button */}
-        <Button
+        <LabeledFloatingButton
+          label='Past Exercises'
+          isOpen={isOpen}
           onClick={onShowPastExercises}
           disabled={loadingPastExercises}
-          size='lg'
           className={buttonVariants.floating.past}
           title='Past Exercises'
-        >
-          <List className='h-5 w-5' />
-        </Button>
+          icon={<List className='h-5 w-5' />}
+        />
       </div>
 
       {/* Main Floating Button */}
