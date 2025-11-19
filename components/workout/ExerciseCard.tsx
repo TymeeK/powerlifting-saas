@@ -52,13 +52,13 @@ export default function ExerciseCard({
   return (
     <Card>
       <CardHeader className='pb-3'>
-        <div className='flex items-center justify-between'>
-          <div className='flex items-center gap-2 sm:gap-3 flex-1 min-w-0'>
+        <div className='flex items-start justify-between gap-2'>
+          <div className='flex items-start gap-2 sm:gap-3 flex-1 min-w-0'>
             <div className='p-1.5 sm:p-2 rounded-lg bg-muted flex-shrink-0'>
               <Dumbbell className='h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground' />
             </div>
             <div className='min-w-0 flex-1'>
-              <CardTitle className='text-lg sm:text-xl truncate'>
+              <CardTitle className='text-lg sm:text-xl break-words'>
                 {exercise.name}
               </CardTitle>
             </div>
