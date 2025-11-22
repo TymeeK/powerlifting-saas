@@ -11,7 +11,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from './config';
-import { SignUpData, LoginData } from '@/lib/types';
+import { SignUpData, LoginData, AuthResult } from '@/lib/types';
 import { logger } from '@/lib/logger';
 
 // Create a child logger for auth operations
@@ -53,6 +53,25 @@ const updateFirestoreUserDocument = async (
           : firestoreError,
     });
   }
+};
+
+const validateSignUpData = (signUpData: SignUpData): AuthResult => {
+  const { firstName, lastName, email, password, confirmPassword } = signUpData;
+  if (password !== confirmPassword) {
+    return {
+      success: false,
+      message: 'Passwords do not match',
+    };
+  }
+  if (password.length < 6) {
+    return {
+      success: false,
+      message: 'Password must be at least 6 characters long',
+    };
+  }
+  return {
+    success: true,
+  };
 };
 /**
  * Signs up a user with the given sign up data in the database.
