@@ -54,7 +54,20 @@ const updateFirestoreUserDocument = async (
     });
   }
 };
-
+/**
+ * Signs up a user with the given sign up data in the database.
+ * The function checks for passwords matching and password length < 6 characters.
+ * Uses firebase authentication to create a new user and then stores the user data in the database.
+ *  **TODO ** Consider refactoring this function because it is doing multiple things and should only sign up the user
+ * - It is currently creating a user in the database and then storing the user data in the database.
+ * - It is currently updating the user's display name and email in the database.
+ * - It is currently setting the user's createdAt and updatedAt fields in the database.
+ * - It is currently returning the user object if the sign up is successful, otherwise throwing an error.
+ * - It is currently logging the user's creation and update in the database.
+ * - It is currently logging the user's creation and update in the database.
+ * @param signUpData - The sign up data including first name, last name, email, password, and confirm password
+ * @returns A promise that resolves to the user object if the sign up is successful, otherwise throws an error
+ */
 export const signUp = async (signUpData: SignUpData) => {
   const { firstName, lastName, email, password, confirmPassword } = signUpData;
 
