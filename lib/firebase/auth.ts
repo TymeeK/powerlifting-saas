@@ -55,10 +55,22 @@ const updateFirestoreUserDocument = async (
   }
 };
 
+/**
+ * Validates the length of the password.
+ * @param password - The password to validate
+ * @returns true if the password is at least 6 characters long, false otherwise
+ */
+
 export const validatePasswordLength = (password: string): boolean => {
   return password.length >= 6;
 };
 
+/**
+ * Validates if the password and confirm password match.
+ * @param password - The password to validate
+ * @param confirmPassword - The confirm password to validate
+ * @returns true if the password and confirm password match, false otherwise
+ */
 export const validatePasswordMatch = (
   password: string,
   confirmPassword: string
@@ -66,6 +78,14 @@ export const validatePasswordMatch = (
   return password === confirmPassword;
 };
 
+/**
+ * Validates the sign up data including passwords matching and password length < 6 characters.
+ * @param signUpData - The sign up data including first name, last name, email, password, and confirm password
+ * @returns { success: boolean; message: string } - The result of the validation
+ * @returns { success: true } - The result of the validation if the sign up data is valid
+ * @returns { success: false, message: 'Passwords do not match' } - The result of the validation if the passwords do not match
+ * @returns { success: false, message: 'Password must be at least 6 characters long' } - The result of the validation if the password is less than 6 characters long
+ */
 export const validateSignUpData = (signUpData: SignUpData): AuthResult => {
   const { password, confirmPassword } = signUpData;
   if (!validatePasswordMatch(password, confirmPassword)) {
@@ -86,14 +106,12 @@ export const validateSignUpData = (signUpData: SignUpData): AuthResult => {
 };
 /**
  * Signs up a user with the given sign up data in the database.
- * The function checks for passwords matching and password length < 6 characters.
  * Uses firebase authentication to create a new user and then stores the user data in the database.
  *  **TODO ** Consider refactoring this function because it is doing multiple things and should only sign up the user
  * - It is currently creating a user in the database and then storing the user data in the database.
  * - It is currently updating the user's display name and email in the database.
  * - It is currently setting the user's createdAt and updatedAt fields in the database.
  * - It is currently returning the user object if the sign up is successful, otherwise throwing an error.
- * - It is currently logging the user's creation and update in the database.
  * - It is currently logging the user's creation and update in the database.
  * @param signUpData - The sign up data including first name, last name, email, password, and confirm password
  * @returns A promise that resolves to the user object if the sign up is successful, otherwise throws an error
