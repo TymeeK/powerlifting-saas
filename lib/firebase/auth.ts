@@ -55,15 +55,26 @@ const updateFirestoreUserDocument = async (
   }
 };
 
-const validateSignUpData = (signUpData: SignUpData): AuthResult => {
-  const { firstName, lastName, email, password, confirmPassword } = signUpData;
-  if (password !== confirmPassword) {
+export const validatePasswordLength = (password: string): boolean => {
+  return password.length >= 6;
+};
+
+export const validatePasswordMatch = (
+  password: string,
+  confirmPassword: string
+): boolean => {
+  return password === confirmPassword;
+};
+
+export const validateSignUpData = (signUpData: SignUpData): AuthResult => {
+  const { password, confirmPassword } = signUpData;
+  if (!validatePasswordMatch(password, confirmPassword)) {
     return {
       success: false,
       message: 'Passwords do not match',
     };
   }
-  if (password.length < 6) {
+  if (!validatePasswordLength(password)) {
     return {
       success: false,
       message: 'Password must be at least 6 characters long',
@@ -87,15 +98,12 @@ const validateSignUpData = (signUpData: SignUpData): AuthResult => {
  * @param signUpData - The sign up data including first name, last name, email, password, and confirm password
  * @returns A promise that resolves to the user object if the sign up is successful, otherwise throws an error
  */
-export const signUp = async (signUpData: SignUpData) => {
-  const { firstName, lastName, email, password, confirmPassword } = signUpData;
+export const signUp = async (signUpData: SignUpData): Promise<AuthResult> => {
+  const { firstName, lastName, email, password } = signUpData;
 
-  if (password !== confirmPassword) {
-    throw new Error('Passwords do not match');
-  }
-
-  if (password.length < 6) {
-    throw new Error('Password must be at least 6 characters long');
+  const validationResult = validateSignUpData(signUpData);
+  if (!validationResult.success) {
+    return validationResult;
   }
 
   try {
