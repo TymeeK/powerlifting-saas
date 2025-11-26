@@ -8,6 +8,7 @@ import {
   updatePassword,
   EmailAuthProvider,
   reauthenticateWithCredential,
+  type User,
 } from 'firebase/auth';
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from './config';
@@ -104,6 +105,28 @@ export const validateSignUpData = (signUpData: SignUpData): AuthResult => {
     success: true,
   };
 };
+
+export const createUser = async (
+  email: string,
+  password: string
+): Promise<User> => {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(
+      auth,
+      email,
+      password
+    );
+    return userCredential.user;
+  } catch (error: any) {
+    authLogger.error('Error creating user', error, {
+      errorCode: error.code,
+    });
+    throw new Error(
+      handleAuthError(error, 'An error occurred during user creation')
+    );
+  }
+};
+
 /**
  * Signs up a user with the given sign up data in the database.
  * Uses firebase authentication to create a new user and then stores the user data in the database.
@@ -124,47 +147,30 @@ export const signUp = async (signUpData: SignUpData): Promise<AuthResult> => {
     return validationResult;
   }
 
+  const user = await createUser(email, password);
+  await updateProfile(user, { displayName: `${firstName} ${lastName}` });
+
   try {
-    authLogger.debug('Creating user account');
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
+    await setDoc(doc(db, 'users', user.uid), {
+      firstName,
+      lastName,
       email,
-      password
-    );
-    const user = userCredential.user;
-    authLogger.info('User account created successfully');
-
-    await updateProfile(user, {
-      displayName: `${firstName} ${lastName}`,
+      createdAt: new Date(),
+      updatedAt: new Date(),
     });
-
-    try {
-      await setDoc(doc(db, 'users', user.uid), {
-        firstName,
-        lastName,
-        email,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-      authLogger.debug('User data stored in Firestore successfully');
-    } catch (firestoreError) {
-      authLogger.error('Error storing user data in Firestore', firestoreError);
-    }
-
-    return {
-      success: true,
-      user: {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-      },
-    };
-  } catch (error: any) {
-    authLogger.error('Error during sign up', error, {
-      errorCode: error.code,
-    });
-    throw new Error(handleAuthError(error, 'An error occurred during sign up'));
+    authLogger.debug('User data stored in Firestore successfully');
+  } catch (firestoreError) {
+    authLogger.error('Error storing user data in Firestore', firestoreError);
   }
+
+  return {
+    success: true,
+    // user: {
+    //   uid: user.uid,
+    //   email: user.email,
+    //   displayName: user.displayName,
+    // },
+  };
 };
 
 export const signIn = async (loginData: LoginData) => {
