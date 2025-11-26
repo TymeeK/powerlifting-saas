@@ -128,16 +128,23 @@ export const createUser = async (
 };
 
 /**
- * Signs up a user with the given sign up data in the database.
- * Uses firebase authentication to create a new user and then stores the user data in the database.
- *  **TODO ** Consider refactoring this function because it is doing multiple things and should only sign up the user
- * - It is currently creating a user in the database and then storing the user data in the database.
- * - It is currently updating the user's display name and email in the database.
- * - It is currently setting the user's createdAt and updatedAt fields in the database.
- * - It is currently returning the user object if the sign up is successful, otherwise throwing an error.
- * - It is currently logging the user's creation and update in the database.
+ * Updates the display name in Firebase Auth profile.
+ * @param user - The Firebase user object
+ * @param displayName - The display name to set
+ */
+const updateAuthDisplayName = async (
+  user: User,
+  displayName: string
+): Promise<void> => {
+  await updateProfile(user, { displayName });
+};
+
+/**
+ * Orchestrates the user sign up process.
+ * Validates the sign up data, creates a user in Firebase Auth, updates the display name,
+ * and stores the user's first name, last name, and timestamps in Firestore.
  * @param signUpData - The sign up data including first name, last name, email, password, and confirm password
- * @returns A promise that resolves to the user object if the sign up is successful, otherwise throws an error
+ * @returns A promise that resolves to an AuthResult with success status. Returns validation error if sign up data is invalid.
  */
 export const signUp = async (signUpData: SignUpData): Promise<AuthResult> => {
   const { firstName, lastName, email, password } = signUpData;
@@ -148,28 +155,19 @@ export const signUp = async (signUpData: SignUpData): Promise<AuthResult> => {
   }
 
   const user = await createUser(email, password);
-  await updateProfile(user, { displayName: `${firstName} ${lastName}` });
+  const displayName = `${firstName} ${lastName}`;
+  await updateAuthDisplayName(user, displayName);
 
-  try {
-    await setDoc(doc(db, 'users', user.uid), {
-      firstName,
-      lastName,
-      email,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    });
-    authLogger.debug('User data stored in Firestore successfully');
-  } catch (firestoreError) {
-    authLogger.error('Error storing user data in Firestore', firestoreError);
-  }
+  const userData = {
+    firstName,
+    lastName,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
 
+  await updateFirestoreUserDocument(user.uid, userData);
   return {
     success: true,
-    // user: {
-    //   uid: user.uid,
-    //   email: user.email,
-    //   displayName: user.displayName,
-    // },
   };
 };
 
@@ -328,33 +326,76 @@ export const updateUserPassword = async (
   }
 };
 
-export const updateUserDisplayName = async (
+const getCurrentUser = () => {
+  return auth.currentUser;
+};
+
+/**
+ * Validates that both first name and last name are provided.
+ * @param firstName - The first name to validate
+ * @param lastName - The last name to validate
+ * @returns An object with success status and optional error message
+ */
+const validateNameInputs = (
   firstName: string,
   lastName: string
-): Promise<{ success: boolean; message: string }> => {
-  if (!auth.currentUser) {
-    return {
-      success: false,
-      message: 'No user is currently signed in',
-    };
-  }
-
+): { success: boolean; message?: string } => {
   if (!firstName || !lastName) {
     return {
       success: false,
       message: 'Both first name and last name are required',
     };
   }
+  return { success: true };
+};
+
+/**
+ * Updates the user's name in Firestore.
+ * @param userId - The user's unique identifier
+ * @param firstName - The user's first name
+ * @param lastName - The user's last name
+ */
+const updateFirestoreUserName = async (
+  userId: string,
+  firstName: string,
+  lastName: string
+): Promise<void> => {
+  await updateFirestoreUserDocument(userId, {
+    firstName,
+    lastName,
+  });
+};
+
+/**
+ * Updates the user's display name in both Firebase Auth and Firestore.
+ * @param firstName - The user's first name
+ * @param lastName - The user's last name
+ * @returns An object with success status and message
+ */
+export const updateUserDisplayName = async (
+  firstName: string,
+  lastName: string
+): Promise<{ success: boolean; message: string }> => {
+  const user = getCurrentUser();
+  if (!user) {
+    return {
+      success: false,
+      message: 'No user is currently signed in',
+    };
+  }
+
+  const validationResult = validateNameInputs(firstName, lastName);
+  if (!validationResult.success) {
+    return {
+      success: false,
+      message: validationResult.message || 'Validation failed',
+    };
+  }
 
   try {
     const displayName = `${firstName} ${lastName}`;
-    await updateProfile(auth.currentUser, {
-      displayName,
-    });
-    await updateFirestoreUserDocument(auth.currentUser.uid, {
-      firstName,
-      lastName,
-    });
+    await updateAuthDisplayName(user, displayName);
+    await updateFirestoreUserName(user.uid, firstName, lastName);
 
     return {
       success: true,
