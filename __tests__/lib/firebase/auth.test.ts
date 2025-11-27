@@ -4,9 +4,10 @@ import {
   validatePasswordLength,
   validatePasswordMatch,
   createUser,
+  updateAuthDisplayName,
 } from '@/lib/firebase/auth';
 import { SignUpData } from '@/lib/types';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 
 // Mock Firebase Auth
@@ -38,6 +39,30 @@ vi.mock('@/lib/logger', () => ({
     })),
   },
 }));
+
+describe('updateAuthDisplayName', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should successfully update the display name', async () => {
+    const mockUser = {
+      uid: 'test-user-123',
+      displayName: 'Test User',
+      email: 'test@example.com',
+    };
+    const displayName = 'New Display Name';
+
+    vi.mocked(updateProfile).mockResolvedValue(undefined);
+
+    await updateAuthDisplayName(mockUser as any, displayName);
+
+    expect(updateProfile).toHaveBeenCalledOnce();
+    expect(updateProfile).toHaveBeenCalledWith(mockUser, {
+      displayName,
+    });
+  });
+});
 
 describe('validatePasswordLength', () => {
   it('should return true when password is exactly 6 characters', () => {
