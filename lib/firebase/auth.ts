@@ -132,7 +132,7 @@ export const createUser = async (
  * @param user - The Firebase user object
  * @param displayName - The display name to set
  */
-const updateAuthDisplayName = async (
+export const updateAuthDisplayName = async (
   user: User,
   displayName: string
 ): Promise<void> => {
