@@ -8,10 +8,12 @@ import {
   isUserSignedIn,
   reauthenticateUser,
   signIn,
+  resetPassword,
 } from '@/lib/firebase/auth';
 import { LoginData, SignUpData } from '@/lib/types';
 import {
   createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   updateProfile,
 } from 'firebase/auth';
@@ -532,6 +534,40 @@ describe('signIn function ', () => {
     });
     await expect(signIn(createLoginData())).rejects.toThrow(
       'Too many failed attempts. Please try again later'
+    );
+  });
+});
+
+describe('resetPassword function', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should call sendPasswordResetEmail with correct arguments', async () => {
+    vi.mocked(sendPasswordResetEmail).mockResolvedValue(undefined);
+    await resetPassword('john@example.com');
+    expect(sendPasswordResetEmail).toHaveBeenCalledWith(
+      auth,
+      'john@example.com'
+    );
+  });
+
+  it('should successfully reset the password', async () => {
+    vi.mocked(sendPasswordResetEmail).mockResolvedValue(undefined);
+    const result = await resetPassword('john@example.com');
+    expect(result).toEqual({
+      success: true,
+      message: 'Password reset email sent successfully!',
+    });
+  });
+
+  it('should throw an error when the email is invalid', async () => {
+    vi.mocked(sendPasswordResetEmail).mockRejectedValue({
+      code: 'auth/invalid-email',
+      message: 'The email address is not valid',
+    });
+    await expect(resetPassword('john@example.com')).rejects.toThrow(
+      'Invalid email address'
     );
   });
 });
