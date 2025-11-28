@@ -5,7 +5,6 @@ import {
   validatePasswordMatch,
   createUser,
   updateAuthDisplayName,
-  signUp,
 } from '@/lib/firebase/auth';
 import { SignUpData } from '@/lib/types';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
@@ -270,29 +269,33 @@ describe('signUp', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    vi.mocked(createUserWithEmailAndPassword).mockResolvedValue({
+      user: mockUser,
+    } as any);
+    vi.mocked(updateDoc).mockResolvedValue(undefined);
+
     authModule = await import('@/lib/firebase/auth');
+
     vi.spyOn(authModule, 'validateSignUpData').mockReturnValue({
       success: true,
     });
     vi.spyOn(authModule, 'createUser').mockResolvedValue(mockUser as any);
     vi.spyOn(authModule, 'updateAuthDisplayName').mockResolvedValue(undefined);
-    vi.mocked(updateDoc).mockResolvedValue(undefined);
   });
 
   it('should successfully orchestrate the sign up process', async () => {
     const signUpData = createSignUpData();
 
-    const result = await signUp(signUpData);
+    const result = await authModule.signUp(signUpData);
 
-    expect(authModule.validateSignUpData).toHaveBeenCalledWith(signUpData);
-    expect(authModule.createUser).toHaveBeenCalledWith(
+    expect(createUserWithEmailAndPassword).toHaveBeenCalledWith(
+      auth,
       signUpData.email,
       signUpData.password
     );
-    expect(authModule.updateAuthDisplayName).toHaveBeenCalledWith(
-      mockUser,
-      'John Doe'
-    );
+    expect(updateProfile).toHaveBeenCalledWith(mockUser, {
+      displayName: 'John Doe',
+    });
     expect(updateDoc).toHaveBeenCalled();
     expect(result).toEqual({ success: true });
   });
@@ -303,31 +306,30 @@ describe('signUp', () => {
       confirmPassword: '12345',
     });
 
-    vi.spyOn(authModule, 'validateSignUpData').mockReturnValue({
-      success: false,
-      message: 'Password must be at least 6 characters long',
-    });
-
-    const result = await signUp(signUpData);
+    const result = await authModule.signUp(signUpData);
 
     expect(result).toEqual({
       success: false,
       message: 'Password must be at least 6 characters long',
     });
-    expect(authModule.createUser).not.toHaveBeenCalled();
-    expect(authModule.updateAuthDisplayName).not.toHaveBeenCalled();
+    expect(createUserWithEmailAndPassword).not.toHaveBeenCalled();
+    expect(updateProfile).not.toHaveBeenCalled();
+    expect(updateDoc).not.toHaveBeenCalled();
   });
 
   it('should propagate error when user creation fails', async () => {
     const signUpData = createSignUpData();
 
-    vi.spyOn(authModule, 'createUser').mockRejectedValue(
-      new Error('Email already in use')
+    vi.mocked(createUserWithEmailAndPassword).mockRejectedValue({
+      code: 'auth/email-already-in-use',
+      message: 'Email already in use',
+    });
+
+    await expect(authModule.signUp(signUpData)).rejects.toThrow(
+      'Email already in use'
     );
 
-    await expect(signUp(signUpData)).rejects.toThrow('Email already in use');
-
-    expect(authModule.updateAuthDisplayName).not.toHaveBeenCalled();
+    expect(updateProfile).not.toHaveBeenCalled();
     expect(updateDoc).not.toHaveBeenCalled();
   });
 
@@ -335,32 +337,24 @@ describe('signUp', () => {
     const signUpData = createSignUpData();
     const callOrder: string[] = [];
 
-    vi.spyOn(authModule, 'validateSignUpData').mockImplementation(() => {
-      callOrder.push('validateSignUpData');
-      return { success: true };
+    vi.mocked(createUserWithEmailAndPassword).mockImplementation(async () => {
+      callOrder.push('createUserWithEmailAndPassword');
+      return { user: mockUser } as any;
     });
 
-    vi.spyOn(authModule, 'createUser').mockImplementation(async () => {
-      callOrder.push('createUser');
-      return mockUser as any;
+    vi.mocked(updateProfile).mockImplementation(async () => {
+      callOrder.push('updateProfile');
     });
-
-    vi.spyOn(authModule, 'updateAuthDisplayName').mockImplementation(
-      async () => {
-        callOrder.push('updateAuthDisplayName');
-      }
-    );
 
     vi.mocked(updateDoc).mockImplementation(async () => {
       callOrder.push('updateDoc');
     });
 
-    await signUp(signUpData);
+    await authModule.signUp(signUpData);
 
     expect(callOrder).toEqual([
-      'validateSignUpData',
-      'createUser',
-      'updateAuthDisplayName',
+      'createUserWithEmailAndPassword',
+      'updateProfile',
       'updateDoc',
     ]);
   });
