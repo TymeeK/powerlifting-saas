@@ -275,6 +275,14 @@ export const reauthenticateUser = async (
       message: 'No user is currently signed in',
     };
   }
+
+  if (!validatePasswordLength(password)) {
+    return {
+      success: false,
+      message: 'Password must be at least 6 characters long',
+    };
+  }
+
   try {
     const credential = EmailAuthProvider.credential(
       currentUser.email,

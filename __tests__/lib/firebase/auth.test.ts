@@ -6,6 +6,7 @@ import {
   createUser,
   updateAuthDisplayName,
   isUserSignedIn,
+  reauthenticateUser,
 } from '@/lib/firebase/auth';
 import { SignUpData } from '@/lib/types';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
@@ -383,5 +384,45 @@ describe('isUserSignedIn', () => {
   it('should return false when no user is signed in', () => {
     (auth as any).currentUser = null;
     expect(isUserSignedIn()).toBe(false);
+  });
+});
+
+describe('reauthenticateUser', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const mockUser = {
+    uid: 'test-user-123',
+    email: 'john@example.com',
+    displayName: null,
+    emailVerified: false,
+  };
+
+  it('should return success: true when reauthentication is successful', async () => {
+    (auth as any).currentUser = mockUser;
+    const result = await reauthenticateUser('password123');
+    expect(result).toEqual({
+      success: true,
+      message: 'Re-authentication successful',
+    });
+  });
+
+  it('should return validation error when no user is signed in', async () => {
+    (auth as any).currentUser = null;
+    const result = await reauthenticateUser('password123');
+    expect(result).toEqual({
+      success: false,
+      message: 'No user is currently signed in',
+    });
+  });
+
+  it('should return validation error when password is less than 6 characters', async () => {
+    (auth as any).currentUser = mockUser;
+    const result = await reauthenticateUser('inval');
+    expect(result).toEqual({
+      success: false,
+      message: 'Password must be at least 6 characters long',
+    });
   });
 });
