@@ -114,7 +114,6 @@ export const validateSignUpData = (signUpData: SignUpData): AuthResult => {
  * @returns The user object
  * @throws An error if the user creation fails
  */
-
 export const createUser = async (
   email: string,
   password: string
@@ -180,6 +179,12 @@ export const signUp = async (signUpData: SignUpData): Promise<AuthResult> => {
   };
 };
 
+/**
+ * Sign in a user with the given login data.
+ * @param loginData - The login data including email and password
+ * @returns A promise that resolves to an AuthResult with success status. Returns validation error if login data is invalid.
+ * @throws An error if the sign in fails
+ */
 export const signIn = async (loginData: LoginData) => {
   const { email, password } = loginData;
 
