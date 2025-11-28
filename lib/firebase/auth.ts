@@ -240,6 +240,10 @@ export const resetPassword = async (email: string) => {
   }
 };
 
+export const isUserSignedIn = () => {
+  return auth.currentUser !== null;
+};
+
 /**
  * Re-authenticate a user with the given password.
  * @param password - The password of the user to re-authenticate
