@@ -250,6 +250,15 @@ export const isUserSignedIn = () => {
 };
 
 /**
+ * Get the current user.
+ * @returns The current user object
+ */
+
+const getCurrentUser = () => {
+  return auth.currentUser;
+};
+
+/**
  * Re-authenticate a user with the given password.
  * @param password - The password of the user to re-authenticate
  * @returns A promise that resolves to an AuthResult with success status. Returns validation error if user is not signed in or password is invalid.
@@ -259,19 +268,25 @@ export const isUserSignedIn = () => {
 export const reauthenticateUser = async (
   password: string
 ): Promise<{ success: boolean; message: string }> => {
-  if (!auth.currentUser || !auth.currentUser.email) {
+  if (!isUserSignedIn()) {
     return {
       success: false,
       message: 'No user is currently signed in',
     };
   }
-
+  const currentUser = getCurrentUser();
+  if (!currentUser || !currentUser.email) {
+    return {
+      success: false,
+      message: 'No user is currently signed in',
+    };
+  }
   try {
     const credential = EmailAuthProvider.credential(
-      auth.currentUser.email,
+      currentUser.email,
       password
     );
-    await reauthenticateWithCredential(auth.currentUser, credential);
+    await reauthenticateWithCredential(currentUser, credential);
     return {
       success: true,
       message: 'Re-authentication successful',
@@ -381,15 +396,6 @@ export const updateUserPassword = async (
       message: handleAuthError(error, 'Failed to update password'),
     };
   }
-};
-
-/**
- * Get the current user.
- * @returns The current user object
- */
-
-const getCurrentUser = () => {
-  return auth.currentUser;
 };
 
 /**
