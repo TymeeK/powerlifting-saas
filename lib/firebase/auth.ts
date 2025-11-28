@@ -287,6 +287,15 @@ export const reauthenticateUser = async (
   }
 };
 
+/**
+ * Update the user's email address.
+ * @param email - The new email address to update the user to
+ * @param password - The password of the user to re-authenticate
+ * @returns A promise that resolves to an AuthResult with success status.
+ * Returns validation error if user is not signed in or password is invalid.
+ * @throws An error if the email update fails
+ */
+
 //TODO: Add verification for new email address
 export const updateUserEmail = async (
   email: string,
