@@ -5,6 +5,7 @@ import {
   validatePasswordMatch,
   createUser,
   updateAuthDisplayName,
+  isUserSignedIn,
 } from '@/lib/firebase/auth';
 import { SignUpData } from '@/lib/types';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
@@ -322,11 +323,11 @@ describe('signUp', () => {
 
     vi.mocked(createUserWithEmailAndPassword).mockRejectedValue({
       code: 'auth/email-already-in-use',
-      message: 'Email already in use',
+      message: 'This email is already registered',
     });
 
     await expect(authModule.signUp(signUpData)).rejects.toThrow(
-      'Email already in use'
+      'This email is already registered'
     );
 
     expect(updateProfile).not.toHaveBeenCalled();
@@ -357,5 +358,30 @@ describe('signUp', () => {
       'updateProfile',
       'updateDoc',
     ]);
+  });
+});
+
+describe('isUserSignedIn', () => {
+  const mockUser = {
+    uid: 'test-user-123',
+    email: 'john@example.com',
+    displayName: null,
+    emailVerified: false,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    (auth as any).currentUser = null;
+  });
+
+  it('should return true when a user is signed in', () => {
+    (auth as any).currentUser = mockUser;
+    expect(isUserSignedIn()).toBe(true);
+  });
+
+  it('should return false when no user is signed in', () => {
+    (auth as any).currentUser = null;
+    expect(isUserSignedIn()).toBe(false);
   });
 });
