@@ -332,6 +332,17 @@ export const updateUserEmail = async (
   }
 };
 
+/**
+ * Update the user's password.
+ * Validates the new password length and re-authenticates the user with the current password.
+ * Updates the user's password in Firebase Auth and Firestore.
+ * @param currentPassword - The current password of the user
+ * @param newPassword - The new password to update the user to
+ * @returns A promise that resolves to an AuthResult with success status.
+ * Returns validation error if user is not signed in or password is invalid.
+ * @throws An error if the password update fails
+ */
+
 export const updateUserPassword = async (
   currentPassword: string,
   newPassword: string
