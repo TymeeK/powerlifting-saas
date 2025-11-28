@@ -212,6 +212,13 @@ export const signIn = async (loginData: LoginData) => {
   }
 };
 
+/**
+ * Send a password reset email to the given email address.
+ * @param email - The email address to send the password reset email to. Must be a valid email address.
+ * @returns A promise that resolves to an AuthResult with success status. Returns validation error if email is invalid.
+ * @throws An error if the password reset email fails to send
+ */
+
 export const resetPassword = async (email: string) => {
   try {
     await sendPasswordResetEmail(auth, email);
@@ -232,6 +239,13 @@ export const resetPassword = async (email: string) => {
     );
   }
 };
+
+/**
+ * Re-authenticate a user with the given password.
+ * @param password - The password of the user to re-authenticate
+ * @returns A promise that resolves to an AuthResult with success status. Returns validation error if user is not signed in or password is invalid.
+ * @throws An error if the re-authentication fails. Returns an error message if the re-authentication fails.
+ */
 
 export const reauthenticateUser = async (
   password: string
