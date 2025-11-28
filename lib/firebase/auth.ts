@@ -268,12 +268,6 @@ const getCurrentUser = () => {
 export const reauthenticateUser = async (
   password: string
 ): Promise<{ success: boolean; message: string }> => {
-  if (!isUserSignedIn()) {
-    return {
-      success: false,
-      message: 'No user is currently signed in',
-    };
-  }
   const currentUser = getCurrentUser();
   if (!currentUser || !currentUser.email) {
     return {
