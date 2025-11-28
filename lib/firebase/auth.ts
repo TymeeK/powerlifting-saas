@@ -240,6 +240,11 @@ export const resetPassword = async (email: string) => {
   }
 };
 
+/**
+ * Check if a user is signed in.
+ * @returns true if the user is signed in, false otherwise
+ */
+
 export const isUserSignedIn = () => {
   return auth.currentUser !== null;
 };
