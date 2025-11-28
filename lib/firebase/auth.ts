@@ -106,6 +106,15 @@ export const validateSignUpData = (signUpData: SignUpData): AuthResult => {
   };
 };
 
+/**
+ * Create a new user in Firebase Auth using createUserWithEmailAndPassword.
+ * If the user creation fails, an error is thrown.
+ * @param email - The email address of the user to create
+ * @param password - The password of the user to create
+ * @returns The user object
+ * @throws An error if the user creation fails
+ */
+
 export const createUser = async (
   email: string,
   password: string
