@@ -9,8 +9,12 @@ import {
   reauthenticateUser,
   signIn,
 } from '@/lib/firebase/auth';
-import { SignUpData } from '@/lib/types';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { LoginData, SignUpData } from '@/lib/types';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  updateProfile,
+} from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { updateDoc, setDoc } from 'firebase/firestore';
 
@@ -429,11 +433,34 @@ describe('reauthenticateUser', () => {
 });
 
 describe('signIn function ', () => {
+  const createLoginData = (overrides?: Partial<LoginData>) => ({
+    email: 'john@example.com',
+    password: 'password123',
+    ...overrides,
+  });
+
+  vi.mock('@/lib/logger', () => ({
+    logger: {
+      child: vi.fn(() => ({
+        error: vi.fn(),
+      })),
+    },
+  }));
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('should successfully sign in a user', async () => {
+    const mockUser = {
+      uid: 'test-user-123',
+      email: 'john@example.com',
+      displayName: null,
+      emailVerified: false,
+    };
+
+    vi.mocked(signInWithEmailAndPassword).mockResolvedValue({
+      user: mockUser,
+    } as any);
     const result = await signIn({
       email: 'john@example.com',
       password: 'password123',
@@ -446,5 +473,65 @@ describe('signIn function ', () => {
         displayName: null,
       },
     });
+  });
+
+  it("Should throw an error when it's the wrong email or password", async () => {
+    vi.mocked(signInWithEmailAndPassword).mockRejectedValue({
+      code: 'auth/wrong-password',
+      message: 'The password is invalid or the user does not have a password',
+    });
+    await expect(signIn(createLoginData())).rejects.toThrow(
+      'Incorrect password'
+    );
+  });
+
+  it('Should throw an error when the email is invalid', async () => {
+    vi.mocked(signInWithEmailAndPassword).mockRejectedValue({
+      code: 'auth/invalid-email',
+      message: 'The email address is not valid',
+    });
+    await expect(signIn(createLoginData())).rejects.toThrow(
+      'Invalid email address'
+    );
+  });
+
+  it('Should throw an error when the email is not found', async () => {
+    vi.mocked(signInWithEmailAndPassword).mockRejectedValue({
+      code: 'auth/user-not-found',
+      message: 'No user found with this email address',
+    });
+    await expect(signIn(createLoginData())).rejects.toThrow(
+      'No account found with this email address'
+    );
+  });
+
+  it('Should throw an error when the user is disabled', async () => {
+    vi.mocked(signInWithEmailAndPassword).mockRejectedValue({
+      code: 'auth/user-disabled',
+      message: 'The user account has been disabled by an administrator',
+    });
+    await expect(signIn(createLoginData())).rejects.toThrow(
+      'This account has been disabled'
+    );
+  });
+
+  it('Should throw an error when the user is not found', async () => {
+    vi.mocked(signInWithEmailAndPassword).mockRejectedValue({
+      code: 'auth/user-not-found',
+      message: 'No user found with this email address',
+    });
+    await expect(signIn(createLoginData())).rejects.toThrow(
+      'No account found with this email address'
+    );
+  });
+
+  it('Should throw an error when there are too many requests', async () => {
+    vi.mocked(signInWithEmailAndPassword).mockRejectedValue({
+      code: 'auth/too-many-requests',
+      message: 'Too many requests. Please try again later',
+    });
+    await expect(signIn(createLoginData())).rejects.toThrow(
+      'Too many failed attempts. Please try again later'
+    );
   });
 });
