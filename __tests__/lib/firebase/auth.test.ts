@@ -7,6 +7,7 @@ import {
   updateAuthDisplayName,
   isUserSignedIn,
   reauthenticateUser,
+  signIn,
 } from '@/lib/firebase/auth';
 import { SignUpData } from '@/lib/types';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
@@ -423,6 +424,27 @@ describe('reauthenticateUser', () => {
     expect(result).toEqual({
       success: false,
       message: 'Password must be at least 6 characters long',
+    });
+  });
+});
+
+describe('signIn function ', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should successfully sign in a user', async () => {
+    const result = await signIn({
+      email: 'john@example.com',
+      password: 'password123',
+    });
+    expect(result).toEqual({
+      success: true,
+      user: {
+        uid: 'test-user-123',
+        email: 'john@example.com',
+        displayName: null,
+      },
     });
   });
 });
