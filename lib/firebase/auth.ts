@@ -383,6 +383,11 @@ export const updateUserPassword = async (
   }
 };
 
+/**
+ * Get the current user.
+ * @returns The current user object
+ */
+
 const getCurrentUser = () => {
   return auth.currentUser;
 };
