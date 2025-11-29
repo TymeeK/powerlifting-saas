@@ -318,7 +318,8 @@ export const updateUserEmail = async (
   email: string,
   password: string
 ): Promise<{ success: boolean; message: string }> => {
-  if (!auth.currentUser) {
+  const user = getCurrentUser();
+  if (!user) {
     return {
       success: false,
       message: 'No user is currently signed in',
@@ -331,8 +332,8 @@ export const updateUserEmail = async (
   }
 
   try {
-    await updateEmail(auth.currentUser, email);
-    await updateFirestoreUserDocument(auth.currentUser.uid, { email });
+    await updateEmail(user, email);
+    await updateFirestoreUserDocument(user.uid, { email });
 
     return {
       success: true,
@@ -364,7 +365,8 @@ export const updateUserPassword = async (
   currentPassword: string,
   newPassword: string
 ): Promise<{ success: boolean; message: string }> => {
-  if (!auth.currentUser) {
+  const user = getCurrentUser();
+  if (!user) {
     return {
       success: false,
       message: 'No user is currently signed in',
@@ -384,7 +386,7 @@ export const updateUserPassword = async (
   }
 
   try {
-    await updatePassword(auth.currentUser, newPassword);
+    await updatePassword(user, newPassword);
     return {
       success: true,
       message: 'Password updated successfully!',
