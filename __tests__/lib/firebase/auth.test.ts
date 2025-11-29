@@ -9,12 +9,14 @@ import {
   reauthenticateUser,
   signIn,
   resetPassword,
+  updateUserEmail,
 } from '@/lib/firebase/auth';
 import { LoginData, SignUpData } from '@/lib/types';
 import {
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
+  updateEmail,
   updateProfile,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
@@ -569,5 +571,29 @@ describe('resetPassword function', () => {
     await expect(resetPassword('john@example.com')).rejects.toThrow(
       'Invalid email address'
     );
+  });
+});
+
+describe('updateUserEmail function', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should successfully update the user email', async () => {
+    vi.mocked(updateEmail).mockResolvedValue(undefined);
+    const result = await updateUserEmail('john@example.com', 'password123');
+    expect(result).toEqual({
+      success: true,
+      message: 'Email updated successfully!',
+    });
+  });
+
+  it('should return validation error when no user is signed in', async () => {
+    (auth as any).currentUser = null;
+    const result = await updateUserEmail('john@example.com', 'password123');
+    expect(result).toEqual({
+      success: false,
+      message: 'No user is currently signed in',
+    });
   });
 });
