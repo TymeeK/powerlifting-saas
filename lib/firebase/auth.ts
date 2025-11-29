@@ -8,10 +8,11 @@ import {
   updatePassword,
   EmailAuthProvider,
   reauthenticateWithCredential,
+  type User,
 } from 'firebase/auth';
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from './config';
-import { SignUpData, LoginData } from '@/lib/types';
+import { SignUpData, LoginData, AuthResult } from '@/lib/types';
 import { logger } from '@/lib/logger';
 
 // Create a child logger for auth operations
@@ -55,60 +56,135 @@ const updateFirestoreUserDocument = async (
   }
 };
 
-export const signUp = async (signUpData: SignUpData) => {
-  const { firstName, lastName, email, password, confirmPassword } = signUpData;
+/**
+ * Validates the length of the password.
+ * @param password - The password to validate
+ * @returns true if the password is at least 6 characters long, false otherwise
+ */
 
-  if (password !== confirmPassword) {
-    throw new Error('Passwords do not match');
+export const validatePasswordLength = (password: string): boolean => {
+  return password.length >= 6;
+};
+
+/**
+ * Validates if the password and confirm password match.
+ * @param password - The password to validate
+ * @param confirmPassword - The confirm password to validate
+ * @returns true if the password and confirm password match, false otherwise
+ */
+export const validatePasswordMatch = (
+  password: string,
+  confirmPassword: string
+): boolean => {
+  return password === confirmPassword;
+};
+
+/**
+ * Validates the sign up data including passwords matching and password length < 6 characters.
+ * @param signUpData - The sign up data including first name, last name, email, password, and confirm password
+ * @returns { success: boolean; message: string } - The result of the validation
+ * @returns { success: true } - The result of the validation if the sign up data is valid
+ * @returns { success: false, message: 'Passwords do not match' } - The result of the validation if the passwords do not match
+ * @returns { success: false, message: 'Password must be at least 6 characters long' } - The result of the validation if the password is less than 6 characters long
+ */
+export const validateSignUpData = (signUpData: SignUpData): AuthResult => {
+  const { password, confirmPassword } = signUpData;
+  if (!validatePasswordMatch(password, confirmPassword)) {
+    return {
+      success: false,
+      message: 'Passwords do not match',
+    };
   }
-
-  if (password.length < 6) {
-    throw new Error('Password must be at least 6 characters long');
+  if (!validatePasswordLength(password)) {
+    return {
+      success: false,
+      message: 'Password must be at least 6 characters long',
+    };
   }
+  return {
+    success: true,
+  };
+};
 
+/**
+ * Create a new user in Firebase Auth using createUserWithEmailAndPassword.
+ * If the user creation fails, an error is thrown.
+ * @param email - The email address of the user to create
+ * @param password - The password of the user to create
+ * @returns The user object
+ * @throws An error if the user creation fails
+ */
+export const createUser = async (
+  email: string,
+  password: string
+): Promise<User> => {
   try {
-    authLogger.debug('Creating user account');
     const userCredential = await createUserWithEmailAndPassword(
       auth,
       email,
       password
     );
-    const user = userCredential.user;
-    authLogger.info('User account created successfully');
-
-    await updateProfile(user, {
-      displayName: `${firstName} ${lastName}`,
-    });
-
-    try {
-      await setDoc(doc(db, 'users', user.uid), {
-        firstName,
-        lastName,
-        email,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-      authLogger.debug('User data stored in Firestore successfully');
-    } catch (firestoreError) {
-      authLogger.error('Error storing user data in Firestore', firestoreError);
-    }
-
-    return {
-      success: true,
-      user: {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-      },
-    };
+    return userCredential.user;
   } catch (error: any) {
-    authLogger.error('Error during sign up', error, {
+    authLogger.error('Error creating user', error, {
       errorCode: error.code,
     });
-    throw new Error(handleAuthError(error, 'An error occurred during sign up'));
+    throw new Error(
+      handleAuthError(error, 'An error occurred during user creation')
+    );
   }
 };
 
+/**
+ * Updates the display name in Firebase Auth profile.
+ * @param user - The Firebase user object
+ * @param displayName - The display name to set
+ */
+export const updateAuthDisplayName = async (
+  user: User,
+  displayName: string
+): Promise<void> => {
+  await updateProfile(user, { displayName });
+};
+
+/**
+ * Orchestrates the user sign up process.
+ * Validates the sign up data, creates a user in Firebase Auth, updates the display name,
+ * and stores the user's first name, last name, and timestamps in Firestore.
+ * @param signUpData - The sign up data including first name, last name, email, password, and confirm password
+ * @returns A promise that resolves to an AuthResult with success status. Returns validation error if sign up data is invalid.
+ */
+export const signUp = async (signUpData: SignUpData): Promise<AuthResult> => {
+  const { firstName, lastName, email, password } = signUpData;
+
+  const validationResult = validateSignUpData(signUpData);
+  if (!validationResult.success) {
+    return validationResult;
+  }
+
+  const user = await createUser(email, password);
+  const displayName = `${firstName} ${lastName}`;
+  await updateAuthDisplayName(user, displayName);
+
+  const userData = {
+    firstName,
+    lastName,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  await updateFirestoreUserDocument(user.uid, userData);
+  return {
+    success: true,
+  };
+};
+
+/**
+ * Sign in a user with the given login data.
+ * @param loginData - The login data including email and password
+ * @returns A promise that resolves to an AuthResult with success status. Returns validation error if login data is invalid.
+ * @throws An error if the sign in fails
+ */
 export const signIn = async (loginData: LoginData) => {
   const { email, password } = loginData;
 
@@ -136,6 +212,13 @@ export const signIn = async (loginData: LoginData) => {
   }
 };
 
+/**
+ * Send a password reset email to the given email address.
+ * @param email - The email address to send the password reset email to. Must be a valid email address.
+ * @returns A promise that resolves to an AuthResult with success status. Returns validation error if email is invalid.
+ * @throws An error if the password reset email fails to send
+ */
+
 export const resetPassword = async (email: string) => {
   try {
     await sendPasswordResetEmail(auth, email);
@@ -157,22 +240,55 @@ export const resetPassword = async (email: string) => {
   }
 };
 
+/**
+ * Check if a user is signed in.
+ * @returns true if the user is signed in, false otherwise
+ */
+
+export const isUserSignedIn = () => {
+  return auth.currentUser !== null;
+};
+
+/**
+ * Get the current user.
+ * @returns The current user object
+ */
+
+const getCurrentUser = () => {
+  return auth.currentUser;
+};
+
+/**
+ * Re-authenticate a user with the given password.
+ * @param password - The password of the user to re-authenticate
+ * @returns A promise that resolves to an AuthResult with success status. Returns validation error if user is not signed in or password is invalid.
+ * @throws An error if the re-authentication fails. Returns an error message if the re-authentication fails.
+ */
+
 export const reauthenticateUser = async (
   password: string
 ): Promise<{ success: boolean; message: string }> => {
-  if (!auth.currentUser || !auth.currentUser.email) {
+  const currentUser = getCurrentUser();
+  if (!currentUser || !currentUser.email) {
     return {
       success: false,
       message: 'No user is currently signed in',
     };
   }
 
+  if (!validatePasswordLength(password)) {
+    return {
+      success: false,
+      message: 'Password must be at least 6 characters long',
+    };
+  }
+
   try {
     const credential = EmailAuthProvider.credential(
-      auth.currentUser.email,
+      currentUser.email,
       password
     );
-    await reauthenticateWithCredential(auth.currentUser, credential);
+    await reauthenticateWithCredential(currentUser, credential);
     return {
       success: true,
       message: 'Re-authentication successful',
@@ -188,12 +304,22 @@ export const reauthenticateUser = async (
   }
 };
 
+/**
+ * Update the user's email address.
+ * @param email - The new email address to update the user to
+ * @param password - The password of the user to re-authenticate
+ * @returns A promise that resolves to an AuthResult with success status.
+ * Returns validation error if user is not signed in or password is invalid.
+ * @throws An error if the email update fails
+ */
+
 //TODO: Add verification for new email address
 export const updateUserEmail = async (
   email: string,
   password: string
 ): Promise<{ success: boolean; message: string }> => {
-  if (!auth.currentUser) {
+  const user = getCurrentUser();
+  if (!user) {
     return {
       success: false,
       message: 'No user is currently signed in',
@@ -206,8 +332,8 @@ export const updateUserEmail = async (
   }
 
   try {
-    await updateEmail(auth.currentUser, email);
-    await updateFirestoreUserDocument(auth.currentUser.uid, { email });
+    await updateEmail(user, email);
+    await updateFirestoreUserDocument(user.uid, { email });
 
     return {
       success: true,
@@ -224,11 +350,23 @@ export const updateUserEmail = async (
   }
 };
 
+/**
+ * Update the user's password.
+ * Validates the new password length and re-authenticates the user with the current password.
+ * Updates the user's password in Firebase Auth and Firestore.
+ * @param currentPassword - The current password of the user
+ * @param newPassword - The new password to update the user to
+ * @returns A promise that resolves to an AuthResult with success status.
+ * Returns validation error if user is not signed in or password is invalid.
+ * @throws An error if the password update fails
+ */
+
 export const updateUserPassword = async (
   currentPassword: string,
   newPassword: string
 ): Promise<{ success: boolean; message: string }> => {
-  if (!auth.currentUser) {
+  const user = getCurrentUser();
+  if (!user) {
     return {
       success: false,
       message: 'No user is currently signed in',
@@ -248,7 +386,7 @@ export const updateUserPassword = async (
   }
 
   try {
-    await updatePassword(auth.currentUser, newPassword);
+    await updatePassword(user, newPassword);
     return {
       success: true,
       message: 'Password updated successfully!',
@@ -264,33 +402,72 @@ export const updateUserPassword = async (
   }
 };
 
-export const updateUserDisplayName = async (
+/**
+ * Validates that both first name and last name are provided.
+ * @param firstName - The first name to validate
+ * @param lastName - The last name to validate
+ * @returns An object with success status and optional error message
+ */
+const validateNameInputs = (
   firstName: string,
   lastName: string
-): Promise<{ success: boolean; message: string }> => {
-  if (!auth.currentUser) {
-    return {
-      success: false,
-      message: 'No user is currently signed in',
-    };
-  }
-
+): { success: boolean; message?: string } => {
   if (!firstName || !lastName) {
     return {
       success: false,
       message: 'Both first name and last name are required',
     };
   }
+  return { success: true };
+};
+
+/**
+ * Updates the user's name in Firestore.
+ * @param userId - The user's unique identifier
+ * @param firstName - The user's first name
+ * @param lastName - The user's last name
+ */
+const updateFirestoreUserName = async (
+  userId: string,
+  firstName: string,
+  lastName: string
+): Promise<void> => {
+  await updateFirestoreUserDocument(userId, {
+    firstName,
+    lastName,
+  });
+};
+
+/**
+ * Updates the user's display name in both Firebase Auth and Firestore.
+ * @param firstName - The user's first name
+ * @param lastName - The user's last name
+ * @returns An object with success status and message
+ */
+export const updateUserDisplayName = async (
+  firstName: string,
+  lastName: string
+): Promise<{ success: boolean; message: string }> => {
+  const user = getCurrentUser();
+  if (!user) {
+    return {
+      success: false,
+      message: 'No user is currently signed in',
+    };
+  }
+
+  const validationResult = validateNameInputs(firstName, lastName);
+  if (!validationResult.success) {
+    return {
+      success: false,
+      message: validationResult.message || 'Validation failed',
+    };
+  }
 
   try {
     const displayName = `${firstName} ${lastName}`;
-    await updateProfile(auth.currentUser, {
-      displayName,
-    });
-    await updateFirestoreUserDocument(auth.currentUser.uid, {
-      firstName,
-      lastName,
-    });
+    await updateAuthDisplayName(user, displayName);
+    await updateFirestoreUserName(user.uid, firstName, lastName);
 
     return {
       success: true,

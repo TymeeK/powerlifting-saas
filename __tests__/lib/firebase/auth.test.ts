@@ -1,0 +1,949 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import {
+  validateSignUpData,
+  validatePasswordLength,
+  validatePasswordMatch,
+  createUser,
+  updateAuthDisplayName,
+  isUserSignedIn,
+  reauthenticateUser,
+  signIn,
+  resetPassword,
+  updateUserEmail,
+  updateUserPassword,
+  updateUserDisplayName,
+} from '@/lib/firebase/auth';
+import { LoginData, SignUpData } from '@/lib/types';
+import {
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  updateEmail,
+  updatePassword,
+  updateProfile,
+  EmailAuthProvider,
+  reauthenticateWithCredential,
+} from 'firebase/auth';
+import { auth } from '@/lib/firebase/config';
+import { updateDoc, setDoc } from 'firebase/firestore';
+
+// Mock Firebase Auth
+vi.mock('firebase/auth', () => ({
+  createUserWithEmailAndPassword: vi.fn(),
+  updateProfile: vi.fn(),
+  signInWithEmailAndPassword: vi.fn(),
+  sendPasswordResetEmail: vi.fn(),
+  updateEmail: vi.fn(),
+  updatePassword: vi.fn(),
+  EmailAuthProvider: {
+    credential: vi.fn(),
+  },
+  reauthenticateWithCredential: vi.fn(),
+}));
+
+// Mock Firebase Firestore
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn((db, collection, id) => ({ db, collection, id })),
+  setDoc: vi.fn(),
+  updateDoc: vi.fn(),
+}));
+
+vi.mock('@/lib/firebase/config', () => ({
+  auth: {},
+  db: {},
+}));
+
+vi.mock('@/lib/logger', () => ({
+  logger: {
+    child: vi.fn(() => ({
+      debug: vi.fn(),
+      info: vi.fn(),
+      error: vi.fn(),
+      warn: vi.fn(),
+    })),
+  },
+}));
+
+describe('updateAuthDisplayName', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should successfully update the display name', async () => {
+    const mockUser = {
+      uid: 'test-user-123',
+      displayName: 'Test User',
+      email: 'test@example.com',
+    };
+    const displayName = 'New Display Name';
+
+    vi.mocked(updateProfile).mockResolvedValue(undefined);
+
+    await updateAuthDisplayName(mockUser as any, displayName);
+
+    expect(updateProfile).toHaveBeenCalledOnce();
+    expect(updateProfile).toHaveBeenCalledWith(mockUser, {
+      displayName,
+    });
+  });
+});
+
+describe('validatePasswordLength', () => {
+  it('should return true when password is exactly 6 characters', () => {
+    expect(validatePasswordLength('123456')).toBe(true);
+  });
+
+  it('should return true when password is more than 6 characters', () => {
+    expect(validatePasswordLength('password123')).toBe(true);
+  });
+
+  it('should return false when password is 5 characters', () => {
+    expect(validatePasswordLength('12345')).toBe(false);
+  });
+
+  it('should return false when password is empty', () => {
+    expect(validatePasswordLength('')).toBe(false);
+  });
+});
+
+describe('validatePasswordMatch', () => {
+  it('should return true when passwords match', () => {
+    expect(validatePasswordMatch('password123', 'password123')).toBe(true);
+  });
+
+  it('should return false when passwords do not match', () => {
+    expect(validatePasswordMatch('password123', 'different')).toBe(false);
+  });
+});
+
+describe('createUser', () => {
+  const mockUser = {
+    uid: 'test-user-123',
+    email: 'test@example.com',
+    displayName: null,
+    emailVerified: false,
+  };
+
+  const setupMockUserCredential = () => {
+    const mockUserCredential = {
+      user: mockUser,
+    };
+    vi.mocked(createUserWithEmailAndPassword).mockResolvedValue(
+      mockUserCredential as any
+    );
+    return mockUserCredential;
+  };
+
+  const setupMockError = (error: { code: string; message?: string }) => {
+    vi.mocked(createUserWithEmailAndPassword).mockRejectedValue(error);
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should successfully call createUserWithEmailAndPassword', async () => {
+    setupMockUserCredential();
+
+    await createUser('test@example.com', 'password123');
+    expect(createUserWithEmailAndPassword).toHaveBeenCalledWith(
+      auth,
+      'test@example.com',
+      'password123'
+    );
+  });
+
+  it('should successfully return User object', async () => {
+    setupMockUserCredential();
+
+    const result = await createUser('test@example.com', 'password123');
+    expect(result).toEqual(mockUser);
+  });
+
+  it('should throw error when email is already in use', async () => {
+    setupMockError({
+      code: 'auth/email-already-in-use',
+      message: 'This email is already registered',
+    });
+
+    await expect(
+      createUser('existing@example.com', 'password123')
+    ).rejects.toThrow('This email is already registered');
+  });
+
+  it('should throw error when email is invalid', async () => {
+    setupMockError({
+      code: 'auth/invalid-email',
+      message: 'Invalid email address',
+    });
+
+    await expect(createUser('invalid-email', 'password123')).rejects.toThrow(
+      'Invalid email address'
+    );
+  });
+
+  it('should throw error when password is too weak', async () => {
+    setupMockError({
+      code: 'auth/weak-password',
+      message: 'Password is too weak',
+    });
+
+    await expect(createUser('test@example.com', '123')).rejects.toThrow(
+      'Password is too weak'
+    );
+  });
+
+  it('should throw generic error message for unknown errors', async () => {
+    setupMockError({
+      code: 'auth/unknown-error',
+      message: 'Something went wrong',
+    });
+
+    await expect(createUser('test@example.com', 'password123')).rejects.toThrow(
+      'Something went wrong'
+    );
+  });
+
+  it('should throw default error message when error has no message', async () => {
+    setupMockError({
+      code: 'auth/unknown-error',
+    });
+
+    await expect(createUser('test@example.com', 'password123')).rejects.toThrow(
+      'An error occurred during user creation'
+    );
+  });
+});
+
+describe('validateSignUpData', () => {
+  const createSignUpData = (overrides?: Partial<SignUpData>): SignUpData => ({
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john@example.com',
+    password: 'password123',
+    confirmPassword: 'password123',
+    ...overrides,
+  });
+
+  it('should return success: true when data is valid', () => {
+    const result = validateSignUpData(createSignUpData());
+    expect(result).toEqual({ success: true });
+  });
+
+  it('should return error when passwords do not match', () => {
+    const result = validateSignUpData(
+      createSignUpData({
+        password: 'password123',
+        confirmPassword: 'different',
+      })
+    );
+    expect(result).toEqual({
+      success: false,
+      message: 'Passwords do not match',
+    });
+  });
+
+  it('should return error when password is less than 6 characters', () => {
+    const result = validateSignUpData(
+      createSignUpData({ password: '12345', confirmPassword: '12345' })
+    );
+    expect(result).toEqual({
+      success: false,
+      message: 'Password must be at least 6 characters long',
+    });
+  });
+
+  it('should check password mismatch before password length', () => {
+    const result = validateSignUpData(
+      createSignUpData({ password: '12345', confirmPassword: '123456' })
+    );
+    expect(result).toEqual({
+      success: false,
+      message: 'Passwords do not match',
+    });
+  });
+});
+
+describe('signUp', () => {
+  let authModule: typeof import('@/lib/firebase/auth');
+
+  const createSignUpData = (overrides?: Partial<SignUpData>): SignUpData => ({
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john@example.com',
+    password: 'password123',
+    confirmPassword: 'password123',
+    ...overrides,
+  });
+
+  const mockUser = {
+    uid: 'test-user-123',
+    email: 'john@example.com',
+    displayName: null,
+    emailVerified: false,
+  };
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    vi.mocked(createUserWithEmailAndPassword).mockResolvedValue({
+      user: mockUser,
+    } as any);
+    vi.mocked(updateDoc).mockResolvedValue(undefined);
+
+    authModule = await import('@/lib/firebase/auth');
+
+    vi.spyOn(authModule, 'validateSignUpData').mockReturnValue({
+      success: true,
+    });
+    vi.spyOn(authModule, 'createUser').mockResolvedValue(mockUser as any);
+    vi.spyOn(authModule, 'updateAuthDisplayName').mockResolvedValue(undefined);
+  });
+
+  it('should successfully orchestrate the sign up process', async () => {
+    const signUpData = createSignUpData();
+
+    const result = await authModule.signUp(signUpData);
+
+    expect(createUserWithEmailAndPassword).toHaveBeenCalledWith(
+      auth,
+      signUpData.email,
+      signUpData.password
+    );
+    expect(updateProfile).toHaveBeenCalledWith(mockUser, {
+      displayName: 'John Doe',
+    });
+    expect(updateDoc).toHaveBeenCalled();
+    expect(result).toEqual({ success: true });
+  });
+
+  it('should return validation error when sign up data is invalid', async () => {
+    const signUpData = createSignUpData({
+      password: '12345',
+      confirmPassword: '12345',
+    });
+
+    const result = await authModule.signUp(signUpData);
+
+    expect(result).toEqual({
+      success: false,
+      message: 'Password must be at least 6 characters long',
+    });
+    expect(createUserWithEmailAndPassword).not.toHaveBeenCalled();
+    expect(updateProfile).not.toHaveBeenCalled();
+    expect(updateDoc).not.toHaveBeenCalled();
+  });
+
+  it('should propagate error when user creation fails', async () => {
+    const signUpData = createSignUpData();
+
+    vi.mocked(createUserWithEmailAndPassword).mockRejectedValue({
+      code: 'auth/email-already-in-use',
+      message: 'This email is already registered',
+    });
+
+    await expect(authModule.signUp(signUpData)).rejects.toThrow(
+      'This email is already registered'
+    );
+
+    expect(updateProfile).not.toHaveBeenCalled();
+    expect(updateDoc).not.toHaveBeenCalled();
+  });
+
+  it('should call functions in the correct order', async () => {
+    const signUpData = createSignUpData();
+    const callOrder: string[] = [];
+
+    vi.mocked(createUserWithEmailAndPassword).mockImplementation(async () => {
+      callOrder.push('createUserWithEmailAndPassword');
+      return { user: mockUser } as any;
+    });
+
+    vi.mocked(updateProfile).mockImplementation(async () => {
+      callOrder.push('updateProfile');
+    });
+
+    vi.mocked(updateDoc).mockImplementation(async () => {
+      callOrder.push('updateDoc');
+    });
+
+    await authModule.signUp(signUpData);
+
+    expect(callOrder).toEqual([
+      'createUserWithEmailAndPassword',
+      'updateProfile',
+      'updateDoc',
+    ]);
+  });
+});
+
+describe('isUserSignedIn', () => {
+  const mockUser = {
+    uid: 'test-user-123',
+    email: 'john@example.com',
+    displayName: null,
+    emailVerified: false,
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    (auth as any).currentUser = null;
+  });
+
+  it('should return true when a user is signed in', () => {
+    (auth as any).currentUser = mockUser;
+    expect(isUserSignedIn()).toBe(true);
+  });
+
+  it('should return false when no user is signed in', () => {
+    (auth as any).currentUser = null;
+    expect(isUserSignedIn()).toBe(false);
+  });
+});
+
+describe('reauthenticateUser', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const mockUser = {
+    uid: 'test-user-123',
+    email: 'john@example.com',
+    displayName: null,
+    emailVerified: false,
+  };
+
+  it('should return success: true when reauthentication is successful', async () => {
+    (auth as any).currentUser = mockUser;
+    const result = await reauthenticateUser('password123');
+    expect(result).toEqual({
+      success: true,
+      message: 'Re-authentication successful',
+    });
+  });
+
+  it('should return validation error when no user is signed in', async () => {
+    (auth as any).currentUser = null;
+    const result = await reauthenticateUser('password123');
+    expect(result).toEqual({
+      success: false,
+      message: 'No user is currently signed in',
+    });
+  });
+
+  it('should return validation error when password is less than 6 characters', async () => {
+    (auth as any).currentUser = mockUser;
+    const result = await reauthenticateUser('inval');
+    expect(result).toEqual({
+      success: false,
+      message: 'Password must be at least 6 characters long',
+    });
+  });
+});
+
+describe('signIn function ', () => {
+  const createLoginData = (overrides?: Partial<LoginData>) => ({
+    email: 'john@example.com',
+    password: 'password123',
+    ...overrides,
+  });
+
+  vi.mock('@/lib/logger', () => ({
+    logger: {
+      child: vi.fn(() => ({
+        error: vi.fn(),
+      })),
+    },
+  }));
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should successfully sign in a user', async () => {
+    const mockUser = {
+      uid: 'test-user-123',
+      email: 'john@example.com',
+      displayName: null,
+      emailVerified: false,
+    };
+
+    vi.mocked(signInWithEmailAndPassword).mockResolvedValue({
+      user: mockUser,
+    } as any);
+    const result = await signIn({
+      email: 'john@example.com',
+      password: 'password123',
+    });
+    expect(result).toEqual({
+      success: true,
+      user: {
+        uid: 'test-user-123',
+        email: 'john@example.com',
+        displayName: null,
+      },
+    });
+  });
+
+  it("Should throw an error when it's the wrong email or password", async () => {
+    vi.mocked(signInWithEmailAndPassword).mockRejectedValue({
+      code: 'auth/wrong-password',
+      message: 'The password is invalid or the user does not have a password',
+    });
+    await expect(signIn(createLoginData())).rejects.toThrow(
+      'Incorrect password'
+    );
+  });
+
+  it('Should throw an error when the email is invalid', async () => {
+    vi.mocked(signInWithEmailAndPassword).mockRejectedValue({
+      code: 'auth/invalid-email',
+      message: 'The email address is not valid',
+    });
+    await expect(signIn(createLoginData())).rejects.toThrow(
+      'Invalid email address'
+    );
+  });
+
+  it('Should throw an error when the email is not found', async () => {
+    vi.mocked(signInWithEmailAndPassword).mockRejectedValue({
+      code: 'auth/user-not-found',
+      message: 'No user found with this email address',
+    });
+    await expect(signIn(createLoginData())).rejects.toThrow(
+      'No account found with this email address'
+    );
+  });
+
+  it('Should throw an error when the user is disabled', async () => {
+    vi.mocked(signInWithEmailAndPassword).mockRejectedValue({
+      code: 'auth/user-disabled',
+      message: 'The user account has been disabled by an administrator',
+    });
+    await expect(signIn(createLoginData())).rejects.toThrow(
+      'This account has been disabled'
+    );
+  });
+
+  it('Should throw an error when the user is not found', async () => {
+    vi.mocked(signInWithEmailAndPassword).mockRejectedValue({
+      code: 'auth/user-not-found',
+      message: 'No user found with this email address',
+    });
+    await expect(signIn(createLoginData())).rejects.toThrow(
+      'No account found with this email address'
+    );
+  });
+
+  it('Should throw an error when there are too many requests', async () => {
+    vi.mocked(signInWithEmailAndPassword).mockRejectedValue({
+      code: 'auth/too-many-requests',
+      message: 'Too many requests. Please try again later',
+    });
+    await expect(signIn(createLoginData())).rejects.toThrow(
+      'Too many failed attempts. Please try again later'
+    );
+  });
+});
+
+describe('resetPassword function', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should call sendPasswordResetEmail with correct arguments', async () => {
+    vi.mocked(sendPasswordResetEmail).mockResolvedValue(undefined);
+    await resetPassword('john@example.com');
+    expect(sendPasswordResetEmail).toHaveBeenCalledWith(
+      auth,
+      'john@example.com'
+    );
+  });
+
+  it('should successfully reset the password', async () => {
+    vi.mocked(sendPasswordResetEmail).mockResolvedValue(undefined);
+    const result = await resetPassword('john@example.com');
+    expect(result).toEqual({
+      success: true,
+      message: 'Password reset email sent successfully!',
+    });
+  });
+
+  it('should throw an error when the email is invalid', async () => {
+    vi.mocked(sendPasswordResetEmail).mockRejectedValue({
+      code: 'auth/invalid-email',
+      message: 'The email address is not valid',
+    });
+    await expect(resetPassword('john@example.com')).rejects.toThrow(
+      'Invalid email address'
+    );
+  });
+});
+
+describe('updateUserEmail function', () => {
+  let authModule: typeof import('@/lib/firebase/auth');
+
+  const mockUser = {
+    uid: 'test-user-123',
+    email: 'old@example.com',
+    displayName: 'Test User',
+    emailVerified: false,
+  };
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    (auth as any).currentUser = mockUser;
+    vi.mocked(updateDoc).mockResolvedValue(undefined);
+    vi.mocked(updateEmail).mockResolvedValue(undefined);
+    vi.mocked(reauthenticateWithCredential).mockResolvedValue({} as any);
+    vi.mocked(EmailAuthProvider.credential).mockReturnValue({} as any);
+
+    authModule = await import('@/lib/firebase/auth');
+  });
+
+  it('should successfully update the user email', async () => {
+    const result = await authModule.updateUserEmail(
+      'new@example.com',
+      'password123'
+    );
+
+    expect(updateEmail).toHaveBeenCalledWith(mockUser, 'new@example.com');
+    expect(updateDoc).toHaveBeenCalled();
+    expect(result).toEqual({
+      success: true,
+      message: 'Email updated successfully!',
+    });
+  });
+
+  it('should return validation error when no user is signed in', async () => {
+    (auth as any).currentUser = null;
+    const result = await authModule.updateUserEmail(
+      'new@example.com',
+      'password123'
+    );
+
+    expect(result).toEqual({
+      success: false,
+      message: 'No user is currently signed in',
+    });
+    expect(updateEmail).not.toHaveBeenCalled();
+  });
+
+  it('should return error when re-authentication fails', async () => {
+    vi.mocked(reauthenticateWithCredential).mockRejectedValueOnce({
+      code: 'auth/wrong-password',
+      message: 'Incorrect password',
+    });
+
+    const result = await authModule.updateUserEmail(
+      'new@example.com',
+      'wrongpassword'
+    );
+
+    expect(updateEmail).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      success: false,
+      message: 'Incorrect password',
+    });
+  });
+
+  it('should return error when updateEmail fails', async () => {
+    vi.mocked(updateEmail).mockRejectedValue({
+      code: 'auth/invalid-email',
+      message: 'The email address is not valid',
+    });
+
+    const result = await authModule.updateUserEmail(
+      'invalid-email',
+      'password123'
+    );
+
+    expect(updateEmail).toHaveBeenCalled();
+    expect(result).toEqual({
+      success: false,
+      message: 'Invalid email address',
+    });
+  });
+
+  it('should return error when updateEmail fails with unknown error', async () => {
+    vi.mocked(updateEmail).mockRejectedValue({
+      code: 'auth/unknown-error',
+      message: 'Something went wrong',
+    });
+
+    const result = await authModule.updateUserEmail(
+      'new@example.com',
+      'password123'
+    );
+
+    expect(result).toEqual({
+      success: false,
+      message: 'Something went wrong',
+    });
+  });
+
+  it('should return default error message when updateEmail fails without message', async () => {
+    vi.mocked(updateEmail).mockRejectedValue({
+      code: 'auth/unknown-error',
+    });
+
+    const result = await authModule.updateUserEmail(
+      'new@example.com',
+      'password123'
+    );
+
+    expect(result).toEqual({
+      success: false,
+      message: 'Failed to update email',
+    });
+  });
+});
+
+describe('updateUserPassword function', () => {
+  let authModule: typeof import('@/lib/firebase/auth');
+
+  const mockUser = {
+    uid: 'test-user-123',
+    email: 'test@example.com',
+    displayName: 'Test User',
+    emailVerified: false,
+  };
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    (auth as any).currentUser = mockUser;
+    vi.mocked(updatePassword).mockResolvedValue(undefined);
+    vi.mocked(reauthenticateWithCredential).mockResolvedValue({} as any);
+    vi.mocked(EmailAuthProvider.credential).mockReturnValue({} as any);
+
+    authModule = await import('@/lib/firebase/auth');
+  });
+
+  it('should successfully update the user password', async () => {
+    const result = await authModule.updateUserPassword(
+      'oldpassword123',
+      'newpassword123'
+    );
+
+    expect(updatePassword).toHaveBeenCalledWith(mockUser, 'newpassword123');
+    expect(result).toEqual({
+      success: true,
+      message: 'Password updated successfully!',
+    });
+  });
+
+  it('should return validation error when no user is signed in', async () => {
+    (auth as any).currentUser = null;
+    const result = await authModule.updateUserPassword(
+      'oldpassword123',
+      'newpassword123'
+    );
+
+    expect(result).toEqual({
+      success: false,
+      message: 'No user is currently signed in',
+    });
+    expect(updatePassword).not.toHaveBeenCalled();
+  });
+
+  it('should return validation error when new password is less than 6 characters', async () => {
+    const result = await authModule.updateUserPassword(
+      'oldpassword123',
+      'short'
+    );
+
+    expect(result).toEqual({
+      success: false,
+      message: 'Password must be at least 6 characters long',
+    });
+    expect(updatePassword).not.toHaveBeenCalled();
+  });
+
+  it('should return error when re-authentication fails', async () => {
+    vi.mocked(reauthenticateWithCredential).mockRejectedValueOnce({
+      code: 'auth/wrong-password',
+      message: 'Incorrect password',
+    });
+
+    const result = await authModule.updateUserPassword(
+      'wrongpassword',
+      'newpassword123'
+    );
+
+    expect(updatePassword).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      success: false,
+      message: 'Incorrect password',
+    });
+  });
+
+  it('should return error when updatePassword fails', async () => {
+    vi.mocked(updatePassword).mockRejectedValue({
+      code: 'auth/weak-password',
+      message: 'Password is too weak',
+    });
+
+    const result = await authModule.updateUserPassword(
+      'oldpassword123',
+      'newpassword123'
+    );
+
+    expect(updatePassword).toHaveBeenCalled();
+    expect(result).toEqual({
+      success: false,
+      message: 'Password is too weak',
+    });
+  });
+
+  it('should return error when updatePassword fails with unknown error', async () => {
+    vi.mocked(updatePassword).mockRejectedValue({
+      code: 'auth/unknown-error',
+      message: 'Something went wrong',
+    });
+
+    const result = await authModule.updateUserPassword(
+      'oldpassword123',
+      'newpassword123'
+    );
+
+    expect(result).toEqual({
+      success: false,
+      message: 'Something went wrong',
+    });
+  });
+
+  it('should return default error message when updatePassword fails without message', async () => {
+    vi.mocked(updatePassword).mockRejectedValue({
+      code: 'auth/unknown-error',
+    });
+
+    const result = await authModule.updateUserPassword(
+      'oldpassword123',
+      'newpassword123'
+    );
+
+    expect(result).toEqual({
+      success: false,
+      message: 'Failed to update password',
+    });
+  });
+});
+
+describe('updateUserDisplayName function', () => {
+  let authModule: typeof import('@/lib/firebase/auth');
+
+  const mockUser = {
+    uid: 'test-user-123',
+    email: 'test@example.com',
+    displayName: 'Old Name',
+    emailVerified: false,
+  };
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    (auth as any).currentUser = mockUser;
+    vi.mocked(updateProfile).mockResolvedValue(undefined);
+    vi.mocked(updateDoc).mockResolvedValue(undefined);
+
+    authModule = await import('@/lib/firebase/auth');
+  });
+
+  it('should successfully update the user display name', async () => {
+    const result = await authModule.updateUserDisplayName('John', 'Doe');
+
+    expect(updateProfile).toHaveBeenCalledWith(mockUser, {
+      displayName: 'John Doe',
+    });
+    expect(updateDoc).toHaveBeenCalled();
+    expect(result).toEqual({
+      success: true,
+      message: 'Name updated successfully!',
+    });
+  });
+
+  it('should return validation error when no user is signed in', async () => {
+    (auth as any).currentUser = null;
+    const result = await authModule.updateUserDisplayName('John', 'Doe');
+
+    expect(result).toEqual({
+      success: false,
+      message: 'No user is currently signed in',
+    });
+    expect(updateProfile).not.toHaveBeenCalled();
+    expect(updateDoc).not.toHaveBeenCalled();
+  });
+
+  it('should return validation error when firstName is missing', async () => {
+    const result = await authModule.updateUserDisplayName('', 'Doe');
+
+    expect(result).toEqual({
+      success: false,
+      message: 'Both first name and last name are required',
+    });
+    expect(updateProfile).not.toHaveBeenCalled();
+    expect(updateDoc).not.toHaveBeenCalled();
+  });
+
+  it('should return validation error when lastName is missing', async () => {
+    const result = await authModule.updateUserDisplayName('John', '');
+
+    expect(result).toEqual({
+      success: false,
+      message: 'Both first name and last name are required',
+    });
+    expect(updateProfile).not.toHaveBeenCalled();
+    expect(updateDoc).not.toHaveBeenCalled();
+  });
+
+  it('should return validation error when both names are missing', async () => {
+    const result = await authModule.updateUserDisplayName('', '');
+
+    expect(result).toEqual({
+      success: false,
+      message: 'Both first name and last name are required',
+    });
+    expect(updateProfile).not.toHaveBeenCalled();
+    expect(updateDoc).not.toHaveBeenCalled();
+  });
+
+  it('should return error when updateAuthDisplayName fails', async () => {
+    vi.mocked(updateProfile).mockRejectedValue({
+      code: 'auth/network-request-failed',
+      message: 'Network error',
+    });
+
+    const result = await authModule.updateUserDisplayName('John', 'Doe');
+
+    expect(updateProfile).toHaveBeenCalled();
+    expect(result).toEqual({
+      success: false,
+      message: 'Network error',
+    });
+  });
+
+  it('should return error when updateAuthDisplayName fails with unknown error', async () => {
+    vi.mocked(updateProfile).mockRejectedValue({
+      code: 'auth/unknown-error',
+      message: 'Something went wrong',
+    });
+
+    const result = await authModule.updateUserDisplayName('John', 'Doe');
+
+    expect(result).toEqual({
+      success: false,
+      message: 'Something went wrong',
+    });
+  });
+
+  it('should return default error message when updateAuthDisplayName fails without message', async () => {
+    vi.mocked(updateProfile).mockRejectedValue({
+      code: 'auth/unknown-error',
+    });
+
+    const result = await authModule.updateUserDisplayName('John', 'Doe');
+
+    expect(result).toEqual({
+      success: false,
+      message: 'Failed to update name',
+    });
+  });
+});

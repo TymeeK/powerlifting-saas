@@ -13,3 +13,11 @@ export interface LoginData {
   password: string;
   rememberMe?: boolean;
 }
+
+/**
+ * Result type for operations that can succeed or fail with a message.
+ * Uses discriminated union for type safety.
+ */
+export type AuthResult =
+  | { success: true }
+  | { success: false; message: string };
