@@ -4,6 +4,7 @@ import {
   addDoc,
   getDocs,
   serverTimestamp,
+  FieldValue,
 } from 'firebase/firestore';
 import { db } from './config';
 import {
@@ -16,15 +17,48 @@ import { logger } from '@/lib/logger';
 
 const workoutLogger = logger.child({ component: 'firebase-workout' });
 
+/**
+ * The workout data object with the exercises,
+ * state, createdAt, and updatedAt
+ */
+type WorkoutData = {
+  exercises: WorkoutExercise[];
+  state: 'active' | 'end';
+  createdAt: FieldValue;
+  updatedAt: FieldValue;
+};
+
+/**
+ * Create a workout data object with the exercises,
+ * state, createdAt, and updatedAt
+ * @param exercises - The exercises in the workout
+ * @param state - The state of the workout (active or end)
+ * @returns - The workout data with the exercises, state, createdAt, and updatedAt
+ */
 const createWorkoutData = (
   exercises: WorkoutExercise[],
   state: 'active' | 'end' = 'end'
-) => ({
+): WorkoutData => ({
   exercises,
   state,
   createdAt: serverTimestamp(),
   updatedAt: serverTimestamp(),
 });
+
+/**
+ * Add a workout to the database.
+ * @param userId - The ID of the user saving the workout
+ * @param workoutData - The workout data to add
+ * @returns - The document reference of the added workout
+ */
+const addWorkoutToFirestore = async (
+  userId: string,
+  workoutData: WorkoutData
+) => {
+  const userWorkoutsRef = collection(db, 'users', userId, 'workouts');
+  const docRef = await addDoc(userWorkoutsRef, workoutData);
+  return docRef;
+};
 
 /**
  * Save a workout to the database.
@@ -43,22 +77,18 @@ export const saveWorkout = async (
   try {
     const workoutData = createWorkoutData(exercises, state);
 
-    const userWorkoutsRef = collection(db, 'users', userId, 'workouts');
-    const docRef = await addDoc(userWorkoutsRef, workoutData);
+    const docRef = await addWorkoutToFirestore(userId, workoutData);
 
-    const querySnapshot = await getDocs(userWorkoutsRef);
-    const totalWorkouts = querySnapshot.size;
-
-    workoutLogger.info('Workout saved successfully', {
-      totalWorkouts,
-      exerciseCount: exercises.length,
-      state,
-    });
+    // workoutLogger.info('Workout saved successfully', {
+    //   totalWorkouts,
+    //   exerciseCount: exercises.length,
+    //   state,
+    // });
 
     return {
       success: true,
       workoutId: docRef.id,
-      totalWorkouts,
+      // totalWorkouts,
       message: 'Workout saved successfully!',
     };
   } catch (error: any) {
