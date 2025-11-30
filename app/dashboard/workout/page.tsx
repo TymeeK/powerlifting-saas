@@ -76,7 +76,6 @@ export default function WorkoutPage() {
     saveSuccess: false,
   });
 
-  const [workoutCount, setWorkoutCount] = useState<number | null>(null);
   const [isFloatingMenuOpen, setIsFloatingMenuOpen] = useState(false);
   const [isHoveringFloatingButton, setIsHoveringFloatingButton] =
     useState(false);
@@ -325,7 +324,6 @@ export default function WorkoutPage() {
         setWorkoutState({ exercises: [], sets: {} });
 
         // Show confirmation screen
-        setWorkoutCount(result.totalWorkouts);
         setModalState(prev => ({ ...prev, showConfirmation: true }));
       }
     } catch (error: any) {
@@ -475,7 +473,6 @@ export default function WorkoutPage() {
       {/* Workout Confirmation Screen */}
       <WorkoutConfirmationModal
         isOpen={modalState.showConfirmation}
-        workoutCount={workoutCount}
         onStartNewWorkout={() => {
           setModalState(prev => ({
             ...prev,
