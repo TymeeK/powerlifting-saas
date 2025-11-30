@@ -28,6 +28,12 @@ type WorkoutData = {
   updatedAt: FieldValue;
 };
 
+type SaveWorkoutResult = {
+  success: boolean;
+  workoutId: string;
+  message: string;
+};
+
 /**
  * Create a workout data object with the exercises,
  * state, createdAt, and updatedAt
@@ -73,10 +79,16 @@ export const saveWorkout = async (
   userId: string,
   exercises: WorkoutExercise[],
   state: 'active' | 'end' = 'end'
-) => {
+): Promise<SaveWorkoutResult> => {
   try {
     const workoutData = createWorkoutData(exercises, state);
     const docRef = await addWorkoutToFirestore(userId, workoutData);
+
+    workoutLogger.debug('Workout saved successfully', {
+      workoutId: docRef.id,
+      exerciseCount: exercises.length,
+      state,
+    });
 
     return {
       success: true,
@@ -84,26 +96,12 @@ export const saveWorkout = async (
       message: 'Workout saved successfully!',
     };
   } catch (error: any) {
-    workoutLogger.error('Error saving workout', error, {
-      errorCode: error.code,
-      exerciseCount: exercises.length,
-    });
-
-    let errorMessage = 'An error occurred while saving the workout';
-
-    switch (error.code) {
-      case 'permission-denied':
-        errorMessage = 'You do not have permission to save workouts';
-        break;
-      case 'unavailable':
-        errorMessage =
-          'Service is temporarily unavailable. Please try again later';
-        break;
-      default:
-        errorMessage = error.message || errorMessage;
-    }
-
-    throw new Error(errorMessage);
+    workoutLogger.error('Error saving workout', error);
+    return {
+      success: false,
+      workoutId: '',
+      message: error.message || 'Failed to save workout',
+    };
   }
 };
 
