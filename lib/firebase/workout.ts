@@ -14,8 +14,17 @@ import {
 } from '@/lib/types';
 import { logger } from '@/lib/logger';
 
-// Create a child logger for workout operations
 const workoutLogger = logger.child({ component: 'firebase-workout' });
+
+const createWorkoutData = (
+  exercises: WorkoutExercise[],
+  state: 'active' | 'end' = 'end'
+) => ({
+  exercises,
+  state,
+  createdAt: serverTimestamp(),
+  updatedAt: serverTimestamp(),
+});
 
 /**
  * Save a workout to the database.
@@ -32,12 +41,7 @@ export const saveWorkout = async (
   state: 'active' | 'end' = 'end'
 ) => {
   try {
-    const workoutData = {
-      exercises,
-      state,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    };
+    const workoutData = createWorkoutData(exercises, state);
 
     const userWorkoutsRef = collection(db, 'users', userId, 'workouts');
     const docRef = await addDoc(userWorkoutsRef, workoutData);
