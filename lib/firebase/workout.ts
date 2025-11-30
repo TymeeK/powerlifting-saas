@@ -17,6 +17,15 @@ import { logger } from '@/lib/logger';
 // Create a child logger for workout operations
 const workoutLogger = logger.child({ component: 'firebase-workout' });
 
+/**
+ * Save a workout to the database.
+ * @param userId - The ID of the user saving the workout
+ * @param exercises - The exercises in the workout
+ * @param state - The state of the workout
+ * @returns - The result of the workout save which includes the workout ID,
+ * the total number of workouts, and a success message
+ * @throws - An error if the workout save fails
+ */
 export const saveWorkout = async (
   userId: string,
   exercises: WorkoutExercise[],
