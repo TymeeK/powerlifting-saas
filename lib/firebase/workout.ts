@@ -35,7 +35,7 @@ type WorkoutData = {
  * @param state - The state of the workout (active or end)
  * @returns - The workout data with the exercises, state, createdAt, and updatedAt
  */
-const createWorkoutData = (
+export const createWorkoutData = (
   exercises: WorkoutExercise[],
   state: 'active' | 'end' = 'end'
 ): WorkoutData => ({
@@ -51,7 +51,7 @@ const createWorkoutData = (
  * @param workoutData - The workout data to add
  * @returns - The document reference of the added workout
  */
-const addWorkoutToFirestore = async (
+export const addWorkoutToFirestore = async (
   userId: string,
   workoutData: WorkoutData
 ) => {
