@@ -9,9 +9,6 @@ import {
   reauthenticateUser,
   signIn,
   resetPassword,
-  updateUserEmail,
-  updateUserPassword,
-  updateUserDisplayName,
 } from '@/lib/firebase/auth';
 import { LoginData, SignUpData } from '@/lib/types';
 import {
@@ -25,7 +22,7 @@ import {
   reauthenticateWithCredential,
 } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
-import { updateDoc, setDoc } from 'firebase/firestore';
+import { updateDoc } from 'firebase/firestore';
 
 // Mock Firebase Auth
 vi.mock('firebase/auth', () => ({
