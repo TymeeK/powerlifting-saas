@@ -17,14 +17,12 @@ import { logger } from '@/lib/logger';
 // Create a child logger for workout operations
 const workoutLogger = logger.child({ component: 'firebase-workout' });
 
-// Save workout function
 export const saveWorkout = async (
   userId: string,
   exercises: WorkoutExercise[],
   state: 'active' | 'end' = 'end'
 ) => {
   try {
-    // Create workout data
     const workoutData = {
       exercises,
       state,
@@ -32,11 +30,9 @@ export const saveWorkout = async (
       updatedAt: serverTimestamp(),
     };
 
-    // Add to user's workouts subcollection
     const userWorkoutsRef = collection(db, 'users', userId, 'workouts');
     const docRef = await addDoc(userWorkoutsRef, workoutData);
 
-    // Get total workout count for this user
     const querySnapshot = await getDocs(userWorkoutsRef);
     const totalWorkouts = querySnapshot.size;
 
@@ -76,7 +72,6 @@ export const saveWorkout = async (
   }
 };
 
-// Get all past workouts for a user
 export const getPastWorkouts = async (userId: string) => {
   try {
     const userWorkoutsRef = collection(db, 'users', userId, 'workouts');
@@ -87,20 +82,17 @@ export const getPastWorkouts = async (userId: string) => {
       const data = doc.data();
       const workoutDate = data.createdAt?.toDate() || new Date();
 
-      // Calculate workout duration (this would need to be stored or calculated)
-      // For now, we'll estimate based on number of exercises and sets
       const totalSets =
         data.exercises?.reduce(
           (total: number, exercise: WorkoutExercise) =>
             total + (exercise.sets?.length || 0),
           0
         ) || 0;
-      const estimatedMinutes = Math.max(30, totalSets * 2); // Rough estimate
+      const estimatedMinutes = Math.max(30, totalSets * 2);
       const hours = Math.floor(estimatedMinutes / 60);
       const minutes = estimatedMinutes % 60;
       const duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 
-      // Calculate total volume
       const totalVolume =
         data.exercises?.reduce((total: number, exercise: WorkoutExercise) => {
           return (
@@ -113,13 +105,11 @@ export const getPastWorkouts = async (userId: string) => {
           );
         }, 0) || 0;
 
-      // Count personal records (this would need to be calculated based on previous workouts)
-      // For now, we'll set to 0 as we don't have PR tracking logic yet
       const personalRecords = 0;
 
       workouts.push({
         id: doc.id,
-        date: workoutDate.toISOString().split('T')[0], // YYYY-MM-DD format
+        date: workoutDate.toISOString().split('T')[0],
         duration,
         exercises:
           data.exercises?.map((exercise: WorkoutExercise) => ({
@@ -134,7 +124,6 @@ export const getPastWorkouts = async (userId: string) => {
       });
     });
 
-    // Sort by creation date (newest first)
     workouts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     workoutLogger.debug('Past workouts fetched successfully', {
@@ -151,7 +140,6 @@ export const getPastWorkouts = async (userId: string) => {
   }
 };
 
-// Get weekly summary data for dashboard
 export const getWeeklySummary = async (userId: string) => {
   try {
     const userWorkoutsRef = collection(db, 'users', userId, 'workouts');
