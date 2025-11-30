@@ -76,19 +76,11 @@ export const saveWorkout = async (
 ) => {
   try {
     const workoutData = createWorkoutData(exercises, state);
-
     const docRef = await addWorkoutToFirestore(userId, workoutData);
-
-    // workoutLogger.info('Workout saved successfully', {
-    //   totalWorkouts,
-    //   exerciseCount: exercises.length,
-    //   state,
-    // });
 
     return {
       success: true,
       workoutId: docRef.id,
-      // totalWorkouts,
       message: 'Workout saved successfully!',
     };
   } catch (error: any) {
