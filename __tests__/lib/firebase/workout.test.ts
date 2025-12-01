@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createWorkoutData } from '@/lib/firebase/workout';
-import { serverTimestamp } from 'firebase/firestore';
+import {
+  addWorkoutToFirestore,
+  createWorkoutData,
+} from '@/lib/firebase/workout';
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
+import { WorkoutExercise } from '@/lib/types';
 
 // Mock Firebase Firestore
 vi.mock('firebase/firestore', () => ({
@@ -65,3 +70,36 @@ describe('createWorkoutData', () => {
     expect(serverTimestamp).toHaveBeenCalledTimes(2);
   });
 });
+
+// describe('addWorkoutToFirestore', () => {
+//   beforeEach(() => {
+//     vi.clearAllMocks();
+//   });
+
+//   it('should add a workout to the database', async () => {
+//     const userId = 'test-user-123';
+//     const state = 'end';
+//     const exercises: WorkoutExercise[] = [
+//       {
+//         id: 'test-exercise-123',
+//         name: 'Bench Press',
+//         sets: [
+//           {
+//             reps: 10,
+//             weight: 100,
+//             completed: true,
+//           },
+//           {
+//             reps: 10,
+//             weight: 100,
+//             completed: true,
+//           },
+//         ],
+//       },
+//     ];
+//     vi.mock(addDoc).mockResolvedValue({ id: 'test-workout-123' });
+//     const workoutData = createWorkoutData(exercises, state);
+//     const docRef = await addWorkoutToFirestore(userId, workoutData);
+//     expect(docRef).toEqual({ id: 'test-workout-123' });
+//   });
+// });

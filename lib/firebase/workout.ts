@@ -105,6 +105,14 @@ export const saveWorkout = async (
   }
 };
 
+//TODO: Refactor this function to only fetch past workouts
+/**
+ * Currently is doing too many calculations on the client side.
+ * We should only fetch past workouts and that's the only thing this function should do.
+ * @param userId - The ID of the user fetching the past workouts
+ * @returns - The past workouts
+ * @throws - An error if the past workouts fetch fails
+ */
 export const getPastWorkouts = async (userId: string) => {
   try {
     const userWorkoutsRef = collection(db, 'users', userId, 'workouts');
