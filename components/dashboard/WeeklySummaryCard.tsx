@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import {
   Card,
   CardContent,
@@ -7,8 +7,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { PastWorkout } from '@/lib/types';
 import { WeeklySummaryData } from '@/lib/swr/fetcher';
 
 interface WeeklySummaryCardProps {

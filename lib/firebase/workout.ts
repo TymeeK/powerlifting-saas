@@ -296,14 +296,6 @@ export const getWeeklySummaryData = async (userId: string) => {
     startOfWeek.setHours(0, 0, 0, 0);
     const startOfWeekTimestamp = Timestamp.fromDate(startOfWeek);
 
-    // Calculate start date for streak calculation (60 days ago)
-    // Most streaks won't exceed this period, reducing unnecessary data fetch
-    const streakStartDate = new Date(now);
-    streakStartDate.setDate(now.getDate() - 60);
-    streakStartDate.setHours(0, 0, 0, 0);
-    const streakStartTimestamp = Timestamp.fromDate(streakStartDate);
-
-    // Query 1: Fetch workouts from this week only
     const thisWeekQuery = query(
       userWorkoutsRef,
       where('createdAt', '>=', startOfWeekTimestamp),
