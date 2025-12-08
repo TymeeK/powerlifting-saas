@@ -26,8 +26,12 @@ interface ReleaseNotesContentProps {
 }
 
 const VERSION_INFO: Record<string, { label: string; subtitle: string }> = {
-  '1.0.3': {
+  '1.0.4': {
     label: 'Latest',
+    subtitle: 'Performance Improvements & Better Experience',
+  },
+  '1.0.3': {
+    label: 'Features Page',
     subtitle: 'Features Page & Component Architecture',
   },
   '1.0.2': {
@@ -61,7 +65,7 @@ function HeaderSidebarTrigger() {
 export function ReleaseNotesContent({
   releaseNotes,
 }: ReleaseNotesContentProps) {
-  const [selectedVersion, setSelectedVersion] = useState<string>('1.0.3');
+  const [selectedVersion, setSelectedVersion] = useState<string>('1.0.4');
   const versions = Object.keys(releaseNotes).sort().reverse(); // Latest first
 
   const currentContent = releaseNotes[selectedVersion] || '';
