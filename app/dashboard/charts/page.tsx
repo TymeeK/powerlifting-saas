@@ -21,6 +21,8 @@ import {
   ExercisePagination,
 } from '@/components/dashboard/charts';
 import { ExerciseStats } from '@/lib/types';
+import { getPastWorkoutsFetcher } from '@/lib/swr/fetcher';
+import useSWR from 'swr';
 
 const chartsLogger = logger.child({ component: 'charts-page' });
 
@@ -183,11 +185,23 @@ const calculateExerciseStats = (
 
 export default function ChartsPage() {
   const { user, loading } = useRequireAuth('/login');
-  const [workouts, setWorkouts] = useState<PastWorkout[]>([]);
-  const [workoutsLoading, setWorkoutsLoading] = useState(true);
+
   const [currentPage, setCurrentPage] = useState(1);
   const exercisesPerPage = 6;
 
+  const {
+    data: workouts = [],
+    isLoading,
+    error,
+  } = useSWR<PastWorkout[]>(
+    user ? `past-workouts-${user.uid}` : null,
+    () => getPastWorkoutsFetcher(user?.uid || ''),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      dedupingInterval: 5000,
+    }
+  );
   // Memoize monthly volume calculation - only recalculates when workouts change
   const totalVolume = useMemo(() => {
     const now = new Date();
@@ -251,30 +265,7 @@ export default function ChartsPage() {
     setCurrentPage(1);
   }, [workouts]);
 
-  useEffect(() => {
-    const loadWorkouts = async (userId: string) => {
-      try {
-        setWorkoutsLoading(true);
-        const result = await getPastWorkouts(userId);
-        if (result.success) {
-          chartsLogger.debug('Workouts loaded', {
-            workoutCount: result.workouts.length,
-          });
-          setWorkouts(result.workouts);
-        }
-      } catch (error) {
-        chartsLogger.error('Error loading workouts', error);
-      } finally {
-        setWorkoutsLoading(false);
-      }
-    };
-
-    if (user) {
-      loadWorkouts(user.uid);
-    }
-  }, [user]);
-
-  if (loading || workoutsLoading) {
+  if (loading || isLoading) {
     return <LoadingScreen />;
   }
 

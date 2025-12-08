@@ -1,19 +1,21 @@
 'use client';
-
-import { useEffect, useState } from 'react';
-import { auth, getWeeklySummary } from '@/lib/firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import UserProfileCard from '@/components/dashboard/UserProfileCard';
 import WeeklySummaryCard from '@/components/dashboard/WeeklySummaryCard';
-import QuickActionsCard from '@/components/dashboard/QuickActionsCard';
+
 import LoadingScreen from '@/components/workout/LoadingScreen';
 import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
-import { WorkoutSummary } from '@/lib/types';
+import { PastWorkout } from '@/lib/types';
 import { logger } from '@/lib/logger';
+import {
+  getPastWorkoutsFetcher,
+  getWeeklySummaryFetcher,
+  WeeklySummaryData,
+} from '@/lib/swr/fetcher';
+import useSWR from 'swr';
 
 // Create a child logger for dashboard page
 const dashboardLogger = logger.child({ component: 'dashboard-page' });
@@ -76,42 +78,21 @@ const WorkoutCallToActionCard = ({
 export default function DashboardPage() {
   const { user, loading } = useRequireAuth('/login');
   const router = useRouter();
-  const [summaryData, setSummaryData] = useState<WorkoutSummary | null>(null);
-  const [summaryLoading, setSummaryLoading] = useState(false);
-  const [summaryError, setSummaryError] = useState<string | null>(null);
 
-  const fetchSummaryData = async (userId: string) => {
-    setSummaryLoading(true);
-    setSummaryError(null);
-    try {
-      const result = await getWeeklySummary(userId);
-      if (result.success) {
-        setSummaryData(result.summary);
-      } else {
-        setSummaryError('Failed to load summary data');
-      }
-    } catch (error: any) {
-      dashboardLogger.error('Error fetching summary data', error);
-      setSummaryError(error.message || 'Failed to load summary data');
-    } finally {
-      setSummaryLoading(false);
+  // Fetch weekly summary with optimized queries (only fetches necessary data)
+  const {
+    data: weeklySummary,
+    isLoading: isWeeklySummaryLoading,
+    error: weeklySummaryError,
+  } = useSWR<WeeklySummaryData>(
+    user ? `weekly-summary-${user.uid}` : null,
+    () => getWeeklySummaryFetcher(user?.uid || ''),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      dedupingInterval: 5000,
     }
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      router.push('/login');
-    } catch (error) {
-      dashboardLogger.error('Error signing out', error);
-    }
-  };
-
-  useEffect(() => {
-    if (user) {
-      fetchSummaryData(user.uid);
-    }
-  }, [user]);
+  );
 
   if (loading) {
     return <LoadingScreen />;
@@ -138,35 +119,18 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Quick Actions */}
-      {/* <QuickActionsCard /> */}
-
-      {/* Motivational Alert */}
-      {/* <Alert className='bg-green-500/10 border-green-500/30 mb-8'>
-        <AlertDescription className='text-green-200 text-center'>
-          🎉 Great job! You're on a 7-day streak. Keep up the momentum!
-        </AlertDescription>
-      </Alert> */}
-
-      {/* Hero Summary Panel */}
-      {summaryError ? (
+      {weeklySummaryError ? (
         <Alert>
           <AlertDescription className='text-destructive text-center'>
-            ⚠️ {summaryError}
+            ⚠️ {weeklySummaryError.message || 'Failed to fetch weekly summary'}
           </AlertDescription>
         </Alert>
       ) : (
-        <WeeklySummaryCard data={summaryData} loading={summaryLoading} />
+        <WeeklySummaryCard
+          data={weeklySummary}
+          isLoading={isWeeklySummaryLoading}
+        />
       )}
-
-      {/* <Button
-        onClick={handleSignOut}
-        variant='destructive'
-        size='lg'
-        className='bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 shadow-lg hover:shadow-red-500/25'
-      >
-        Sign Out
-      </Button> */}
     </div>
   );
 }

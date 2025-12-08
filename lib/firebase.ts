@@ -23,6 +23,7 @@ export {
   saveWorkout,
   getPastWorkouts,
   getWeeklySummary,
+  getWeeklySummaryData,
 } from './firebase/workout';
 
 // Export exercise library functions

@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { getPastWorkouts } from '@/lib/firebase';
+import useSWR from 'swr';
 
 import {
   Card,
@@ -20,39 +19,26 @@ import BackToDashboardButton from '@/components/back-button';
 import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
 import { PastWorkout } from '@/lib/types';
 import { logger } from '@/lib/logger';
+import { getPastWorkoutsFetcher } from '@/lib/swr/fetcher';
 
 // Create a child logger for past workouts page
 const pastWorkoutsLogger = logger.child({ component: 'past-workouts-page' });
 
 export default function PastWorkoutsPage() {
   const { user, loading } = useRequireAuth('/login');
-  const [workouts, setWorkouts] = useState<PastWorkout[]>([]);
-  const [workoutsLoading, setWorkoutsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadWorkouts = async (userId: string) => {
-    try {
-      setWorkoutsLoading(true);
-      setError(null);
-      const result = await getPastWorkouts(userId);
-      if (result.success) {
-        setWorkouts(result.workouts);
-      } else {
-        setError('Failed to load workouts');
-      }
-    } catch (err) {
-      pastWorkoutsLogger.error('Error loading workouts', err);
-      setError('Failed to load workouts');
-    } finally {
-      setWorkoutsLoading(false);
+  const {
+    data: workouts = [],
+    isLoading,
+    error,
+  } = useSWR<PastWorkout[]>(
+    user ? `past-workouts-${user.uid}` : null,
+    () => getPastWorkoutsFetcher(user?.uid || ''),
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: true,
+      dedupingInterval: 5000,
     }
-  };
-
-  useEffect(() => {
-    if (user) {
-      loadWorkouts(user.uid);
-    }
-  }, [user]);
+  );
 
   if (loading) {
     return <LoadingScreen />;
@@ -157,7 +143,7 @@ export default function PastWorkoutsPage() {
       </div>
 
       {/* Error State */}
-      {error && (
+      {/* {error && (
         <Card>
           <CardContent className='p-6'>
             <p className='text-destructive text-center'>{error}</p>
@@ -171,10 +157,10 @@ export default function PastWorkoutsPage() {
             </div>
           </CardContent>
         </Card>
-      )}
+      )} */}
 
       {/* Workouts Loading State */}
-      {workoutsLoading && (
+      {isLoading && (
         <div className='space-y-6'>
           {[1, 2, 3].map(i => (
             <Card key={i}>
@@ -197,7 +183,7 @@ export default function PastWorkoutsPage() {
       )}
 
       {/* Workouts List */}
-      {!workoutsLoading && !error && (
+      {!isLoading && !error && (
         <div className='space-y-6'>
           {workouts.map((workout, index) => (
             <Card key={workout.id}>
@@ -301,7 +287,7 @@ export default function PastWorkoutsPage() {
       )}
 
       {/* Empty State */}
-      {!workoutsLoading && !error && workouts.length === 0 && (
+      {!isLoading && !error && workouts.length === 0 && (
         <Card>
           <CardContent className='p-12 text-center'>
             <Dumbbell className='h-16 w-16 text-muted-foreground mx-auto mb-4' />
