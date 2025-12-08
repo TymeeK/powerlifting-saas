@@ -164,11 +164,15 @@ export function ReleaseNotesContent({
                     </p>
                   ),
                   ul: ({ children }) => (
-                    <ul className='list-none space-y-2 sm:space-y-3 mb-3 sm:mb-4 pl-0'>{children}</ul>
+                    <ul className='list-none space-y-2 sm:space-y-3 mb-3 sm:mb-4 pl-0'>
+                      {children}
+                    </ul>
                   ),
                   li: ({ children }) => (
                     <li className='flex items-start gap-2 sm:gap-3 text-sm sm:text-base text-muted-foreground'>
-                      <span className='text-purple-500 mt-1.5 sm:mt-2 flex-shrink-0'>•</span>
+                      <span className='text-purple-500 mt-1.5 sm:mt-2 flex-shrink-0'>
+                        •
+                      </span>
                       <span className='flex-1'>{children}</span>
                     </li>
                   ),
@@ -177,7 +181,9 @@ export function ReleaseNotesContent({
                       {children}
                     </strong>
                   ),
-                  hr: () => <hr className='my-6 sm:my-8 border-t border-border' />,
+                  hr: () => (
+                    <hr className='my-6 sm:my-8 border-t border-border' />
+                  ),
                 }}
               >
                 {currentContent}
