@@ -1,8 +1,6 @@
 'use client';
 
-import { useState, useEffect, cache } from 'react';
-import { getPastWorkouts } from '@/lib/firebase';
-import useSWR, { useSWRConfig } from 'swr';
+import useSWR from 'swr';
 
 import {
   Card,
@@ -28,7 +26,6 @@ const pastWorkoutsLogger = logger.child({ component: 'past-workouts-page' });
 
 export default function PastWorkoutsPage() {
   const { user, loading } = useRequireAuth('/login');
-  const { cache } = useSWRConfig();
   const {
     data: workouts = [],
     isLoading,
