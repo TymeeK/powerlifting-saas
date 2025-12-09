@@ -226,55 +226,6 @@ export const getWeeklySummary = async (userId: string) => {
 };
 
 /**
- * Helper function to convert a Firestore document to PastWorkout format
- * @param doc - The Firestore document snapshot
- * @returns - A PastWorkout object
- */
-const convertDocToPastWorkout = (doc: any): PastWorkout => {
-  const data = doc.data();
-  const workoutDate = data.createdAt?.toDate() || new Date();
-
-  const totalSets =
-    data.exercises?.reduce(
-      (total: number, exercise: WorkoutExercise) =>
-        total + (exercise.sets?.length || 0),
-      0
-    ) || 0;
-  const estimatedMinutes = Math.max(30, totalSets * 2);
-  const hours = Math.floor(estimatedMinutes / 60);
-  const minutes = estimatedMinutes % 60;
-  const duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-
-  const totalVolume =
-    data.exercises?.reduce((total: number, exercise: WorkoutExercise) => {
-      return (
-        total +
-        (exercise.sets?.reduce(
-          (exerciseTotal: number, set: WorkoutSet) =>
-            exerciseTotal + set.reps * set.weight,
-          0
-        ) || 0)
-      );
-    }, 0) || 0;
-
-  return {
-    id: doc.id,
-    date: workoutDate.toISOString().split('T')[0],
-    duration,
-    exercises:
-      data.exercises?.map((exercise: WorkoutExercise) => ({
-        name: exercise.name,
-        sets: exercise.sets?.length || 0,
-        reps: exercise.sets?.map((set: WorkoutSet) => set.reps) || [],
-        weight: exercise.sets?.map((set: WorkoutSet) => set.weight) || [],
-      })) || [],
-    totalVolume,
-    personalRecords: 0,
-    createdAt: workoutDate,
-  };
-};
-
-/**
  * Get optimized weekly summary data using date-filtered Firestore queries.
  * Only fetches workouts from the current week and recent period for streak calculation.
  *
