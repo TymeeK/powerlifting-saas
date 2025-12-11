@@ -216,7 +216,17 @@ export default function ChartsPage() {
     });
 
     const volume = monthlyWorkouts.reduce((total, workout) => {
-      return total + (workout.totalVolume || 0);
+      return (
+        total +
+        workout.exercises.reduce((exerciseTotal, exercise) => {
+          return (
+            exerciseTotal +
+            exercise.reps.reduce((repTotal, rep, index) => {
+              return repTotal + rep * exercise.weight[index];
+            }, 0)
+          );
+        }, 0)
+      );
     }, 0);
 
     chartsLogger.debug('Monthly volume calculation', {
