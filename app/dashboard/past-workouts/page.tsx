@@ -10,7 +10,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import LoadingScreen from '@/components/workout/LoadingScreen';
 import { Calendar, Clock, Dumbbell, Trophy } from 'lucide-react';
@@ -20,6 +19,7 @@ import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
 import { PastWorkout } from '@/lib/types';
 import { logger } from '@/lib/logger';
 import { getPastWorkoutsFetcher } from '@/lib/swr/fetcher';
+import { useMemo } from 'react';
 
 // Create a child logger for past workouts page
 const pastWorkoutsLogger = logger.child({ component: 'past-workouts-page' });
@@ -40,6 +40,32 @@ export default function PastWorkoutsPage() {
     }
   );
 
+  const totalSets = useMemo(() => {
+    return workouts.reduce(
+      (total, workout) =>
+        total +
+        workout.exercises.reduce((total, exercise) => total + exercise.sets, 0),
+      0
+    );
+  }, [workouts]);
+
+  const totalVolume = useMemo(() => {
+    return workouts.reduce((total, workout) => {
+      return (
+        total +
+        workout.exercises.reduce((exerciseTotal, exercise) => {
+          return (
+            exerciseTotal +
+            exercise.reps.reduce(
+              (sum, reps, i) => sum + reps * exercise.weight[i],
+              0
+            )
+          );
+        }, 0)
+      );
+    }, 0);
+  }, [workouts]);
+
   if (loading) {
     return <LoadingScreen />;
   }
@@ -58,10 +84,6 @@ export default function PastWorkoutsPage() {
     });
   };
 
-  const calculateTotalSets = (exercises: any[]) => {
-    return exercises.reduce((total, exercise) => total + exercise.sets, 0);
-  };
-
   return (
     <div className='container mx-auto p-6 space-y-6'>
       <BackToDashboardButton />
@@ -75,7 +97,7 @@ export default function PastWorkoutsPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6'>
+      <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6'>
         <Card>
           <CardContent className='p-4 sm:p-6'>
             <div className='flex items-center space-x-3'>
@@ -97,45 +119,15 @@ export default function PastWorkoutsPage() {
                 <Trophy className='h-6 w-6 text-muted-foreground' />
               </div>
               <div>
-                <p className='text-2xl font-bold'>
+                {/* <p className='text-2xl font-bold'>
                   {workouts.reduce(
                     (total, workout) => total + workout.personalRecords,
                     0
                   )}
-                </p>
+                </p> */}
                 <p className='text-muted-foreground text-sm'>
                   Personal Records
                 </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className='p-4 sm:p-6'>
-            <div className='flex items-center space-x-3'>
-              <div className='p-2 bg-muted rounded-lg'>
-                <Clock className='h-6 w-6 text-muted-foreground' />
-              </div>
-              <div>
-                <p className='text-2xl font-bold'>
-                  {Math.round(
-                    workouts.reduce((total, workout) => {
-                      const [hours, minutes] =
-                        workout.duration.split('h ')[0] === workout.duration
-                          ? [0, parseInt(workout.duration.split('m')[0])]
-                          : [
-                              parseInt(workout.duration.split('h ')[0]),
-                              parseInt(
-                                workout.duration.split('h ')[1].split('m')[0]
-                              ),
-                            ];
-                      return total + hours + minutes / 60;
-                    }, 0)
-                  )}
-                  h
-                </p>
-                <p className='text-muted-foreground text-sm'>Total Time</p>
               </div>
             </div>
           </CardContent>
@@ -202,19 +194,6 @@ export default function PastWorkoutsPage() {
                       </CardDescription>
                     </div>
                   </div>
-                  <div className='flex items-center space-x-4'>
-                    <Badge variant='secondary'>
-                      <Clock className='h-3 w-3 mr-1' />
-                      {workout.duration}
-                    </Badge>
-                    {workout.personalRecords > 0 && (
-                      <Badge variant='secondary'>
-                        <Trophy className='h-3 w-3 mr-1' />
-                        {workout.personalRecords} PR
-                        {workout.personalRecords > 1 ? 's' : ''}
-                      </Badge>
-                    )}
-                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -226,14 +205,12 @@ export default function PastWorkoutsPage() {
                     <p className='text-muted-foreground text-sm'>Exercises</p>
                   </div>
                   <div className='text-center'>
-                    <p className='text-2xl font-bold'>
-                      {calculateTotalSets(workout.exercises)}
-                    </p>
+                    <p className='text-2xl font-bold'>{totalSets}</p>
                     <p className='text-muted-foreground text-sm'>Total Sets</p>
                   </div>
                   <div className='text-center'>
                     <p className='text-2xl font-bold'>
-                      {workout.totalVolume.toLocaleString()}
+                      {totalVolume.toLocaleString()}
                     </p>
                     <p className='text-muted-foreground text-sm'>
                       Total Volume (lbs)

@@ -28,15 +28,12 @@ export interface WorkoutData {
 export interface PastWorkout {
   id: string;
   date: string;
-  duration: string;
   exercises: {
     name: string;
     sets: number;
     reps: number[];
     weight: number[];
   }[];
-  totalVolume: number;
-  personalRecords: number;
   createdAt: Date;
 }
 
