@@ -16,7 +16,7 @@ import { Calendar, Clock, Dumbbell, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import BackToDashboardButton from '@/components/back-button';
 import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
-import { PastWorkout } from '@/lib/types';
+import { Exercise, PastWorkout, WorkoutSet } from '@/lib/types';
 import { logger } from '@/lib/logger';
 import { getPastWorkoutsFetcher } from '@/lib/swr/fetcher';
 import { useMemo } from 'react';
@@ -40,30 +40,34 @@ export default function PastWorkoutsPage() {
     }
   );
 
-  const totalSets = useMemo(() => {
-    return workouts.reduce(
-      (total, workout) =>
-        total +
-        workout.exercises.reduce((total, exercise) => total + exercise.sets, 0),
-      0
+  const createWorkoutMap = (
+    workouts: PastWorkout[],
+    calculator: (workout: PastWorkout) => number
+  ) => {
+    return new Map<string, number>(
+      workouts.map(workout => [workout.id, calculator(workout)])
+    );
+  };
+
+  const workoutSetCount = useMemo(() => {
+    return createWorkoutMap(workouts, workout =>
+      workout.exercises.reduce((total, exercise) => total + exercise.sets, 0)
     );
   }, [workouts]);
 
   const totalVolume = useMemo(() => {
-    return workouts.reduce((total, workout) => {
-      return (
-        total +
-        workout.exercises.reduce((exerciseTotal, exercise) => {
-          return (
-            exerciseTotal +
-            exercise.reps.reduce(
-              (sum, reps, i) => sum + reps * exercise.weight[i],
-              0
-            )
-          );
-        }, 0)
-      );
-    }, 0);
+    return createWorkoutMap(workouts, workout =>
+      workout.exercises.reduce((total, exercise) => {
+        return (
+          total +
+          exercise.weight.reduce(
+            (total, weight, index) =>
+              total + weight * (exercise.reps[index] || 0),
+            0
+          )
+        );
+      }, 0)
+    );
   }, [workouts]);
 
   if (loading) {
@@ -119,12 +123,6 @@ export default function PastWorkoutsPage() {
                 <Trophy className='h-6 w-6 text-muted-foreground' />
               </div>
               <div>
-                {/* <p className='text-2xl font-bold'>
-                  {workouts.reduce(
-                    (total, workout) => total + workout.personalRecords,
-                    0
-                  )}
-                </p> */}
                 <p className='text-muted-foreground text-sm'>
                   Personal Records
                 </p>
@@ -205,12 +203,14 @@ export default function PastWorkoutsPage() {
                     <p className='text-muted-foreground text-sm'>Exercises</p>
                   </div>
                   <div className='text-center'>
-                    <p className='text-2xl font-bold'>{totalSets}</p>
+                    <p className='text-2xl font-bold'>
+                      {(workoutSetCount.get(workout.id) ?? 0).toLocaleString()}
+                    </p>
                     <p className='text-muted-foreground text-sm'>Total Sets</p>
                   </div>
                   <div className='text-center'>
                     <p className='text-2xl font-bold'>
-                      {totalVolume.toLocaleString()}
+                      {(totalVolume.get(workout.id) ?? 0).toLocaleString()}
                     </p>
                     <p className='text-muted-foreground text-sm'>
                       Total Volume (lbs)
