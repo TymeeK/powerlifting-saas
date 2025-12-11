@@ -6,7 +6,7 @@ import { UserExercise } from './exercise';
 export interface WorkoutSet {
   reps: number;
   weight: number;
-  completed: boolean;
+  completed?: boolean;
 }
 
 // Workout exercise interface
@@ -24,16 +24,17 @@ export interface WorkoutData {
   updatedAt: Date;
 }
 
+export interface Exercise {
+  name: string;
+  sets: number;
+  reps: number[];
+  weight: number[];
+}
 // Past workout interface
 export interface PastWorkout {
   id: string;
   date: string;
-  exercises: {
-    name: string;
-    sets: number;
-    reps: number[];
-    weight: number[];
-  }[];
+  exercises: Exercise[];
   createdAt: Date;
 }
 
