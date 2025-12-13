@@ -8,18 +8,8 @@ export const getPastWorkoutsFetcher = async (
   return workouts;
 };
 
-export type WeeklySummaryData = {
-  thisWeekCount: number;
-};
-
 export const getWeeklySummaryFetcher = async (
   userId: string
-): Promise<WeeklySummaryData> => {
-  const result = await getWeeklySummaryData(userId);
-  if (!result.success) {
-    throw new Error('Failed to fetch weekly summary');
-  }
-  return {
-    thisWeekCount: result.thisWeekCount,
-  };
+): Promise<number> => {
+  return await getWeeklySummaryData(userId);
 };
