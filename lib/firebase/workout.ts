@@ -9,6 +9,9 @@ import {
   where,
   orderBy,
   Timestamp,
+  DocumentData,
+  CollectionReference,
+  QuerySnapshot,
 } from 'firebase/firestore';
 import { db } from './config';
 import {
@@ -36,6 +39,30 @@ type SaveWorkoutResult = {
   success: boolean;
   workoutId: string;
   message: string;
+};
+
+/**
+ * Get the collection reference for a given user and a collection name
+ * @param userId - The ID of the user
+ * @param collectionName - The name of the collection
+ * @returns - The collection reference
+ */
+export const getUserCollectionRef = async (
+  userId: string,
+  collectionName: string
+) => {
+  return collection(db, 'users', userId, collectionName);
+};
+
+const getUserQuerySnapshot = async (
+  collectionRef: CollectionReference<DocumentData, DocumentData>
+) => {
+  try {
+    return await getDocs(collectionRef);
+  } catch (error: any) {
+    workoutLogger.error('Error fetching query snapshot', error);
+    throw new Error('Failed to fetch query snapshot');
+  }
 };
 
 /**
@@ -109,7 +136,34 @@ export const saveWorkout = async (
   }
 };
 
-//TODO: Refactor this function to only fetch past workouts
+/**
+ * Convert a query snapshot to an array of past workouts
+ * @param querySnapshot - The query snapshot to convert
+ * @returns - The array of past workouts
+ */
+const querySnapshotToPastWorkouts = (
+  querySnapshot: QuerySnapshot<DocumentData, DocumentData>
+): PastWorkout[] => {
+  const workouts: PastWorkout[] = [];
+  querySnapshot.forEach(doc => {
+    const data = doc.data();
+    const workoutDate = data.createdAt?.toDate() || new Date();
+    workouts.push({
+      id: doc.id,
+      date: workoutDate.toISOString().split('T')[0],
+      exercises:
+        data.exercises?.map((exercise: WorkoutExercise) => ({
+          name: exercise.name,
+          sets: exercise.sets?.length || 0,
+          reps: exercise.sets?.map((set: WorkoutSet) => set.reps) || [],
+          weight: exercise.sets?.map((set: WorkoutSet) => set.weight) || [],
+        })) || [],
+      createdAt: workoutDate,
+    });
+  });
+  return workouts;
+};
+
 /**
  * Currently is doing too many calculations on the client side.
  * We should only fetch past workouts and that's the only thing this function should do.
@@ -119,28 +173,10 @@ export const saveWorkout = async (
  */
 export const getPastWorkouts = async (userId: string) => {
   try {
-    const userWorkoutsRef = collection(db, 'users', userId, 'workouts');
-    const querySnapshot = await getDocs(userWorkoutsRef);
+    const userWorkoutsRef = await getUserCollectionRef(userId, 'workouts');
+    const querySnapshot = await getUserQuerySnapshot(userWorkoutsRef);
 
-    const workouts: PastWorkout[] = [];
-    querySnapshot.forEach(doc => {
-      const data = doc.data();
-      const workoutDate = data.createdAt?.toDate() || new Date();
-
-      workouts.push({
-        id: doc.id,
-        date: workoutDate.toISOString().split('T')[0],
-        exercises:
-          data.exercises?.map((exercise: WorkoutExercise) => ({
-            name: exercise.name,
-            sets: exercise.sets?.length || 0,
-            reps: exercise.sets?.map((set: WorkoutSet) => set.reps) || [],
-            weight: exercise.sets?.map((set: WorkoutSet) => set.weight) || [],
-          })) || [],
-        createdAt: workoutDate,
-      });
-    });
-
+    const workouts: PastWorkout[] = querySnapshotToPastWorkouts(querySnapshot);
     workouts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     workoutLogger.debug('Past workouts fetched successfully', {
