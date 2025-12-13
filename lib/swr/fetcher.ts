@@ -4,11 +4,8 @@ import { PastWorkout } from '@/lib/types/workout';
 export const getPastWorkoutsFetcher = async (
   userId: string
 ): Promise<PastWorkout[]> => {
-  const result = await getPastWorkouts(userId);
-  if (!result.success) {
-    throw new Error('Failed to fetch past workouts');
-  }
-  return result.workouts;
+  const workouts = await getPastWorkouts(userId);
+  return workouts;
 };
 
 export type WeeklySummaryData = {
