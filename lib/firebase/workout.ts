@@ -47,10 +47,10 @@ type SaveWorkoutResult = {
  * @param collectionName - The name of the collection
  * @returns - The collection reference
  */
-export const getUserCollectionRef = async (
+export const getUserCollectionRef = (
   userId: string,
   collectionName: string
-) => {
+): CollectionReference<DocumentData, DocumentData> => {
   return collection(db, 'users', userId, collectionName);
 };
 
@@ -141,7 +141,7 @@ export const saveWorkout = async (
  * @param querySnapshot - The query snapshot to convert
  * @returns - The array of past workouts
  */
-const querySnapshotToPastWorkouts = (
+const convertToPastWorkouts = (
   querySnapshot: QuerySnapshot<DocumentData, DocumentData>
 ): PastWorkout[] => {
   const workouts: PastWorkout[] = [];
@@ -165,32 +165,15 @@ const querySnapshotToPastWorkouts = (
 };
 
 /**
- * Currently is doing too many calculations on the client side.
+ * Currently is doing too many calculations
  * We should only fetch past workouts and that's the only thing this function should do.
  * @param userId - The ID of the user fetching the past workouts
  * @returns - The past workouts
- * @throws - An error if the past workouts fetch fails
  */
 export const getPastWorkouts = async (userId: string) => {
-  try {
-    const userWorkoutsRef = await getUserCollectionRef(userId, 'workouts');
-    const querySnapshot = await getUserQuerySnapshot(userWorkoutsRef);
-
-    const workouts: PastWorkout[] = querySnapshotToPastWorkouts(querySnapshot);
-    workouts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-    workoutLogger.debug('Past workouts fetched successfully', {
-      workoutCount: workouts.length,
-    });
-
-    return {
-      success: true,
-      workouts,
-    };
-  } catch (error: any) {
-    workoutLogger.error('Error fetching past workouts', error);
-    throw new Error('Failed to fetch past workouts');
-  }
+  const userWorkoutsRef = getUserCollectionRef(userId, 'workouts');
+  const userWorkoutsSnapshot = await getUserQuerySnapshot(userWorkoutsRef);
+  return convertToPastWorkouts(userWorkoutsSnapshot);
 };
 
 export const getUserWorkouts = async (userId: string) => {
