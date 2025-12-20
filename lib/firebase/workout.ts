@@ -7,6 +7,7 @@ import {
   FieldValue,
   query,
   where,
+  limit,
   orderBy,
   Timestamp,
   DocumentData,
@@ -15,15 +16,12 @@ import {
   Query,
 } from 'firebase/firestore';
 import { db } from './config';
-import {
-  WorkoutExercise,
-  WorkoutSet,
-  PastWorkout,
-  WorkoutSummary,
-} from '@/lib/types';
+import { WorkoutExercise, WorkoutSet, PastWorkout } from '@/lib/types';
 import { logger } from '@/lib/logger';
 
 const workoutLogger = logger.child({ component: 'firebase-workout' });
+export const WORKOUT_DEFAULT_LIMIT = 5; // Default limit for past workouts
+export const USERS_WORKOUTS_COLLECTION = 'workouts';
 
 /**
  * The workout data object with the exercises,
@@ -103,7 +101,10 @@ export const addWorkoutToFirestore = async (
   userId: string,
   workoutData: WorkoutData
 ) => {
-  const userWorkoutsRef = collection(db, 'users', userId, 'workouts');
+  const userWorkoutsRef = getUserCollectionRef(
+    userId,
+    USERS_WORKOUTS_COLLECTION
+  );
   const docRef = await addDoc(userWorkoutsRef, workoutData);
   return docRef;
 };
@@ -175,6 +176,17 @@ const convertToPastWorkouts = (
   return workouts;
 };
 
+const getPastWorkoutQuery = async (
+  userWorkoutsRef: CollectionReference<DocumentData, DocumentData>,
+  limitCount: number = WORKOUT_DEFAULT_LIMIT
+): Promise<Query<DocumentData, DocumentData>> => {
+  return query(
+    userWorkoutsRef,
+    limit(limitCount),
+    orderBy('createdAt', 'desc')
+  );
+};
+
 /**
  * Get the past workouts for a user
  * We should only fetch past workouts and that's the only thing this function should do.
@@ -182,9 +194,19 @@ const convertToPastWorkouts = (
  * @param limit - The limit of the past workouts to fetch
  * @returns - The past workouts
  */
-export const getPastWorkouts = async (userId: string) => {
-  const userWorkoutsRef = getUserCollectionRef(userId, 'workouts');
-  const userWorkoutsSnapshot = await getUserQuerySnapshot(userWorkoutsRef);
+export const getPastWorkouts = async (
+  userId: string,
+  limitCount: number = WORKOUT_DEFAULT_LIMIT
+) => {
+  const userWorkoutsRef = getUserCollectionRef(
+    userId,
+    USERS_WORKOUTS_COLLECTION
+  );
+  const userWorkoutsQuery = await getPastWorkoutQuery(
+    userWorkoutsRef,
+    limitCount
+  );
+  const userWorkoutsSnapshot = await getUserQuerySnapshot(userWorkoutsQuery);
   return convertToPastWorkouts(userWorkoutsSnapshot);
 };
 
@@ -200,14 +222,16 @@ export const getPastWorkouts = async (userId: string) => {
  * @throws - An error if the weekly summary fetch fails
  */
 export const getWeeklySummaryData = async (userId: string) => {
-  const userWorkoutsRef = getUserCollectionRef(userId, 'workouts');
-
   // Calculate start of current week (Sunday 00:00:00)
   const now = new Date();
   const startOfWeek = new Date(now);
   startOfWeek.setDate(now.getDate() - now.getDay()); // Start of current week (Sunday)
   startOfWeek.setHours(0, 0, 0, 0);
   const startOfWeekTimestamp = Timestamp.fromDate(startOfWeek);
+  const userWorkoutsRef = getUserCollectionRef(
+    userId,
+    USERS_WORKOUTS_COLLECTION
+  );
 
   const thisWeekQuery = query(
     userWorkoutsRef,

@@ -4,8 +4,7 @@ import { PastWorkout } from '@/lib/types/workout';
 export const getPastWorkoutsFetcher = async (
   userId: string
 ): Promise<PastWorkout[]> => {
-  const workouts = await getPastWorkouts(userId);
-  return workouts;
+  return await getPastWorkouts(userId);
 };
 
 export const getWeeklySummaryFetcher = async (
