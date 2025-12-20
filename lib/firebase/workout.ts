@@ -14,6 +14,7 @@ import {
   CollectionReference,
   QuerySnapshot,
   Query,
+  startAfter,
 } from 'firebase/firestore';
 import { db } from './config';
 import { WorkoutExercise, WorkoutSet, PastWorkout } from '@/lib/types';
@@ -40,6 +41,12 @@ type SaveWorkoutResult = {
   message: string;
 };
 
+export type PastWorkoutsResult = {
+  workouts: PastWorkout[];
+  lastVisibleDoc: DocumentData | null;
+  hasMore: boolean;
+};
+
 type UserQuerySnapshot =
   | CollectionReference<DocumentData, DocumentData>
   | Query<DocumentData, DocumentData>;
@@ -63,7 +70,7 @@ export const getUserCollectionRef = (
  * @returns - The query snapshot
  * @throws - An error if the query snapshot fetch fails
  */
-const getUserQuerySnapshot = async (
+const getDocSnapshot = async (
   ref: UserQuerySnapshot
 ): Promise<QuerySnapshot<DocumentData, DocumentData>> => {
   try {
@@ -176,28 +183,28 @@ const convertToPastWorkouts = (
   return workouts;
 };
 
-const getPastWorkoutQuery = async (
+const createPastWorkoutQuery = async (
   userWorkoutsRef: CollectionReference<DocumentData, DocumentData>,
-  limitCount: number = WORKOUT_DEFAULT_LIMIT
+  limitCount: number = WORKOUT_DEFAULT_LIMIT,
+  lastVisibleDoc: DocumentData | null = null
 ): Promise<Query<DocumentData, DocumentData>> => {
-  return query(
-    userWorkoutsRef,
-    limit(limitCount),
-    orderBy('createdAt', 'desc')
-  );
+  return lastVisibleDoc
+    ? query(
+        userWorkoutsRef,
+        limit(limitCount),
+        orderBy('createdAt', 'desc'),
+        startAfter(lastVisibleDoc.data().createdAt)
+      )
+    : query(userWorkoutsRef, limit(limitCount), orderBy('createdAt', 'desc'));
 };
 
-const getLastVisibleDoc = async (
+const getLastVisibleDoc = (
   querySnapshot: QuerySnapshot<DocumentData, DocumentData>
-): Promise<DocumentData> => {
-  return querySnapshot.docs[querySnapshot.docs.length - 1];
+): DocumentData | null => {
+  return querySnapshot.docs.length > 0
+    ? querySnapshot.docs[querySnapshot.docs.length - 1]
+    : null;
 };
-const getNextVisibleDoc = async (
-  querySnapshot: QuerySnapshot<DocumentData, DocumentData>
-): Promise<DocumentData> => {
-  return querySnapshot.docs[0];
-};
-
 /**
  * Get the past workouts for a user
  * We should only fetch past workouts and that's the only thing this function should do.
@@ -207,19 +214,28 @@ const getNextVisibleDoc = async (
  */
 export const getPastWorkouts = async (
   userId: string,
-  limitCount: number = WORKOUT_DEFAULT_LIMIT
-) => {
+  limitCount: number = WORKOUT_DEFAULT_LIMIT,
+  lastVisibleDoc: DocumentData | null = null
+): Promise<PastWorkoutsResult> => {
   const userWorkoutsRef = getUserCollectionRef(
     userId,
     USERS_WORKOUTS_COLLECTION
   );
-  const userWorkoutsQuery = await getPastWorkoutQuery(
+  const userWorkoutsQuery = await createPastWorkoutQuery(
     userWorkoutsRef,
-    limitCount
+    limitCount,
+    lastVisibleDoc
   );
-  const userWorkoutsSnapshot = await getUserQuerySnapshot(userWorkoutsQuery);
+  const userWorkoutsSnapshot = await getDocSnapshot(userWorkoutsQuery);
 
-  return convertToPastWorkouts(userWorkoutsSnapshot);
+  const workouts = convertToPastWorkouts(userWorkoutsSnapshot);
+  const lastVisibleDocResult = getLastVisibleDoc(userWorkoutsSnapshot);
+  const hasMore = workouts.length === limitCount;
+  return {
+    workouts,
+    lastVisibleDoc: lastVisibleDocResult,
+    hasMore,
+  };
 };
 
 /**
@@ -250,7 +266,7 @@ export const getWeeklySummaryData = async (userId: string) => {
     where('createdAt', '>=', startOfWeekTimestamp),
     orderBy('createdAt', 'desc')
   );
-  const thisWeekSnapshot = await getUserQuerySnapshot(thisWeekQuery);
+  const thisWeekSnapshot = await getDocSnapshot(thisWeekQuery);
   const thisWeekCount = thisWeekSnapshot.size;
 
   workoutLogger.debug('Weekly summary data fetched successfully', {

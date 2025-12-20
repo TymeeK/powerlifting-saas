@@ -1,10 +1,16 @@
 import { getPastWorkouts, getWeeklySummaryData } from '@/lib/firebase';
-import { PastWorkout } from '@/lib/types/workout';
+import {
+  PastWorkoutsResult,
+  WORKOUT_DEFAULT_LIMIT,
+} from '@/lib/firebase/workout';
+import { DocumentData } from 'firebase/firestore';
 
 export const getPastWorkoutsFetcher = async (
-  userId: string
-): Promise<PastWorkout[]> => {
-  return await getPastWorkouts(userId);
+  userId: string,
+  limitCount: number = WORKOUT_DEFAULT_LIMIT,
+  lastVisibleDoc: DocumentData | null = null
+): Promise<PastWorkoutsResult> => {
+  return await getPastWorkouts(userId, limitCount, lastVisibleDoc);
 };
 
 export const getWeeklySummaryFetcher = async (

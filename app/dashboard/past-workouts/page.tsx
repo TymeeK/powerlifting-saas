@@ -12,45 +12,75 @@ import {
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import LoadingScreen from '@/components/workout/LoadingScreen';
-import { Calendar, Clock, Dumbbell, Trophy } from 'lucide-react';
+import { Calendar, Dumbbell, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import BackToDashboardButton from '@/components/back-button';
 import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
-import { Exercise, PastWorkout, WorkoutSet } from '@/lib/types';
+import { Exercise, PastWorkout } from '@/lib/types';
+import {
+  PastWorkoutsResult,
+  WORKOUT_DEFAULT_LIMIT,
+} from '@/lib/firebase/workout';
 import { logger } from '@/lib/logger';
 import { getPastWorkoutsFetcher } from '@/lib/swr/fetcher';
-import { useMemo, useState } from 'react';
-import { DocumentData } from 'firebase/firestore';
+import { useEffect, useMemo, useState } from 'react';
 import ExercisePagination from '@/components/dashboard/charts/ExercisePagination';
+import { DocumentData } from 'firebase/firestore';
 
 // Create a child logger for past workouts page
 const pastWorkoutsLogger = logger.child({ component: 'past-workouts-page' });
 
 export default function PastWorkoutsPage() {
   const { user, loading } = useRequireAuth('/login');
-
   const [currentPage, setCurrentPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [lastVisibleDoc, setLastVisibleDoc] = useState<DocumentData | null>(
-    null
-  );
-  const [nextVisibleDoc, setNextVisibleDoc] = useState<DocumentData | null>(
-    null
-  );
+  const [pageCursor, setPageCursor] = useState<
+    Map<number, DocumentData | null>
+  >(new Map([[1, null]]));
+
+  const currentPageCursor = pageCursor.get(currentPage) || null;
+
+  const swrKey = `past-workouts-${user?.uid}-${currentPage}-${
+    currentPageCursor?.id || 'initial'
+  }`;
 
   const {
-    data: workouts = [],
+    data: pageData,
     isLoading,
     error,
-  } = useSWR<PastWorkout[]>(
-    user ? `past-workouts-${user.uid}` : null,
-    () => getPastWorkoutsFetcher(user?.uid || ''),
+  } = useSWR<PastWorkoutsResult>(
+    user ? swrKey : null,
+    () =>
+      getPastWorkoutsFetcher(
+        user?.uid || '',
+        WORKOUT_DEFAULT_LIMIT,
+        currentPageCursor
+      ),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: true,
       dedupingInterval: 5000,
     }
   );
+
+  const { workouts, lastVisibleDoc, hasMore } = pageData || {
+    workouts: [],
+    lastVisibleDoc: null,
+    hasMore: false,
+  };
+
+  useEffect(() => {
+    if (lastVisibleDoc) {
+      setPageCursor(prev => {
+        const next = new Map(prev);
+        next.set(currentPage + 1, lastVisibleDoc);
+        return next;
+      });
+    }
+  }, [lastVisibleDoc, currentPage]);
+
+  const totalPages = useMemo(() => {
+    return hasMore ? currentPage + 1 : currentPage;
+  }, [hasMore, currentPage]);
 
   const createWorkoutMap = (
     workouts: PastWorkout[],
@@ -62,7 +92,7 @@ export default function PastWorkoutsPage() {
   };
 
   const workoutSetCount = useMemo(() => {
-    return createWorkoutMap(workouts, workout =>
+    return createWorkoutMap(workouts || [], workout =>
       workout.exercises.reduce((total, exercise) => total + exercise.sets, 0)
     );
   }, [workouts]);
@@ -281,7 +311,7 @@ export default function PastWorkoutsPage() {
 
       <ExercisePagination
         currentPage={currentPage}
-        totalPages={10}
+        totalPages={totalPages}
         onPageChange={handlePageChange}
       />
 
