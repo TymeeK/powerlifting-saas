@@ -19,13 +19,25 @@ import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
 import { Exercise, PastWorkout, WorkoutSet } from '@/lib/types';
 import { logger } from '@/lib/logger';
 import { getPastWorkoutsFetcher } from '@/lib/swr/fetcher';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { DocumentData } from 'firebase/firestore';
+import ExercisePagination from '@/components/dashboard/charts/ExercisePagination';
 
 // Create a child logger for past workouts page
 const pastWorkoutsLogger = logger.child({ component: 'past-workouts-page' });
 
 export default function PastWorkoutsPage() {
   const { user, loading } = useRequireAuth('/login');
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [lastVisibleDoc, setLastVisibleDoc] = useState<DocumentData | null>(
+    null
+  );
+  const [nextVisibleDoc, setNextVisibleDoc] = useState<DocumentData | null>(
+    null
+  );
+
   const {
     data: workouts = [],
     isLoading,
@@ -86,6 +98,10 @@ export default function PastWorkoutsPage() {
       month: 'long',
       day: 'numeric',
     });
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   return (
@@ -262,6 +278,12 @@ export default function PastWorkoutsPage() {
           ))}
         </div>
       )}
+
+      <ExercisePagination
+        currentPage={currentPage}
+        totalPages={10}
+        onPageChange={handlePageChange}
+      />
 
       {/* Empty State */}
       {!isLoading && !error && workouts.length === 0 && (

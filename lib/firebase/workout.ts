@@ -187,6 +187,17 @@ const getPastWorkoutQuery = async (
   );
 };
 
+const getLastVisibleDoc = async (
+  querySnapshot: QuerySnapshot<DocumentData, DocumentData>
+): Promise<DocumentData> => {
+  return querySnapshot.docs[querySnapshot.docs.length - 1];
+};
+const getNextVisibleDoc = async (
+  querySnapshot: QuerySnapshot<DocumentData, DocumentData>
+): Promise<DocumentData> => {
+  return querySnapshot.docs[0];
+};
+
 /**
  * Get the past workouts for a user
  * We should only fetch past workouts and that's the only thing this function should do.
@@ -207,6 +218,7 @@ export const getPastWorkouts = async (
     limitCount
   );
   const userWorkoutsSnapshot = await getUserQuerySnapshot(userWorkoutsQuery);
+
   return convertToPastWorkouts(userWorkoutsSnapshot);
 };
 
