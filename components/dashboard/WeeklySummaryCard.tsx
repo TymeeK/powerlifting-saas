@@ -7,10 +7,9 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { WeeklySummaryData } from '@/lib/swr/fetcher';
 
 interface WeeklySummaryCardProps {
-  data?: WeeklySummaryData;
+  data?: number;
   isLoading?: boolean;
 }
 
@@ -18,7 +17,7 @@ export default function WeeklySummaryCard({
   data,
   isLoading = false,
 }: WeeklySummaryCardProps) {
-  const thisWeeksWorkoutsCount = data?.thisWeekCount ?? 0;
+  const thisWeeksWorkoutsCount = data || 0;
 
   if (isLoading) {
     return (
@@ -57,7 +56,7 @@ export default function WeeklySummaryCard({
       <Card>
         <CardHeader>
           <CardTitle className='text-center text-xl'>
-            This Week&apos;s Summary
+            This Week's Summary
           </CardTitle>
           <CardDescription className='text-center'>
             No workout data available yet.
