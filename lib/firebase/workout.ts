@@ -249,7 +249,7 @@ export const getPastWorkouts = async (
  * @returns - Object containing this week's workout count and streak data
  * @throws - An error if the weekly summary fetch fails
  */
-export const getWeeklySummaryData = async (userId: string) => {
+export const getWeeklySummaryData = async (userId: string): Promise<number> => {
   // Calculate start of current week (Sunday 00:00:00)
   const now = new Date();
   const startOfWeek = new Date(now);

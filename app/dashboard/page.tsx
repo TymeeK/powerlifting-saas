@@ -13,7 +13,6 @@ import { logger } from '@/lib/logger';
 import {
   getPastWorkoutsFetcher,
   getWeeklySummaryFetcher,
-  WeeklySummaryData,
 } from '@/lib/swr/fetcher';
 import useSWR from 'swr';
 
@@ -84,7 +83,7 @@ export default function DashboardPage() {
     data: weeklySummary,
     isLoading: isWeeklySummaryLoading,
     error: weeklySummaryError,
-  } = useSWR<WeeklySummaryData>(
+  } = useSWR<number>(
     user ? `weekly-summary-${user.uid}` : null,
     () => getWeeklySummaryFetcher(user?.uid || ''),
     {

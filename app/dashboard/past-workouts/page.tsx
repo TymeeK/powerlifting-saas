@@ -1,7 +1,5 @@
 'use client';
 
-import useSWR from 'swr';
-
 import {
   Card,
   CardContent,
@@ -16,71 +14,28 @@ import { Calendar, Dumbbell, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import BackToDashboardButton from '@/components/back-button';
 import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
-import { Exercise, PastWorkout } from '@/lib/types';
-import {
-  PastWorkoutsResult,
-  WORKOUT_DEFAULT_LIMIT,
-} from '@/lib/firebase/workout';
-import { logger } from '@/lib/logger';
-import { getPastWorkoutsFetcher } from '@/lib/swr/fetcher';
-import { useEffect, useMemo, useState } from 'react';
+import { usePastWorkouts } from '@/lib/hooks';
+import { PastWorkout } from '@/lib/types';
+import { calculateWorkoutVolume } from '@/lib/workout-utils';
+import { useMemo } from 'react';
 import ExercisePagination from '@/components/dashboard/charts/ExercisePagination';
-import { DocumentData } from 'firebase/firestore';
-
-// Create a child logger for past workouts page
-const pastWorkoutsLogger = logger.child({ component: 'past-workouts-page' });
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
 export default function PastWorkoutsPage() {
   const { user, loading } = useRequireAuth('/login');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageCursor, setPageCursor] = useState<
-    Map<number, DocumentData | null>
-  >(new Map([[1, null]]));
-
-  const currentPageCursor = pageCursor.get(currentPage) || null;
-
-  const swrKey = `past-workouts-${user?.uid}-${currentPage}-${
-    currentPageCursor?.id || 'initial'
-  }`;
-
   const {
-    data: pageData,
+    workouts,
     isLoading,
     error,
-  } = useSWR<PastWorkoutsResult>(
-    user ? swrKey : null,
-    () =>
-      getPastWorkoutsFetcher(
-        user?.uid || '',
-        WORKOUT_DEFAULT_LIMIT,
-        currentPageCursor
-      ),
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-      dedupingInterval: 5000,
-    }
-  );
-
-  const { workouts, lastVisibleDoc, hasMore } = pageData || {
-    workouts: [],
-    lastVisibleDoc: null,
-    hasMore: false,
-  };
-
-  useEffect(() => {
-    if (lastVisibleDoc) {
-      setPageCursor(prev => {
-        const next = new Map(prev);
-        next.set(currentPage + 1, lastVisibleDoc);
-        return next;
-      });
-    }
-  }, [lastVisibleDoc, currentPage]);
-
-  const totalPages = useMemo(() => {
-    return hasMore ? currentPage + 1 : currentPage;
-  }, [hasMore, currentPage]);
+    totalPages,
+    currentPage,
+    handlePageChange,
+  } = usePastWorkouts(user?.uid);
 
   const createWorkoutMap = (
     workouts: PastWorkout[],
@@ -93,22 +48,16 @@ export default function PastWorkoutsPage() {
 
   const workoutSetCount = useMemo(() => {
     return createWorkoutMap(workouts || [], workout =>
-      workout.exercises.reduce((total, exercise) => total + exercise.sets, 0)
+      workout.exercises.reduce(
+        (total: number, exercise) => total + exercise.sets,
+        0
+      )
     );
   }, [workouts]);
 
   const totalVolume = useMemo(() => {
     return createWorkoutMap(workouts, workout =>
-      workout.exercises.reduce((total, exercise) => {
-        return (
-          total +
-          exercise.weight.reduce(
-            (total, weight, index) =>
-              total + weight * (exercise.reps[index] || 0),
-            0
-          )
-        );
-      }, 0)
+      calculateWorkoutVolume(workout)
     );
   }, [workouts]);
 
@@ -128,10 +77,6 @@ export default function PastWorkoutsPage() {
       month: 'long',
       day: 'numeric',
     });
-  };
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
   };
 
   return (
@@ -221,91 +166,110 @@ export default function PastWorkoutsPage() {
       {/* Workouts List */}
       {!isLoading && !error && (
         <div className='space-y-6'>
-          {workouts.map((workout, index) => (
-            <Card key={workout.id}>
-              <CardHeader>
-                <div className='flex items-center justify-between'>
-                  <div className='flex items-center space-x-3'>
-                    <div className='p-2 bg-muted rounded-lg'>
-                      <Calendar className='h-5 w-5 text-muted-foreground' />
-                    </div>
-                    <div>
-                      <CardTitle className='text-xl'>
-                        {formatDate(workout.date)}
-                      </CardTitle>
-                      <CardDescription>
-                        Workout #{workouts.length - index}
-                      </CardDescription>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6'>
-                  <div className='text-center'>
-                    <p className='text-2xl font-bold'>
-                      {workout.exercises.length}
-                    </p>
-                    <p className='text-muted-foreground text-sm'>Exercises</p>
-                  </div>
-                  <div className='text-center'>
-                    <p className='text-2xl font-bold'>
-                      {(workoutSetCount.get(workout.id) ?? 0).toLocaleString()}
-                    </p>
-                    <p className='text-muted-foreground text-sm'>Total Sets</p>
-                  </div>
-                  <div className='text-center'>
-                    <p className='text-2xl font-bold'>
-                      {(totalVolume.get(workout.id) ?? 0).toLocaleString()}
-                    </p>
-                    <p className='text-muted-foreground text-sm'>
-                      Total Volume (lbs)
-                    </p>
-                  </div>
-                </div>
-
-                <Separator className='mb-4' />
-
-                <div>
-                  <h4 className='font-semibold mb-3'>Exercises Performed</h4>
-                  <div className='space-y-3'>
-                    {workout.exercises.map((exercise, exerciseIndex) => (
-                      <div
-                        key={exerciseIndex}
-                        className='bg-muted/50 rounded-lg p-4'
-                      >
-                        <div className='flex items-center justify-between mb-2'>
-                          <h5 className='font-bold text-lg underline'>
-                            {exercise.name}
-                          </h5>
-                          <span className='text-muted-foreground text-sm'>
-                            {exercise.sets} sets
-                          </span>
-                        </div>
-                        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2'>
-                          {exercise.sets > 0 &&
-                            Array.from(
-                              { length: exercise.sets },
-                              (_, setIndex) => (
-                                <div
-                                  key={setIndex}
-                                  className='bg-muted rounded p-2 sm:p-3 text-center'
-                                >
-                                  <p className='text-xs sm:text-sm font-medium'>
-                                    {exercise.reps[setIndex]} ×{' '}
-                                    {exercise.weight[setIndex]}lbs
-                                  </p>
-                                </div>
-                              )
-                            )}
+          <Accordion type='single' collapsible>
+            {workouts.map((workout, index) => (
+              <AccordionItem value={workout.id} className='border-b-0'>
+                <AccordionTrigger className='cursor-pointer'>
+                  {formatDate(workout.date)}
+                </AccordionTrigger>
+                <AccordionContent>
+                  <Card className='border-t-0'>
+                    <CardHeader>
+                      <div className='flex items-center justify-between'>
+                        <div className='flex items-center space-x-3'>
+                          <div className='p-2 bg-muted rounded-lg'>
+                            <Calendar className='h-5 w-5 text-muted-foreground' />
+                          </div>
+                          <div>
+                            <CardTitle className='text-xl'>
+                              {formatDate(workout.date)}
+                            </CardTitle>
+                            <CardDescription>
+                              Workout #{workouts.length - index}
+                            </CardDescription>
+                          </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    </CardHeader>
+                    <CardContent>
+                      <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6'>
+                        <div className='text-center'>
+                          <p className='text-2xl font-bold'>
+                            {workout.exercises.length}
+                          </p>
+                          <p className='text-muted-foreground text-sm'>
+                            Exercises
+                          </p>
+                        </div>
+                        <div className='text-center'>
+                          <p className='text-2xl font-bold'>
+                            {(
+                              workoutSetCount.get(workout.id) ?? 0
+                            ).toLocaleString()}
+                          </p>
+                          <p className='text-muted-foreground text-sm'>
+                            Total Sets
+                          </p>
+                        </div>
+                        <div className='text-center'>
+                          <p className='text-2xl font-bold'>
+                            {(
+                              totalVolume.get(workout.id) ?? 0
+                            ).toLocaleString()}
+                          </p>
+                          <p className='text-muted-foreground text-sm'>
+                            Total Volume (lbs)
+                          </p>
+                        </div>
+                      </div>
+
+                      <Separator className='mb-4' />
+
+                      <div>
+                        <h4 className='font-semibold mb-3'>
+                          Exercises Performed
+                        </h4>
+                        <div className='space-y-3'>
+                          {workout.exercises.map((exercise, exerciseIndex) => (
+                            <div
+                              key={exerciseIndex}
+                              className='bg-muted/50 rounded-lg p-4'
+                            >
+                              <div className='flex items-center justify-between mb-2'>
+                                <h5 className='font-bold text-lg underline'>
+                                  {exercise.name}
+                                </h5>
+                                <span className='text-muted-foreground text-sm'>
+                                  {exercise.sets} sets
+                                </span>
+                              </div>
+                              <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2'>
+                                {exercise.sets > 0 &&
+                                  Array.from(
+                                    { length: exercise.sets },
+                                    (_, setIndex) => (
+                                      <div
+                                        key={setIndex}
+                                        className='bg-muted rounded p-2 sm:p-3 text-center'
+                                      >
+                                        <p className='text-xs sm:text-sm font-medium'>
+                                          {exercise.reps[setIndex]} ×{' '}
+                                          {exercise.weight[setIndex]}lbs
+                                        </p>
+                                      </div>
+                                    )
+                                  )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
       )}
 
