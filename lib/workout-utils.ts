@@ -6,6 +6,7 @@ import {
   FormState,
   LoadingState,
   ErrorState,
+  PastWorkout,
 } from '@/lib/types';
 import { logger } from '@/lib/logger';
 
@@ -203,4 +204,33 @@ export const getOrdinalSuffix = (num: number): string => {
 export const validateExerciseForm = (name: string): string | null => {
   if (!name.trim()) return 'Exercise name is required';
   return null;
+};
+
+// Volume calculation utilities
+/**
+ * Calculate the total volume (reps × weight) for a single exercise
+ * @param exercise - The exercise with sets, reps, and weight arrays
+ * @returns The total volume for the exercise
+ */
+export const calculateExerciseVolume = (
+  exercise: PastWorkout['exercises'][0]
+): number => {
+  let exerciseVolume = 0;
+  for (let i = 0; i < exercise.sets; i++) {
+    const reps = exercise.reps[i] || 0;
+    const weight = exercise.weight[i] || 0;
+    exerciseVolume += reps * weight;
+  }
+  return exerciseVolume;
+};
+
+/**
+ * Calculate the total volume for an entire workout by summing all exercise volumes
+ * @param workout - The workout containing exercises
+ * @returns The total volume for the workout
+ */
+export const calculateWorkoutVolume = (workout: PastWorkout): number => {
+  return workout.exercises.reduce((total, exercise) => {
+    return total + calculateExerciseVolume(exercise);
+  }, 0);
 };

@@ -7,19 +7,22 @@ import {
   FieldValue,
   query,
   where,
+  limit,
   orderBy,
   Timestamp,
+  DocumentData,
+  CollectionReference,
+  QuerySnapshot,
+  Query,
+  startAfter,
 } from 'firebase/firestore';
 import { db } from './config';
-import {
-  WorkoutExercise,
-  WorkoutSet,
-  PastWorkout,
-  WorkoutSummary,
-} from '@/lib/types';
+import { WorkoutExercise, WorkoutSet, PastWorkout } from '@/lib/types';
 import { logger } from '@/lib/logger';
 
 const workoutLogger = logger.child({ component: 'firebase-workout' });
+export const WORKOUT_DEFAULT_LIMIT = 5; // Default limit for past workouts
+export const USERS_WORKOUTS_COLLECTION = 'workouts';
 
 /**
  * The workout data object with the exercises,
@@ -36,6 +39,46 @@ type SaveWorkoutResult = {
   success: boolean;
   workoutId: string;
   message: string;
+};
+
+export type PastWorkoutsResult = {
+  workouts: PastWorkout[];
+  lastVisibleDoc: DocumentData | null;
+  hasMore: boolean;
+};
+
+type UserQuerySnapshot =
+  | CollectionReference<DocumentData, DocumentData>
+  | Query<DocumentData, DocumentData>;
+
+/**
+ * Get the collection reference for a given user and a collection name
+ * @param userId - The ID of the user
+ * @param collectionName - The name of the collection
+ * @returns - The collection reference
+ */
+export const getUserCollectionRef = (
+  userId: string,
+  collectionName: string
+): CollectionReference<DocumentData, DocumentData> => {
+  return collection(db, 'users', userId, collectionName);
+};
+
+/**
+ * Fetch a query snapshot from a collection reference
+ * @param ref - The collection reference to fetch the query snapshot from
+ * @returns - The query snapshot
+ * @throws - An error if the query snapshot fetch fails
+ */
+const getDocSnapshot = async (
+  ref: UserQuerySnapshot
+): Promise<QuerySnapshot<DocumentData, DocumentData>> => {
+  try {
+    return await getDocs(ref);
+  } catch (error: any) {
+    workoutLogger.error('Error fetching query snapshot', error);
+    throw new Error('Failed to fetch query snapshot');
+  }
 };
 
 /**
@@ -65,7 +108,10 @@ export const addWorkoutToFirestore = async (
   userId: string,
   workoutData: WorkoutData
 ) => {
-  const userWorkoutsRef = collection(db, 'users', userId, 'workouts');
+  const userWorkoutsRef = getUserCollectionRef(
+    userId,
+    USERS_WORKOUTS_COLLECTION
+  );
   const docRef = await addDoc(userWorkoutsRef, workoutData);
   return docRef;
 };
@@ -109,168 +155,86 @@ export const saveWorkout = async (
   }
 };
 
-//TODO: Refactor this function to only fetch past workouts
 /**
- * Currently is doing too many calculations on the client side.
+ * Convert a query snapshot to an array of past workouts
+ * @param querySnapshot - The query snapshot to convert
+ * @returns - The array of past workouts
+ */
+const convertToPastWorkouts = (
+  querySnapshot: QuerySnapshot<DocumentData, DocumentData>
+): PastWorkout[] => {
+  const workouts: PastWorkout[] = [];
+  querySnapshot.forEach(doc => {
+    const data = doc.data();
+    const workoutDate = data.createdAt?.toDate() || new Date();
+    workouts.push({
+      id: doc.id,
+      date: workoutDate.toISOString().split('T')[0],
+      exercises:
+        data.exercises?.map((exercise: WorkoutExercise) => ({
+          name: exercise.name,
+          sets: exercise.sets?.length || 0,
+          reps: exercise.sets?.map((set: WorkoutSet) => set.reps) || [],
+          weight: exercise.sets?.map((set: WorkoutSet) => set.weight) || [],
+        })) || [],
+      createdAt: workoutDate,
+    });
+  });
+  return workouts;
+};
+
+const createPastWorkoutQuery = async (
+  userWorkoutsRef: CollectionReference<DocumentData, DocumentData>,
+  limitCount: number = WORKOUT_DEFAULT_LIMIT,
+  lastVisibleDoc: DocumentData | null = null
+): Promise<Query<DocumentData, DocumentData>> => {
+  return lastVisibleDoc
+    ? query(
+        userWorkoutsRef,
+        limit(limitCount),
+        orderBy('createdAt', 'desc'),
+        startAfter(lastVisibleDoc.data().createdAt)
+      )
+    : query(userWorkoutsRef, limit(limitCount), orderBy('createdAt', 'desc'));
+};
+
+const getLastVisibleDoc = (
+  querySnapshot: QuerySnapshot<DocumentData, DocumentData>
+): DocumentData | null => {
+  return querySnapshot.docs.length > 0
+    ? querySnapshot.docs[querySnapshot.docs.length - 1]
+    : null;
+};
+/**
+ * Get the past workouts for a user
  * We should only fetch past workouts and that's the only thing this function should do.
  * @param userId - The ID of the user fetching the past workouts
+ * @param limit - The limit of the past workouts to fetch
  * @returns - The past workouts
- * @throws - An error if the past workouts fetch fails
  */
-export const getPastWorkouts = async (userId: string) => {
-  try {
-    const userWorkoutsRef = collection(db, 'users', userId, 'workouts');
-    const querySnapshot = await getDocs(userWorkoutsRef);
+export const getPastWorkouts = async (
+  userId: string,
+  limitCount: number = WORKOUT_DEFAULT_LIMIT,
+  lastVisibleDoc: DocumentData | null = null
+): Promise<PastWorkoutsResult> => {
+  const userWorkoutsRef = getUserCollectionRef(
+    userId,
+    USERS_WORKOUTS_COLLECTION
+  );
+  const userWorkoutsQuery = await createPastWorkoutQuery(
+    userWorkoutsRef,
+    limitCount,
+    lastVisibleDoc
+  );
+  const userWorkoutsSnapshot = await getDocSnapshot(userWorkoutsQuery);
 
-    const workouts: PastWorkout[] = [];
-    querySnapshot.forEach(doc => {
-      const data = doc.data();
-      const workoutDate = data.createdAt?.toDate() || new Date();
-
-      const totalSets =
-        data.exercises?.reduce(
-          (total: number, exercise: WorkoutExercise) =>
-            total + (exercise.sets?.length || 0),
-          0
-        ) || 0;
-      const estimatedMinutes = Math.max(30, totalSets * 2);
-      const hours = Math.floor(estimatedMinutes / 60);
-      const minutes = estimatedMinutes % 60;
-      const duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-
-      const totalVolume =
-        data.exercises?.reduce((total: number, exercise: WorkoutExercise) => {
-          return (
-            total +
-            (exercise.sets?.reduce(
-              (exerciseTotal: number, set: WorkoutSet) =>
-                exerciseTotal + set.reps * set.weight,
-              0
-            ) || 0)
-          );
-        }, 0) || 0;
-
-      const personalRecords = 0;
-
-      workouts.push({
-        id: doc.id,
-        date: workoutDate.toISOString().split('T')[0],
-        duration,
-        exercises:
-          data.exercises?.map((exercise: WorkoutExercise) => ({
-            name: exercise.name,
-            sets: exercise.sets?.length || 0,
-            reps: exercise.sets?.map((set: WorkoutSet) => set.reps) || [],
-            weight: exercise.sets?.map((set: WorkoutSet) => set.weight) || [],
-          })) || [],
-        totalVolume,
-        personalRecords,
-        createdAt: workoutDate,
-      });
-    });
-
-    workouts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-
-    workoutLogger.debug('Past workouts fetched successfully', {
-      workoutCount: workouts.length,
-    });
-
-    return {
-      success: true,
-      workouts,
-    };
-  } catch (error: any) {
-    workoutLogger.error('Error fetching past workouts', error);
-    throw new Error('Failed to fetch past workouts');
-  }
-};
-
-export const getUserWorkouts = async (userId: string) => {
-  try {
-    const userWorkoutsRef = collection(db, 'users', userId, 'workouts');
-    const querySnapshot = await getDocs(userWorkoutsRef);
-    return querySnapshot.docs.map(doc => doc.data());
-  } catch (error: any) {
-    workoutLogger.error('Error fetching user workouts', error);
-    throw new Error('Failed to fetch user workouts');
-  }
-};
-
-/**
- * Get the weekly summary of the user's workouts
- * @param userId - The ID of the user fetching the weekly summary
- * @returns - The weekly summary
- * @throws - An error if the weekly summary fetch fails
- */
-export const getWeeklySummary = async (userId: string) => {
-  try {
-    const userWorkouts = await getUserWorkouts(userId);
-    if (!userWorkouts || userWorkouts.length === 0) {
-      throw new Error('Failed to fetch user workouts');
-    }
-    workoutLogger.debug('User workouts fetched successfully', {
-      workoutCount: userWorkouts.length,
-      userWorkouts,
-    });
-
-    const workouts = userWorkouts as PastWorkout[];
-
-    return {
-      success: true,
-      workouts,
-    };
-  } catch (error: any) {
-    workoutLogger.error('Error fetching weekly summary', error);
-    throw new Error('Failed to fetch weekly summary');
-  }
-};
-
-/**
- * Helper function to convert a Firestore document to PastWorkout format
- * @param doc - The Firestore document snapshot
- * @returns - A PastWorkout object
- */
-const convertDocToPastWorkout = (doc: any): PastWorkout => {
-  const data = doc.data();
-  const workoutDate = data.createdAt?.toDate() || new Date();
-
-  const totalSets =
-    data.exercises?.reduce(
-      (total: number, exercise: WorkoutExercise) =>
-        total + (exercise.sets?.length || 0),
-      0
-    ) || 0;
-  const estimatedMinutes = Math.max(30, totalSets * 2);
-  const hours = Math.floor(estimatedMinutes / 60);
-  const minutes = estimatedMinutes % 60;
-  const duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-
-  const totalVolume =
-    data.exercises?.reduce((total: number, exercise: WorkoutExercise) => {
-      return (
-        total +
-        (exercise.sets?.reduce(
-          (exerciseTotal: number, set: WorkoutSet) =>
-            exerciseTotal + set.reps * set.weight,
-          0
-        ) || 0)
-      );
-    }, 0) || 0;
-
+  const workouts = convertToPastWorkouts(userWorkoutsSnapshot);
+  const lastVisibleDocResult = getLastVisibleDoc(userWorkoutsSnapshot);
+  const hasMore = workouts.length === limitCount;
   return {
-    id: doc.id,
-    date: workoutDate.toISOString().split('T')[0],
-    duration,
-    exercises:
-      data.exercises?.map((exercise: WorkoutExercise) => ({
-        name: exercise.name,
-        sets: exercise.sets?.length || 0,
-        reps: exercise.sets?.map((set: WorkoutSet) => set.reps) || [],
-        weight: exercise.sets?.map((set: WorkoutSet) => set.weight) || [],
-      })) || [],
-    totalVolume,
-    personalRecords: 0,
-    createdAt: workoutDate,
+    workouts,
+    lastVisibleDoc: lastVisibleDocResult,
+    hasMore,
   };
 };
 
@@ -285,37 +249,31 @@ const convertDocToPastWorkout = (doc: any): PastWorkout => {
  * @returns - Object containing this week's workout count and streak data
  * @throws - An error if the weekly summary fetch fails
  */
-export const getWeeklySummaryData = async (userId: string) => {
-  try {
-    const userWorkoutsRef = collection(db, 'users', userId, 'workouts');
+export const getWeeklySummaryData = async (userId: string): Promise<number> => {
+  // Calculate start of current week (Sunday 00:00:00)
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay()); // Start of current week (Sunday)
+  startOfWeek.setHours(0, 0, 0, 0);
+  const startOfWeekTimestamp = Timestamp.fromDate(startOfWeek);
+  const userWorkoutsRef = getUserCollectionRef(
+    userId,
+    USERS_WORKOUTS_COLLECTION
+  );
 
-    // Calculate start of current week (Sunday 00:00:00)
-    const now = new Date();
-    const startOfWeek = new Date(now);
-    startOfWeek.setDate(now.getDate() - now.getDay()); // Start of current week (Sunday)
-    startOfWeek.setHours(0, 0, 0, 0);
-    const startOfWeekTimestamp = Timestamp.fromDate(startOfWeek);
+  const thisWeekQuery = query(
+    userWorkoutsRef,
+    where('createdAt', '>=', startOfWeekTimestamp),
+    orderBy('createdAt', 'desc')
+  );
+  const thisWeekSnapshot = await getDocSnapshot(thisWeekQuery);
+  const thisWeekCount = thisWeekSnapshot.size;
 
-    const thisWeekQuery = query(
-      userWorkoutsRef,
-      where('createdAt', '>=', startOfWeekTimestamp),
-      orderBy('createdAt', 'desc')
-    );
-    const thisWeekSnapshot = await getDocs(thisWeekQuery);
-    const thisWeekCount = thisWeekSnapshot.size;
+  workoutLogger.debug('Weekly summary data fetched successfully', {
+    thisWeekCount,
 
-    workoutLogger.debug('Weekly summary data fetched successfully', {
-      thisWeekCount,
+    startOfWeek: startOfWeek.toISOString(),
+  });
 
-      startOfWeek: startOfWeek.toISOString(),
-    });
-
-    return {
-      success: true,
-      thisWeekCount,
-    };
-  } catch (error: any) {
-    workoutLogger.error('Error fetching weekly summary data', error);
-    throw new Error('Failed to fetch weekly summary data');
-  }
+  return thisWeekCount;
 };

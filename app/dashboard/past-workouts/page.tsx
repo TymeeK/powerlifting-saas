@@ -1,7 +1,5 @@
 'use client';
 
-import useSWR from 'swr';
-
 import {
   Card,
   CardContent,
@@ -10,35 +8,58 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import LoadingScreen from '@/components/workout/LoadingScreen';
-import { Calendar, Clock, Dumbbell, Trophy } from 'lucide-react';
+import { Calendar, Dumbbell, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import BackToDashboardButton from '@/components/back-button';
 import { useRequireAuth } from '@/lib/hooks/userRequireAuth';
+import { usePastWorkouts } from '@/lib/hooks';
 import { PastWorkout } from '@/lib/types';
-import { logger } from '@/lib/logger';
-import { getPastWorkoutsFetcher } from '@/lib/swr/fetcher';
-
-// Create a child logger for past workouts page
-const pastWorkoutsLogger = logger.child({ component: 'past-workouts-page' });
+import { calculateWorkoutVolume } from '@/lib/workout-utils';
+import { useMemo } from 'react';
+import ExercisePagination from '@/components/dashboard/charts/ExercisePagination';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 
 export default function PastWorkoutsPage() {
   const { user, loading } = useRequireAuth('/login');
   const {
-    data: workouts = [],
+    workouts,
     isLoading,
     error,
-  } = useSWR<PastWorkout[]>(
-    user ? `past-workouts-${user.uid}` : null,
-    () => getPastWorkoutsFetcher(user?.uid || ''),
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: true,
-      dedupingInterval: 5000,
-    }
-  );
+    totalPages,
+    currentPage,
+    handlePageChange,
+  } = usePastWorkouts(user?.uid);
+
+  const createWorkoutMap = (
+    workouts: PastWorkout[],
+    calculator: (workout: PastWorkout) => number
+  ) => {
+    return new Map<string, number>(
+      workouts.map(workout => [workout.id, calculator(workout)])
+    );
+  };
+
+  const workoutSetCount = useMemo(() => {
+    return createWorkoutMap(workouts || [], workout =>
+      workout.exercises.reduce(
+        (total: number, exercise) => total + exercise.sets,
+        0
+      )
+    );
+  }, [workouts]);
+
+  const totalVolume = useMemo(() => {
+    return createWorkoutMap(workouts, workout =>
+      calculateWorkoutVolume(workout)
+    );
+  }, [workouts]);
 
   if (loading) {
     return <LoadingScreen />;
@@ -58,10 +79,6 @@ export default function PastWorkoutsPage() {
     });
   };
 
-  const calculateTotalSets = (exercises: any[]) => {
-    return exercises.reduce((total, exercise) => total + exercise.sets, 0);
-  };
-
   return (
     <div className='container mx-auto p-6 space-y-6'>
       <BackToDashboardButton />
@@ -75,7 +92,7 @@ export default function PastWorkoutsPage() {
       </div>
 
       {/* Stats Overview */}
-      <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6'>
+      <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6'>
         <Card>
           <CardContent className='p-4 sm:p-6'>
             <div className='flex items-center space-x-3'>
@@ -97,45 +114,9 @@ export default function PastWorkoutsPage() {
                 <Trophy className='h-6 w-6 text-muted-foreground' />
               </div>
               <div>
-                <p className='text-2xl font-bold'>
-                  {workouts.reduce(
-                    (total, workout) => total + workout.personalRecords,
-                    0
-                  )}
-                </p>
                 <p className='text-muted-foreground text-sm'>
                   Personal Records
                 </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className='p-4 sm:p-6'>
-            <div className='flex items-center space-x-3'>
-              <div className='p-2 bg-muted rounded-lg'>
-                <Clock className='h-6 w-6 text-muted-foreground' />
-              </div>
-              <div>
-                <p className='text-2xl font-bold'>
-                  {Math.round(
-                    workouts.reduce((total, workout) => {
-                      const [hours, minutes] =
-                        workout.duration.split('h ')[0] === workout.duration
-                          ? [0, parseInt(workout.duration.split('m')[0])]
-                          : [
-                              parseInt(workout.duration.split('h ')[0]),
-                              parseInt(
-                                workout.duration.split('h ')[1].split('m')[0]
-                              ),
-                            ];
-                      return total + hours + minutes / 60;
-                    }, 0)
-                  )}
-                  h
-                </p>
-                <p className='text-muted-foreground text-sm'>Total Time</p>
               </div>
             </div>
           </CardContent>
@@ -185,106 +166,118 @@ export default function PastWorkoutsPage() {
       {/* Workouts List */}
       {!isLoading && !error && (
         <div className='space-y-6'>
-          {workouts.map((workout, index) => (
-            <Card key={workout.id}>
-              <CardHeader>
-                <div className='flex items-center justify-between'>
-                  <div className='flex items-center space-x-3'>
-                    <div className='p-2 bg-muted rounded-lg'>
-                      <Calendar className='h-5 w-5 text-muted-foreground' />
-                    </div>
-                    <div>
-                      <CardTitle className='text-xl'>
-                        {formatDate(workout.date)}
-                      </CardTitle>
-                      <CardDescription>
-                        Workout #{workouts.length - index}
-                      </CardDescription>
-                    </div>
-                  </div>
-                  <div className='flex items-center space-x-4'>
-                    <Badge variant='secondary'>
-                      <Clock className='h-3 w-3 mr-1' />
-                      {workout.duration}
-                    </Badge>
-                    {workout.personalRecords > 0 && (
-                      <Badge variant='secondary'>
-                        <Trophy className='h-3 w-3 mr-1' />
-                        {workout.personalRecords} PR
-                        {workout.personalRecords > 1 ? 's' : ''}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6'>
-                  <div className='text-center'>
-                    <p className='text-2xl font-bold'>
-                      {workout.exercises.length}
-                    </p>
-                    <p className='text-muted-foreground text-sm'>Exercises</p>
-                  </div>
-                  <div className='text-center'>
-                    <p className='text-2xl font-bold'>
-                      {calculateTotalSets(workout.exercises)}
-                    </p>
-                    <p className='text-muted-foreground text-sm'>Total Sets</p>
-                  </div>
-                  <div className='text-center'>
-                    <p className='text-2xl font-bold'>
-                      {workout.totalVolume.toLocaleString()}
-                    </p>
-                    <p className='text-muted-foreground text-sm'>
-                      Total Volume (lbs)
-                    </p>
-                  </div>
-                </div>
-
-                <Separator className='mb-4' />
-
-                <div>
-                  <h4 className='font-semibold mb-3'>Exercises Performed</h4>
-                  <div className='space-y-3'>
-                    {workout.exercises.map((exercise, exerciseIndex) => (
-                      <div
-                        key={exerciseIndex}
-                        className='bg-muted/50 rounded-lg p-4'
-                      >
-                        <div className='flex items-center justify-between mb-2'>
-                          <h5 className='font-bold text-lg underline'>
-                            {exercise.name}
-                          </h5>
-                          <span className='text-muted-foreground text-sm'>
-                            {exercise.sets} sets
-                          </span>
-                        </div>
-                        <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2'>
-                          {exercise.sets > 0 &&
-                            Array.from(
-                              { length: exercise.sets },
-                              (_, setIndex) => (
-                                <div
-                                  key={setIndex}
-                                  className='bg-muted rounded p-2 sm:p-3 text-center'
-                                >
-                                  <p className='text-xs sm:text-sm font-medium'>
-                                    {exercise.reps[setIndex]} ×{' '}
-                                    {exercise.weight[setIndex]}lbs
-                                  </p>
-                                </div>
-                              )
-                            )}
+          <Accordion type='single' collapsible>
+            {workouts.map((workout, index) => (
+              <AccordionItem value={workout.id} className='border-b-0'>
+                <AccordionTrigger className='cursor-pointer'>
+                  {formatDate(workout.date)}
+                </AccordionTrigger>
+                <AccordionContent>
+                  <Card className='border-t-0'>
+                    <CardHeader>
+                      <div className='flex items-center justify-between'>
+                        <div className='flex items-center space-x-3'>
+                          <div className='p-2 bg-muted rounded-lg'>
+                            <Calendar className='h-5 w-5 text-muted-foreground' />
+                          </div>
+                          <div>
+                            <CardTitle className='text-xl'>
+                              {formatDate(workout.date)}
+                            </CardTitle>
+                            <CardDescription>
+                              Workout #{workouts.length - index}
+                            </CardDescription>
+                          </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    </CardHeader>
+                    <CardContent>
+                      <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-6'>
+                        <div className='text-center'>
+                          <p className='text-2xl font-bold'>
+                            {workout.exercises.length}
+                          </p>
+                          <p className='text-muted-foreground text-sm'>
+                            Exercises
+                          </p>
+                        </div>
+                        <div className='text-center'>
+                          <p className='text-2xl font-bold'>
+                            {(
+                              workoutSetCount.get(workout.id) ?? 0
+                            ).toLocaleString()}
+                          </p>
+                          <p className='text-muted-foreground text-sm'>
+                            Total Sets
+                          </p>
+                        </div>
+                        <div className='text-center'>
+                          <p className='text-2xl font-bold'>
+                            {(
+                              totalVolume.get(workout.id) ?? 0
+                            ).toLocaleString()}
+                          </p>
+                          <p className='text-muted-foreground text-sm'>
+                            Total Volume (lbs)
+                          </p>
+                        </div>
+                      </div>
+
+                      <Separator className='mb-4' />
+
+                      <div>
+                        <h4 className='font-semibold mb-3'>
+                          Exercises Performed
+                        </h4>
+                        <div className='space-y-3'>
+                          {workout.exercises.map((exercise, exerciseIndex) => (
+                            <div
+                              key={exerciseIndex}
+                              className='bg-muted/50 rounded-lg p-4'
+                            >
+                              <div className='flex items-center justify-between mb-2'>
+                                <h5 className='font-bold text-lg underline'>
+                                  {exercise.name}
+                                </h5>
+                                <span className='text-muted-foreground text-sm'>
+                                  {exercise.sets} sets
+                                </span>
+                              </div>
+                              <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2'>
+                                {exercise.sets > 0 &&
+                                  Array.from(
+                                    { length: exercise.sets },
+                                    (_, setIndex) => (
+                                      <div
+                                        key={setIndex}
+                                        className='bg-muted rounded p-2 sm:p-3 text-center'
+                                      >
+                                        <p className='text-xs sm:text-sm font-medium'>
+                                          {exercise.reps[setIndex]} ×{' '}
+                                          {exercise.weight[setIndex]}lbs
+                                        </p>
+                                      </div>
+                                    )
+                                  )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
         </div>
       )}
+
+      <ExercisePagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
+      />
 
       {/* Empty State */}
       {!isLoading && !error && workouts.length === 0 && (

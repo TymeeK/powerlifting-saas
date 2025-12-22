@@ -22,7 +22,6 @@ export {
 export {
   saveWorkout,
   getPastWorkouts,
-  getWeeklySummary,
   getWeeklySummaryData,
 } from './firebase/workout';
 
